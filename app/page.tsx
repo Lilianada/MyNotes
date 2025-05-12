@@ -42,7 +42,17 @@ export default function Home() {
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
-        <main className="flex-1 grid gap-4 md:grid-cols-[24%_75%] overflow-hidden">
+        <main className="flex-1 grid gap-4 md:grid-cols-[24%_75%] overflow-hidden relative">
+          {/* Mobile overlay to close sidebar when clicking outside */}
+          {isSidebarOpen && (
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-30 z-20 md:hidden"
+              onClick={() => {
+                setIsSidebarOpen(false);
+              }}
+              aria-hidden="true"
+            />
+          )}
           <List 
             isSidebarOpen={isSidebarOpen}
             onSelectNote={(note) => {

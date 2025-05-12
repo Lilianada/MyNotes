@@ -7,14 +7,18 @@ import { resolve } from "path"
 
 // Helper to sanitize file names and create a slug
 const sanitizeFileName = (name: string): string => {
-  return name
+  // First trim and limit to a reasonable length to prevent extremely long file names
+  const trimmedName = name.trim().slice(0, 100)
+  
+  return trimmedName
     .toLowerCase()
-    .replace(/[/\\?%*:|"<>]/g, '')  // Remove prohibited characters
-    .replace(/\s+/g, '-')           // Replace spaces with hyphens
-    .replace(/[^\w\-]/g, '')        // Remove non-word chars except hyphens
-    .replace(/\-\-+/g, '-')         // Replace multiple hyphens with single hyphen
-    .replace(/^-+|-+$/g, '')        // Remove leading/trailing hyphens
-    .trim() || 'untitled'           // Fallback if empty after processing
+    .replace(/[/\\?%*:|"<>]/g, '')    // Remove prohibited characters
+    .replace(/\s+/g, '-')             // Replace spaces with hyphens
+    .replace(/[^\w\-\.]/g, '')        // Remove non-word chars except hyphens and dots
+    .replace(/\-\-+/g, '-')           // Replace multiple hyphens with single hyphen
+    .replace(/^-+|-+$/g, '')          // Remove leading/trailing hyphens
+    .replace(/\.+$/, '')              // Remove trailing dots
+    || 'untitled'                      // Fallback if empty after processing
 }
 
 export async function saveNoteToFile(content: string, id: number, title: string) {
