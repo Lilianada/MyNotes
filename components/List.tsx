@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import type { Note } from "@/types";
 import { useNotes } from "@/contexts/note-context";
 import { Trash2 } from "lucide-react";
+import DeleteConfirmation from "./delete-confirmation";
 
 interface ListProps {
   isSidebarOpen: boolean;
@@ -17,6 +18,8 @@ export default function List({
   // Use notes from context
   const { notes, selectNote, selectedNoteId, deleteNote } = useNotes();
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   
   // Sort notes from newest to oldest
   const sortedNotes = [...notes].sort((a, b) => 
@@ -25,17 +28,24 @@ export default function List({
   
   const handleDeleteNote = async (note: Note, e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (confirm(`Are you sure you want to delete "${note.noteTitle}"?`)) {
-      setIsDeleting(note.id);
+    // Open the delete confirmation dialog
+    setNoteToDelete(note);
+    setIsDeleteDialogOpen(true);
+  };
+  
+  const confirmDelete = async () => {
+    if (noteToDelete) {
+      setIsDeleting(noteToDelete.id);
       
       try {
         // The deleteNote function in the context now handles both state and file deletion
-        await deleteNote(note.id);
+        await deleteNote(noteToDelete.id);
       } catch (error) {
         console.error("Error deleting note:", error);
       } finally {
         setIsDeleting(null);
+        setNoteToDelete(null);
+        setIsDeleteDialogOpen(false);
       }
     }
   };
@@ -94,6 +104,20 @@ export default function List({
         </ul>
       ) : (
         <p className="text-center text-gray-400 p-4">No notes yet</p>
+      )}
+      
+      {/* Delete Confirmation Dialog */}
+      {noteToDelete && (
+        <DeleteConfirmation
+          isOpen={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setNoteToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          title="Delete Note"
+          description={`Are you sure you want to delete "${noteToDelete.noteTitle}"? This action cannot be undone.`}
+        />
       )}
     </aside>
   );

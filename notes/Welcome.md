@@ -1,6 +1,6 @@
-# Welcome to SimpleNotes!
+# Welcome to NoteItDown!
 
-SimpleNotes is a minimalist notes app designed for quick and efficient note-taking. Here are some tips to get started:
+NoteItDown is a minimalist notes app designed for quick and efficient note-taking. Here are some tips to get started:
 
 ## Markdown Support
 - **Bold text** using `**bold**`

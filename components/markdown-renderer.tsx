@@ -14,13 +14,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, onChange }
     
     // Process line by line
     return text.split('\n').map((line, index) => {
-      // Headings
+      // Headings with proper styling classes
       if (line.startsWith('# ')) {
-        return `<h1>${line.substring(2)}</h1>`;
+        return `<h1 class="text-2xl font-bold mt-4 mb-2">${line.substring(2)}</h1>`;
       } else if (line.startsWith('## ')) {
-        return `<h2>${line.substring(3)}</h2>`;
+        return `<h2 class="text-xl font-semibold mt-3 mb-2">${line.substring(3)}</h2>`;
       } else if (line.startsWith('### ')) {
-        return `<h3>${line.substring(4)}</h3>`;
+        return `<h3 class="text-lg font-medium mt-2 mb-1">${line.substring(4)}</h3>`;
       }
       
       // Bold text
@@ -60,7 +60,31 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, onChange }
   const lines = content.split('\n');
   
   return (
-    <div className="w-full flex-1 overflow-y-auto p-1 text-[15px] scrollbar-hide h-[calc(100vh_-_10rem)]">
+    <div className="w-full flex-1 overflow-y-auto p-1 text-[15px] scrollbar-hide h-[calc(100vh_-_10rem)] markdown-content">
+      {/* Add global styles for markdown headers */}
+      <style jsx global>{`
+        .markdown-content h1 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          margin-top: 1rem;
+          margin-bottom: 0.5rem;
+          color: #111827;
+        }
+        .markdown-content h2 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin-top: 0.75rem;
+          margin-bottom: 0.5rem;
+          color: #1f2937;
+        }
+        .markdown-content h3 {
+          font-size: 1.125rem;
+          font-weight: 500;
+          margin-top: 0.5rem;
+          margin-bottom: 0.25rem;
+          color: #374151;
+        }
+      `}</style>
       {lines.map((line, index) => {
         // Replace checkbox patterns with actual checkboxes
         if (line.includes('[ ]')) {

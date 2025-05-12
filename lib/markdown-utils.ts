@@ -11,9 +11,9 @@ export function markdownToHtml(markdown: string): string {
     .replace(/\n/g, '<br>')
     
     // Headers
-    .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold my-4">$1</h1>')
-    .replace(/^## (.+)$/gm, '<h2 class="text-xl font-bold my-3">$1</h2>')
-    .replace(/^### (.+)$/gm, '<h3 class="text-lg font-bold my-2">$1</h3>')
+    .replace(/^# (.+)$/gm, '<h1 class="text-2xl font-bold my-4 text-gray-900">$1</h1>')
+    .replace(/^## (.+)$/gm, '<h2 class="text-xl font-semibold my-3 text-gray-800">$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3 class="text-lg font-medium my-2 text-gray-700">$1</h3>')
     
     // Bold
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')

@@ -1,4 +1,4 @@
-# MyNotes
+# NoteItDown
 
 A minimalist notes application built with Next.js and TypeScript.
 

@@ -1,9 +1,6 @@
----
-mode: 'ask'
----
-Write an article on Vercel's founder, Guillermo Rauch, and his journey in the tech industry. Discuss his early career, the founding of Vercel, and the impact of his work on the developer community. Include insights into his vision for the future of web development and any notable projects or contributions he has made.
----
-Guillermo Rauch: A Visionary in Web Development
+
+## Guillermo Rauch: A Visionary in Web Development
+
 Guillermo Rauch is a name that resonates deeply within the tech industry, particularly in the realm of web development. As the founder and CEO of Vercel, he has played a pivotal role in shaping the modern web landscape. His journey is one of innovation, passion, and a relentless pursuit of excellence.
 In this article, we will explore Guillermo's early career, the founding of Vercel, and the profound impact of his work on the developer community. We will also delve into his vision for the future of web development and highlight some of his notable projects and contributions.
 Guillermo's journey in the tech industry is a testament to his dedication and vision. He has consistently pushed the boundaries of what is possible in web development, inspiring countless developers along the way.

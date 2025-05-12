@@ -7,7 +7,7 @@ import { FontProvider } from "@/contexts/font-context"
 import { NoteProvider } from "@/contexts/note-context"
 
 export const metadata: Metadata = {
-  title: "Simple Notes App",
+  title: "NoteItDown App",
   description: "A minimalist notes app",
   generator: 'Lily'
 }
