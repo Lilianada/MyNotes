@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { Note } from "@/types";
 
 /**
  * Ensures a directory exists, creating it if necessary
@@ -101,4 +102,59 @@ export function listFiles(dirPath: string, extension?: string): string[] {
     console.error('Error listing files:', error);
     return [];
   }
+}
+
+/**
+ * Sanitize a string to be used as a filename
+ */
+export function sanitizeFileName(name: string): string {
+  // First trim and limit to a reasonable length to prevent extremely long file names
+  const trimmedName = name.trim().slice(0, 100);
+  
+  return trimmedName
+    .toLowerCase()
+    .replace(/[/\\?%*:|"<>]/g, '') // Remove prohibited characters
+    .replace(/\s+/g, '-')          // Replace spaces with hyphens
+    .replace(/[^\w\-\.]/g, '')      // Remove non-word chars except hyphens and dots
+    .replace(/\-\-+/g, '-')         // Replace multiple hyphens with single hyphen
+    .replace(/^-+|-+$/g, '')        // Remove leading/trailing hyphens
+    .replace(/\.+$/, '')            // Remove trailing dots
+    || 'untitled';                  // Fallback if empty after processing
+}
+
+/**
+ * Get a note's content from its filepath
+ */
+export function getNoteContent(filePath: string): string {
+  try {
+    if (fs.existsSync(filePath)) {
+      return fs.readFileSync(filePath, 'utf8');
+    }
+    return '';
+  } catch (error) {
+    console.error('Error reading note file:', error);
+    return '';
+  }
+}
+
+/**
+ * Create a title from a filename
+ */
+export function titleFromFilename(filename: string): string {
+  const baseName = filename.replace(/\.md$/, '').replace(/-/g, ' ');
+  
+  // Convert from kebab-case to Title Case
+  return baseName
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/**
+ * Ensures the notes directory exists
+ */
+export function ensureNotesDirectory(baseDir: string = process.cwd()): string {
+  const notesDir = path.resolve(baseDir, "notes");
+  ensureDirectoryExists(notesDir);
+  return notesDir;
 }

@@ -3,29 +3,29 @@
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { resolve } from "path";
 import type { Note } from "@/types";
+import { ensureNotesDirectory, titleFromFilename } from "./file-system";
 
 // Load notes from the file system
 export async function loadNotesFromFiles(): Promise<Note[]> {
   try {
-    const notesDir = resolve("./notes");
+    const notesDir = ensureNotesDirectory();
     
-    if (!existsSync(notesDir)) {
-      return [];
-    }
-    
+    // Get all markdown files
     const files = readdirSync(notesDir).filter(file => file.endsWith('.md'));
     let id = 1;
     
     const notes: Note[] = files.map(file => {
       const filePath = resolve(notesDir, file);
       const content = readFileSync(filePath, 'utf8');
-      const noteTitle = file.replace(/\.md$/, '');
+      
+      // Use the titleFromFilename function to get a formatted title
+      const formattedTitle = titleFromFilename(file);
       
       return {
         id: id++,
         content,
         createdAt: new Date(),  // We'll use file stats in a more advanced version
-        noteTitle,
+        noteTitle: formattedTitle,
         filePath
       };
     });
