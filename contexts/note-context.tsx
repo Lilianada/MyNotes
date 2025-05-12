@@ -61,17 +61,28 @@ export function NoteProvider({ children }: { children: ReactNode }) {
   }
   
   const deleteNote = (id: number) => {
+    // First find the note to get its filePath before removing it
+    const noteToDelete = notes.find(note => note.id === id)
+    
+    // Remove from state
     setNotes(prevNotes => prevNotes.filter(note => note.id !== id))
     
     if (selectedNoteId === id) {
       // Select the next available note
       const remainingNotes = notes.filter(note => note.id !== id)
       if (remainingNotes.length > 0) {
-        setSelectedNoteId(remainingNotes[0].id)
+        // Find the most recently created note
+        const newestNote = [...remainingNotes].sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0]
+        setSelectedNoteId(newestNote.id)
       } else {
         setSelectedNoteId(null)
       }
     }
+    
+    // Note: The actual file deletion happens in the List component
+    // through the deleteNoteFile action when the delete button is clicked
   }
   
   const selectNote = (id: number | null) => {
