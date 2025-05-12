@@ -60,7 +60,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, onChange }
   const lines = content.split('\n');
   
   return (
-    <div className="w-full flex-1 overflow-y-auto p-1 text-[15px] scrollbar-hide" style={{ height: 'calc(100vh - 200px)', overflow: 'auto' }}>
+    <div className="w-full flex-1 overflow-y-auto p-1 text-[15px] scrollbar-hide h-[calc(100vh_-10rem)]">
       {lines.map((line, index) => {
         // Replace checkbox patterns with actual checkboxes
         if (line.includes('[ ]')) {

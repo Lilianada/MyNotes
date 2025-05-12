@@ -16,7 +16,7 @@ const TitleModal: React.FC<TitleModalProps> = ({
   cancelTitleInput
 }) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-10">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
       <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-md">
         <h3 className="text-lg font-medium mb-3">Create New Note</h3>
         <form onSubmit={handleTitleSubmit}>

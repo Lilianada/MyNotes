@@ -102,18 +102,6 @@ export function SimpleNotes() {
 
   return (
     <div className="w-full mx-auto h-full flex flex-col">
-      <div className="flex justify-end items-center">
-        <div className="flex items-center" ref={menuRef}>
-          <button
-            onClick={initiateNewNote}
-            className="p-1 text-gray-500 hover:text-gray-700 mr-2"
-            aria-label="Add new note"
-          >
-            +
-          </button>
-          <Menu isOpen={menuOpen} setIsOpen={setMenuOpen} />
-        </div>
-      </div>
 
       {/* Title Input Modal */}
       {showTitleInput && (

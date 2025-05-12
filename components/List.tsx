@@ -43,13 +43,12 @@ export default function List({
   
   return (
     <aside 
-      className={`fixed inset-y-0 left-0 z-20 w-80 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out shadow-lg ${
+      className={`fixed inset-y-0 left-0 z-10 w-80 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out shadow-lg ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } md:translate-x-0 md:relative md:w-full md:mt-8 md:border md:rounded-md md:shadow-sm`}
+      } md:translate-x-0 md:relative md:w-full md:m-4 md:border md:rounded-md md:shadow-sm`}
     >
       <div className="p-4 border-b border-gray-200">
         <header className="text-sm">
-          <p className="text-gray-500">Hi Lily,</p>
           <p className="text-gray-500">You have {notes.length} saved notes</p>
         </header>
       </div>
@@ -59,7 +58,7 @@ export default function List({
           {sortedNotes.map((note) => (
             <li
               key={note.id}
-              className={`p-2 hover:bg-gray-50 rounded cursor-pointer flex items-center justify-between ${
+              className={`p-2 text-sm hover:bg-gray-50 rounded cursor-pointer flex items-center justify-between ${
                 selectedNoteId === note.id ? "bg-blue-50" : ""
               }`}
             >
