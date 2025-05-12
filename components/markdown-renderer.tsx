@@ -12,7 +12,16 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, onChange }
   const markdownToHTML = useCallback((text: string) => {
     if (!text) return '';
     
-    // Process line by line
+    // Check if we have a code block with language syntax (handling multi-line code blocks)
+    if (text.includes('```')) {
+      // Handle code blocks with potential language specification
+      return text.replace(/```([a-z]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+        const language = lang ? ` language-${lang}` : '';
+        return `<pre class="bg-gray-100 dark:bg-gray-800 p-2 rounded my-2 overflow-x-auto${language}"><code class="font-mono text-sm whitespace-pre">${code}</code></pre>`;
+      });
+    }
+    
+    // Process line by line for regular content
     return text.split('\n').map((line, index) => {
       // Headings with proper styling classes
       if (line.startsWith('# ')) {
@@ -33,7 +42,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, onChange }
       line = line.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
       
       // Inline code
-      line = line.replace(/`(.*?)`/g, '<code>$1</code>');
+      line = line.replace(/`(.*?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 rounded font-mono text-sm">$1</code>');
       
       // Checkbox handling is done separately
       
@@ -61,7 +70,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, onChange }
   
   return (
     <div className="w-full flex-1 overflow-y-auto p-1 text-[15px] scrollbar-hide h-[calc(100vh_-_10rem)] markdown-content">
-      {/* Add global styles for markdown headers */}
+      {/* Add global styles for markdown formatting */}
       <style jsx global>{`
         .markdown-content h1 {
           font-size: 1.5rem;
@@ -83,6 +92,57 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, onChange }
           margin-top: 0.5rem;
           margin-bottom: 0.25rem;
           color: #374151;
+        }
+        .markdown-content pre {
+          background-color: #f3f4f6;
+          padding: 0.75rem;
+          border-radius: 0.375rem;
+          overflow-x: auto;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+          font-size: 0.875rem;
+          line-height: 1.5;
+          margin: 1rem 0;
+          white-space: pre;
+          border: 1px solid #e5e7eb;
+        }
+        .markdown-content code {
+          background-color: #f3f4f6;
+          padding: 0.125rem 0.25rem;
+          border-radius: 0.25rem;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+          font-size: 0.875rem;
+        }
+        .markdown-content .language-javascript,
+        .markdown-content .language-js {
+          color: #5a67d8;
+        }
+        .markdown-content .language-typescript,
+        .markdown-content .language-ts {
+          color: #3182ce;
+        }
+        .markdown-content .language-jsx,
+        .markdown-content .language-tsx {
+          color: #805ad5;
+        }
+        .markdown-content .language-html {
+          color: #dd6b20;
+        }
+        .markdown-content .language-css {
+          color: #38a169;
+        }
+        .markdown-content .language-python,
+        .markdown-content .language-py {
+          color: #2c5282;
+        }
+        @media (prefers-color-scheme: dark) {
+          .markdown-content pre {
+            background-color: #1f2937;
+            color: #e5e7eb;
+          }
+          .markdown-content code {
+            background-color: #1f2937;
+            color: #e5e7eb;
+          }
         }
       `}</style>
       {lines.map((line, index) => {

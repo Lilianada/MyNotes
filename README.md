@@ -1,15 +1,21 @@
 # NoteItDown
 
-A minimalist notes application built with Next.js and TypeScript.
+A minimalist notes application built with Next.js and TypeScript that saves notes as markdown files on the server.
 
 ## Features
 
 - Clean, minimalist interface focused on simple note-taking
-- Markdown support for rich text formatting
+- Markdown support for rich text formatting including:
+  - Headers (# H1, ## H2, ### H3)
+  - Text formatting (**bold**, *italic*)
+  - Code blocks (```code```)
+  - Inline code (`code`)
+  - Lists (- item, 1. item)
+  - Checkboxes ([ ] todo, [x] done)
+- Powerful search functionality to find notes by title or content
 - Light and dark mode support
-- File-based storage using markdown files
+- Server-side file storage using markdown (.md) files
 - Keyboard shortcuts for efficient use
-- Search functionality to find notes quickly
 
 ## Tech Stack
 
@@ -49,6 +55,48 @@ yarn build
 # or
 npm run build
 ```
+
+## Search Functionality
+
+The application includes a powerful search feature that allows users to:
+- Search notes by title or content
+- See previews of matching notes with highlighted matches
+- Quickly navigate to search results
+- Real-time search as you type
+
+## Code Block Support
+
+NoteItDown provides excellent support for code blocks in your notes:
+- Syntax highlighting for multiple languages
+- Monospace formatting for code sections
+- Support for both inline code using backticks (`code`) 
+- Multi-line code blocks using triple backticks:
+  ```
+  function example() {
+    return "This is a code block";
+  }
+  ```
+
+## Storage Options
+
+NoteItDown offers flexible storage options to meet different needs:
+
+### File System Storage (Default)
+- Notes are saved as Markdown (.md) files on the server
+- Perfect for self-hosted deployments
+- Requires file system access on the server
+
+### Notion Integration (Optional)
+NoteItDown can be configured to use Notion as a database backend:
+- Store notes in Notion databases instead of the filesystem
+- Perfect for serverless deployments on platforms like Vercel
+- Enables collaboration features through Notion
+- Requires a Notion API key and database ID
+
+To enable Notion integration:
+1. Add your Notion API key and Database ID to `.env.local`
+2. Follow the setup guide in the `.env.local` file
+3. Restart the application
 
 ## License
 

@@ -15,7 +15,7 @@ export function Header({ onNewNote, toggleSidebar, isSidebarOpen }: HeaderProps)
   const [menuOpen, setMenuOpen] = useState(false)
   
   return (
-    <header className="flex justify-between items-center py-3 px-4 sm:px-8 bg-white border-b border-gray-200 shadow-sm z-40 relative">
+    <header className="flex justify-between items-center py-3 px-4 sm:px-8 bg-white border-b border-gray-200 shadow-sm z-20 relative">
       <div>
         <button 
           onClick={toggleSidebar}

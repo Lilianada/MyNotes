@@ -35,8 +35,11 @@ export function markdownToHtml(markdown: string): string {
     .replace(/\[(.+?)\]\((.+?)\)/g, 
       '<a href="$2" class="text-blue-500 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>')
     
-    // Code blocks
-    .replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-100 dark:bg-gray-800 p-2 rounded my-2 overflow-x-auto font-mono text-sm">$1</pre>')
+    // Code blocks with language specification
+    .replace(/```([a-z]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+      const language = lang ? ` language-${lang}` : '';
+      return `<pre class="bg-gray-100 dark:bg-gray-800 p-2 rounded my-2 overflow-x-auto${language}"><code class="font-mono text-sm whitespace-pre">${code}</code></pre>`;
+    })
     
     // Inline code
     .replace(/`(.+?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 rounded font-mono text-sm">$1</code>')
