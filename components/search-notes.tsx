@@ -13,10 +13,8 @@ interface SearchNotesProps {
 export function SearchNotes({ notes, onSelectNote }: SearchNotesProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<Note[]>([])
-  const [isSearching, setIsSearching] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const searchResultsRef = useRef<HTMLDivElement>(null)
-
+  
   // Filter notes based on search query
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -34,42 +32,42 @@ export function SearchNotes({ notes, onSelectNote }: SearchNotesProps) {
     setSearchResults(results)
   }, [searchQuery, notes])
 
-  // Close search results when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchResultsRef.current &&
-        !searchResultsRef.current.contains(event.target as Node) &&
-        searchInputRef.current &&
-        !searchInputRef.current.contains(event.target as Node)
-      ) {
-        setIsSearching(false)
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside)
-    }
-  }, [])
-
   // Handle keyboard navigation in search results
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
-      setIsSearching(false)
+      // Keep focus but clear input
+      setSearchQuery("")
     }
   }
+
+  // Function to highlight matched text
+  const highlightMatch = (text: string, query: string): JSX.Element => {
+    if (!query || !text) return <>{text}</>;
+    
+    const lowerText = text.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const index = lowerText.indexOf(lowerQuery);
+    
+    if (index === -1) return <>{text}</>;
+    
+    return (
+      <>
+        {text.substring(0, index)}
+        <span className="bg-yellow-200">{text.substring(index, index + query.length)}</span>
+        {text.substring(index + query.length)}
+      </>
+    );
+  };
 
   // Handle selecting a note from search results
   const handleSelectNote = (note: Note) => {
     onSelectNote(note)
-    setIsSearching(false)
     setSearchQuery("")
   }
 
   return (
-    <div className="relative">
-      <div className="relative">
+    <div className="w-full">
+      <div className="relative mb-2">
         <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
         <input
           ref={searchInputRef}
@@ -77,41 +75,33 @@ export function SearchNotes({ notes, onSelectNote }: SearchNotesProps) {
           placeholder="Search notes..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          onFocus={() => setIsSearching(true)}
           onKeyDown={handleKeyDown}
           className="h-9 w-full rounded-md border border-gray-200 bg-white pl-8 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300"
+          autoFocus
         />
       </div>
 
-      {isSearching && searchResults.length > 0 && (
-        <div
-          ref={searchResultsRef}
-          className="absolute top-full mt-1 w-full rounded-md border border-gray-200 bg-white shadow-md z-10"
-        >
-          <ul className="max-h-60 overflow-auto py-1">
-            {searchResults.map((note) => (
-              <li
-                key={note.id}
-                onClick={() => handleSelectNote(note)}
-                className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
-              >
-                <div className="font-medium text-sm">{note.noteTitle}</div>
-                <div className="text-xs text-gray-500 truncate">
-                  {createPlainTextPreview(note.content)}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {searchResults.length > 0 && (
+        <ul className="max-h-60 overflow-auto py-1">
+          {searchResults.map((note) => (
+            <li
+              key={note.id}
+              onClick={() => handleSelectNote(note)}
+              className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded-md"
+            >
+              <div className="font-medium text-sm">
+                {highlightMatch(note.noteTitle, searchQuery)}
+              </div>
+              <div className="text-xs text-gray-500 truncate">
+                {highlightMatch(createPlainTextPreview(note.content), searchQuery)}
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
 
-      {isSearching && searchQuery && searchResults.length === 0 && (
-        <div
-          ref={searchResultsRef}
-          className="absolute top-full mt-1 w-full rounded-md border border-gray-200 bg-white shadow-md z-10"
-        >
-          <div className="px-3 py-2 text-sm text-gray-500">No results found</div>
-        </div>
+      {searchQuery && searchResults.length === 0 && (
+        <div className="px-3 py-2 text-sm text-gray-500">No results found</div>
       )}
     </div>
   )

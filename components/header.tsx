@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Menu } from "./menu"
-import { Menu as MenuIcon, X, Plus } from "lucide-react"
+import { Menu as MenuIcon, X, Plus, Search } from "lucide-react"
 import { useNotes } from "@/contexts/note-context"
+import SearchNotes from "./search-notes"
 
 interface HeaderProps {
   onNewNote: () => void
@@ -13,9 +14,26 @@ interface HeaderProps {
 
 export function Header({ onNewNote, toggleSidebar, isSidebarOpen }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const { notes, selectNote } = useNotes()
+  const searchRef = useRef<HTMLDivElement>(null)
+  
+  // Close search when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setMobileSearchOpen(false)
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
   
   return (
-    <header className="flex justify-between items-center py-3 px-4 sm:px-8 bg-white border-b border-gray-200 shadow-sm z-20 relative">
+    <header className="flex items-center py-3 px-4 sm:px-8 bg-white border-b border-gray-200 shadow-sm z-20 relative">
       <div>
         <button 
           onClick={toggleSidebar}
@@ -31,7 +49,49 @@ export function Header({ onNewNote, toggleSidebar, isSidebarOpen }: HeaderProps)
           )}
         </button>
       </div>
-      <div className="text-lg font-medium text-gray-800">Lily's Notes</div>
+      
+      {/* Title is visible on all screens, centered on mobile */}
+      <div className="flex-grow text-center md:text-left md:flex-grow-0 md:ml-4 text-lg font-medium text-gray-800">
+        Lily's Notes
+      </div>
+      
+      {/* Search icon and dialog for all screen sizes */}
+      {/* Spacer for layout */}
+      <div className="flex-grow"></div>
+      
+      {/* Search button */}
+      <div className="relative ml-auto mr-2" ref={searchRef}>
+        <button
+          onClick={() => setMenuOpen(false)}
+          className="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          aria-label="Search notes"
+          title="Search notes"
+          onMouseDown={(e) => {
+            e.preventDefault(); // Prevent focus loss on click
+            setMobileSearchOpen(!mobileSearchOpen);
+          }}
+        >
+          <Search size={16} />
+        </button>
+        
+        {/* Search dropdown */}
+        {mobileSearchOpen && (
+          <div className="absolute top-full mt-1 w-80 right-0 z-50">
+            <div className="bg-white rounded-md border border-gray-200 shadow-lg p-2">
+              <SearchNotes 
+                notes={notes} 
+                onSelectNote={(note) => {
+                  selectNote(note.id);
+                  setMobileSearchOpen(false);
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+      
+      {/* We've replaced the mobile overlay with a universal dropdown approach */}
+      
       <div className="flex items-center space-x-1">
         <button
           onClick={onNewNote}
