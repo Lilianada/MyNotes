@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, KeyboardEvent } from 'react';
 
 interface TitleModalProps {
   handleTitleSubmit: (e: React.FormEvent) => void;
@@ -15,6 +15,20 @@ const TitleModal: React.FC<TitleModalProps> = ({
   setNewNoteTitle,
   cancelTitleInput
 }) => {
+  // Handle escape key to cancel
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      cancelTitleInput();
+    }
+  };
+
+  // Add escape key listener
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown as any);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown as any);
+    };
+  }, []);
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
       <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-md">

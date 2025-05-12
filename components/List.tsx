@@ -43,9 +43,10 @@ export default function List({
   
   return (
     <aside 
-      className={`fixed inset-y-0 left-0 z-10 w-80 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out shadow-lg ${
+      id="sidebar"
+      className={`fixed inset-y-0 left-0 z-30 w-80 bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg ${
         isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } md:translate-x-0 md:relative md:w-full md:m-4 md:border md:rounded-md md:shadow-sm`}
+      } md:translate-x-0 md:relative md:w-full md:m-4 md:border md:rounded-md md:shadow-sm md:transition-shadow`}
     >
       <div className="p-4 border-b border-gray-200">
         <header className="text-sm">
@@ -94,14 +95,6 @@ export default function List({
         </ul>
       ) : (
         <p className="text-center text-gray-400 p-4">No notes yet</p>
-      )}
-      
-      {/* Mobile overlay to close sidebar when clicking outside */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-30 z-10 md:hidden"
-          onClick={() => document.dispatchEvent(new CustomEvent('close-sidebar'))}
-        />
       )}
     </aside>
   );

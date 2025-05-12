@@ -53,6 +53,13 @@ export function SimpleNotes() {
     setNewNoteTitle("")
     setShowTitleInput(true)
   }
+  
+  // Focus title input when it appears
+  useEffect(() => {
+    if (showTitleInput && titleInputRef.current) {
+      titleInputRef.current.focus()
+    }
+  }, [showTitleInput])
 
   const createNewNote = async (customTitle?: string) => {
     // Use the custom title if provided, otherwise use default
@@ -80,12 +87,13 @@ export function SimpleNotes() {
     setNextId(nextId + 1)
     setShowTitleInput(false)
 
-    // Focus the editor
+    // Focus the editor after a proper delay to ensure components are rendered
+    // Use a slightly longer timeout to ensure DOM is fully updated
     setTimeout(() => {
       if (editorRef.current) {
         editorRef.current.focus()
       }
-    }, 0)
+    }, 150) // Increased timeout for more reliable focus
   }
 
   const handleTitleSubmit = (e: React.FormEvent) => {

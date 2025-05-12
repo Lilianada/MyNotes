@@ -19,6 +19,18 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(funct
 ) {
   const [renderHTML, setRenderHTML] = useState(false);
 
+  // Focus the editor when a new note is created or selected
+  useEffect(() => {
+    if (ref && typeof ref === 'object' && ref.current) {
+      // Small delay to ensure rendering is complete
+      const timer = setTimeout(() => {
+        ref.current?.focus();
+      }, 10);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [note.id, ref]);
+
   useEffect(() => {
     // Auto-save when user stops typing
     const saveTimeout = setTimeout(() => {
@@ -75,39 +87,7 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(funct
     setRenderHTML(!renderHTML);
   };
 
-  // Insert current date in YYYY-MM-DD format
-  const insertCurrentDate = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const formattedDate = `${year}-${month}-${day}`;
-    
-    // Check if ref exists and is properly connected to the DOM element
-    if (!ref || typeof ref !== 'object' || !ref.current) return;
-    
-    const textArea = ref.current;
-    
-    // Make sure selectionStart exists and is a number
-    const cursorPos = typeof textArea.selectionStart === 'number' ? textArea.selectionStart : 0;
-    
-    const newContent = 
-      note.content.substring(0, cursorPos) + 
-      formattedDate + 
-      note.content.substring(cursorPos);
-    
-    onChange(newContent);
-    
-    // Set cursor position after the inserted date
-    setTimeout(() => {
-      if (ref && ref.current) {
-        const textAreaElement = ref.current;
-        textAreaElement.selectionStart = cursorPos + formattedDate.length;
-        textAreaElement.selectionEnd = cursorPos + formattedDate.length;
-        textAreaElement.focus();
-      }
-    }, 0);
-  };
+  // Editor functionality is handled without the date insertion feature
 
   return (
     <div className="h-full flex flex-col">
@@ -118,13 +98,6 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(funct
           onUpdateTitle={onUpdateTitle}
         />
         <div className="flex items-center space-x-2">
-          <button
-            onClick={insertCurrentDate}
-            className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
-            title="Insert current date"
-          >
-            Date
-          </button>
           <button 
             onClick={toggleView} 
             className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
