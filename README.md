@@ -1,4 +1,4 @@
-# SimpleNotes
+# MyNotes
 
 A minimalist notes application built with Next.js and TypeScript.
 
@@ -57,5 +57,3 @@ MIT
 ## Acknowledgements
 
 Built with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/).
-# MyNotes
-# MyNotes

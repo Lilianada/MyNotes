@@ -2,7 +2,7 @@ import React from 'react';
 
 interface TitleModalProps {
   handleTitleSubmit: (e: React.FormEvent) => void;
-  titleInputRef: React.RefObject<HTMLInputElement | null>;
+  titleInputRef: React.RefObject<HTMLInputElement>;
   newNoteTitle: string;
   setNewNoteTitle: (value: string) => void;
   cancelTitleInput: () => void;
