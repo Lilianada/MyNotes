@@ -5,9 +5,16 @@
 import { existsSync, mkdirSync, writeFileSync } from "fs"
 import { resolve } from "path"
 
-// Helper to sanitize file names
+// Helper to sanitize file names and create a slug
 const sanitizeFileName = (name: string): string => {
-  return name.replace(/[/\\?%*:|"<>]/g, '-').trim()
+  return name
+    .toLowerCase()
+    .replace(/[/\\?%*:|"<>]/g, '')  // Remove prohibited characters
+    .replace(/\s+/g, '-')           // Replace spaces with hyphens
+    .replace(/[^\w\-]/g, '')        // Remove non-word chars except hyphens
+    .replace(/\-\-+/g, '-')         // Replace multiple hyphens with single hyphen
+    .replace(/^-+|-+$/g, '')        // Remove leading/trailing hyphens
+    .trim() || 'untitled'           // Fallback if empty after processing
 }
 
 export async function saveNoteToFile(content: string, id: number, title: string) {

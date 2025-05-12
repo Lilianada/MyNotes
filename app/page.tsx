@@ -42,7 +42,7 @@ export default function Home() {
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
-        <main className="flex-1 grid md:grid-cols-[30%_70%] overflow-hidden">
+        <main className="flex-1 grid gap-4 md:grid-cols-[24%_75%] overflow-hidden">
           <List 
             isSidebarOpen={isSidebarOpen}
             onSelectNote={(note) => {
