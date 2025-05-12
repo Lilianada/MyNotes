@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react"
 import TitleModal from "./title-modal"
-import { createEmptyNoteFile } from "@/app/actions"
 import { useNotes } from "@/contexts/note-context"
 import ContextNoteEditor from "./context-note-editor"
 import type { Note } from "@/types"
@@ -70,22 +69,17 @@ export function SimpleNotes() {
     // Create a unique title for the new note
     const uniqueTitle = generateUniqueNoteTitle(titleBase)
 
-    // Create an empty file immediately
-    const result = await createEmptyNoteFile(uniqueTitle)
-
-    const newNote: Note = {
-      id: nextId,
-      content: "",
-      createdAt: new Date(),
-      noteTitle: uniqueTitle,
-      filePath: result.success ? result.filePath : undefined,
+    try {
+      // Create the note through the context which now uses server actions
+      const newNote = await addNote(uniqueTitle)
+      
+      // Update the next ID after successful creation
+      setNextId(prev => prev + 1)
+      setShowTitleInput(false)
+    } catch (error) {
+      console.error("Failed to create new note:", error)
+      // You could add error handling UI here
     }
-
-    // Add the note to the context
-    addNote(newNote)
-    
-    setNextId(nextId + 1)
-    setShowTitleInput(false)
 
     // Focus the editor after a proper delay to ensure components are rendered
     // Use a slightly longer timeout to ensure DOM is fully updated

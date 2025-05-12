@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import type { Note } from "@/types";
 import { useNotes } from "@/contexts/note-context";
 import { Trash2 } from "lucide-react";
-import { deleteNoteFile } from "@/app/delete-actions";
 
 interface ListProps {
   isSidebarOpen: boolean;
@@ -30,14 +29,14 @@ export default function List({
     if (confirm(`Are you sure you want to delete "${note.noteTitle}"?`)) {
       setIsDeleting(note.id);
       
-      // If note has a file path, delete the file too
-      if (note.filePath) {
-        await deleteNoteFile(note.filePath);
+      try {
+        // The deleteNote function in the context now handles both state and file deletion
+        await deleteNote(note.id);
+      } catch (error) {
+        console.error("Error deleting note:", error);
+      } finally {
+        setIsDeleting(null);
       }
-      
-      // Remove from context/state
-      deleteNote(note.id);
-      setIsDeleting(null);
     }
   };
   

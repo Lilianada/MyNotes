@@ -114,7 +114,7 @@ export function Notes() {
     };
 
     // Add note to context
-    addNote(newNote);
+    setNotes([...notes, newNote]);
     
     // Select the note in the context
     selectNote(newNote.id);
