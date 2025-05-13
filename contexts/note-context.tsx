@@ -7,6 +7,7 @@ import { saveNoteToFile, createEmptyNoteFile } from "@/app/actions";
 import { firebaseNotesService } from "@/lib/firebase-notes";
 import { localStorageNotesService } from "@/lib/local-storage-notes";
 import { useAuth } from "@/contexts/auth-context";
+import { get } from "http";
 
 interface NoteContextType {
   notes: Note[];
@@ -21,18 +22,55 @@ interface NoteContextType {
 
 const NoteContext = createContext<NoteContextType | undefined>(undefined);
 
+const getWelcomeContent = () => {
+  return `# Welcome to NoteItDown! 🚀
+
+**Transform your thoughts into beautifully organized notes.**
+
+## Getting Started in 30 Seconds
+
+1. **Create** a new note with the "+" button in the sidebar
+2. **Write** using intuitive Markdown formatting
+3. **Toggle** between edit and preview modes with the "View" button
+4. **Find** notes instantly with the search feature
+
+## Markdown Basics
+
+- **Headers:** Use # for headers (# H1, ## H2, ### H3)
+- **Formatting:** **bold**, *italic*, ~~strikethrough~~
+- **Lists:** 
+  - Bullet points like this one
+  - Numbered lists (1. 2. 3.)
+- **Code:** \`inline code\` or code blocks with \`\`\`
+- **Links:** [text](url)
+- **Tasks:** 
+  - [ ] Unchecked task
+  - [x] Checked task
+
+## Pro Tips
+
+> 💡 Type -> to automatically convert to → arrow
+> 
+> Use Ctrl+S or Cmd+S to save notes
+
+Happy note-taking! 📝`;
+};
+
+
 export function NoteProvider({ children }: { children: ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
   const { user, isAdmin } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const initializeNotes = async () => {
+      setIsLoading(true);
       try {
         let loadedNotes: Note[] = [];
         
         // Determine which storage method to use
-        if (isAdmin && user) {
+        if (isAdmin && user && firebaseNotesService) {
           // Use Firebase for admins
           loadedNotes = await firebaseNotesService.getNotes(user.uid);
         } else if (typeof window !== 'undefined') {
@@ -58,9 +96,9 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         } else {
           // Create a welcome note
           let welcomeNote: Note;
-          const welcomeContent = "# Welcome to MyNotes\n\nStart typing to create your first note.";
+          const welcomeContent = getWelcomeContent();
           
-          if (isAdmin && user) {
+          if (isAdmin && user && firebaseNotesService) {
             // Create in Firebase for admin
             welcomeNote = await firebaseNotesService.addNote(user.uid, "Welcome");
             await firebaseNotesService.updateNoteContent(welcomeNote.id, welcomeContent);
@@ -96,6 +134,16 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error("Failed to load notes:", error);
+        // Fallback to local storage if Firebase fails
+        if (typeof window !== 'undefined') {
+          const loadedNotes = localStorageNotesService.getNotes();
+          if (loadedNotes.length > 0) {
+            setNotes(loadedNotes);
+            setSelectedNoteId(loadedNotes[0].id);
+          }
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
