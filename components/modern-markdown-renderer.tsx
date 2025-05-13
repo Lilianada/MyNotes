@@ -140,8 +140,8 @@ const ModernMarkdownRenderer: React.FC<ModernMarkdownRendererProps> = ({
     h6: ({ children }: { children: React.ReactNode }) => <h6 className="text-xs font-bold my-1 text-emerald-700">{children}</h6>,
     
     // Style other elements
-    p: ({ children }: { children: React.ReactNode }) => <p className="my-2 leading-relaxed text-gray-800 text-sm">{children}</p>,
-    a: ({ node, children, href, ...props }: React.ClassAttributes<HTMLAnchorElement> & React.AnchorHTMLAttributes<HTMLAnchorElement> & { children?: React.ReactNode }) => (
+    p: ({ children }: { children: React.ReactNode }) => <p className="my-2 leading-relaxed text-gray-800 text-[14px]">{children}</p>,
+    a: ({ children, href, ...props }: React.ClassAttributes<HTMLAnchorElement> & React.AnchorHTMLAttributes<HTMLAnchorElement> & { children?: React.ReactNode }) => (
       <a 
         href={href} 
         target="_blank" 
@@ -188,8 +188,8 @@ const ModernMarkdownRenderer: React.FC<ModernMarkdownRendererProps> = ({
         {children}
       </tr>
     ),
-    ul: ({ children }: { children: React.ReactNode }) => <ul className="pl-6 my-2 list-disc">{children}</ul>,
-    ol: ({ children }: { children: React.ReactNode }) => <ol className="pl-6 my-2 list-decimal">{children}</ol>,
+    ul: ({ children }: { children: React.ReactNode }) => <ul className="pl-6 my-2 list-disc text-[14px]">{children}</ul>,
+    ol: ({ children }: { children: React.ReactNode }) => <ol className="pl-6 my-2 list-decimal text-[14px]">{children}</ol>,
     hr: () => <hr className="my-4 border-gray-200" />,
     strong: ({ children }: { children: React.ReactNode }) => <strong className="text-orange-600 font-bold">{children}</strong>,
     em: ({ children }: { children: React.ReactNode }) => <em className="text-amber-700 italic">{children}</em>,
