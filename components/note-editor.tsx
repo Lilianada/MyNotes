@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useState } from "react"
 import type { Note } from "@/types"
 import { KeyboardEvent } from 'react';
-import MarkdownRenderer from "./markdown-renderer";
+import ModernMarkdownRenderer from "./modern-markdown-renderer";
 import NoteTitleEditor from "./note-title-editor";
 
 interface NoteEditorProps {
@@ -90,7 +90,7 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(funct
   // Editor functionality is handled without the date insertion feature
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex flex-col h-full max-h-[calc(100vh_-_7rem)]">
       <div className="mb-2 flex justify-between items-center">
         <NoteTitleEditor 
           noteTitle={note.noteTitle}
@@ -110,7 +110,7 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(funct
       
       {renderHTML ? (
         <div className="flex-1 h-full overflow-hidden">
-          <MarkdownRenderer 
+          <ModernMarkdownRenderer 
             content={note.content}
             onChange={onChange}
           />
@@ -121,12 +121,11 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(funct
           ref={ref}
           value={note.content}
           onChange={handleInputChange}
-          className="w-full flex-1 p-0 border-none outline-none resize-none text-sm sm:text-[15px] bg-transparent scrollbar-hide text-justify"
-          placeholder="Start typing with Markdown support... Use # for headings, **bold**, *italic*, and [ ] for checkboxes"
+          className="w-full h-full flex-1 p-0 border-none outline-none resize-none text-sm sm:text-[15px] bg-transparent scrollbar-hide text-justify"
+          placeholder="Start typing with Markdown support..."
           autoFocus
         />
       )}
-      
     </div>
   )
 })

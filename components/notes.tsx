@@ -116,7 +116,7 @@ export function SimpleNotes() {
         />
       )}
 
-      <div className="border border-gray-200 rounded-lg px-4 pt-4 bg-white flex-1 flex flex-col overflow-hidden">
+      <div className="border border-gray-200 rounded-lg px-4 pt-4 bg-white flex-1 flex flex-col overflow-hidden ">
         <div className="flex-1 overflow-hidden">
           {activeNote ? (
             <ContextNoteEditor ref={editorRef} />
