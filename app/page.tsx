@@ -4,7 +4,7 @@ import List from "@/components/List"
 import FontSwitcher from "@/components/font-switcher"
 import { useState, useEffect } from "react"
 import { useNotes } from "@/contexts/note-context"
-import { SimpleNotes } from "@/components/simple-notes"
+import { SimpleNotes } from "@/components/notes"
 import { Header } from "@/components/header"
 
 export default function Home() {

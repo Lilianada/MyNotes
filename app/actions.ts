@@ -23,7 +23,7 @@ const sanitizeFileName = (name: string): string => {
     || "untitled"; // Fallback if empty after processing
 };
 
-export async function saveNoteToFile(content: string, id: number, title: string) {
+export async function saveNoteToFile(content: string, id: number, title: string, slug: string) {
   try {
     // Ensure the notes directory exists
     const notesDir = resolve(process.cwd(), "notes");
@@ -32,7 +32,7 @@ export async function saveNoteToFile(content: string, id: number, title: string)
     }
 
     // Create a file name from the title or fall back to the ID
-    const fileName = title ? sanitizeFileName(title) : `note-${id}`;
+    const fileName =  slug || sanitizeFileName(title) || `note-${id}`;
     const filePath = resolve(notesDir, `${fileName}.md`); // Changed to .md
 
     // Save the content to the file
