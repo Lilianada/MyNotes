@@ -14,33 +14,28 @@ import {
   Timestamp 
 } from 'firebase/firestore';
 
-// Helper function to create a slug from a title
+// Helper functions
 const createSlugFromTitle = (title: string): string => {
   return title
     .toLowerCase()
-    .replace(/[^\w\s-]/g, "") // Remove non-word chars
-    .replace(/[\s_-]+/g, "-") // Replace spaces and underscores with hyphens
-    .replace(/^-+|-+$/g, "") // Trim hyphens from start and end
-    || "untitled"; // Fallback for empty titles
+    .replace(/[^\w\s-]/g, "") 
+    .replace(/[\s_-]+/g, "-") 
+    .replace(/^-+|-+$/g, "") 
+    || "untitled"; 
 };
 
-// Get a unique slug by appending a number if necessary
 const getUniqueSlug = async (baseSlug: string): Promise<string> => {
-  // Check if a note with this slug already exists
   const notesRef = collection(db, 'notes');
   const q = query(notesRef, where("slug", "==", baseSlug));
   const snapshot = await getDocs(q);
   
-  // If no document exists with this slug, it's unique
   if (snapshot.empty) {
     return baseSlug;
   }
   
-  // Otherwise, append a number to make it unique
   let counter = 1;
   let newSlug = `${baseSlug}-${counter}`;
   
-  // Keep checking until we find a unique slug
   while (true) {
     const q = query(notesRef, where("slug", "==", newSlug));
     const snapshot = await getDocs(q);
@@ -54,7 +49,6 @@ const getUniqueSlug = async (baseSlug: string): Promise<string> => {
   }
 };
 
-// Convert Firestore timestamp to Date
 const convertTimestamp = (timestamp: any): Date => {
   if (!timestamp) return new Date();
   
@@ -65,8 +59,8 @@ const convertTimestamp = (timestamp: any): Date => {
   return new Date(timestamp);
 };
 
+// Export as a named export, not default export
 export const firebaseNotesService = {
-  // Get all notes
   async getNotes(userId: string): Promise<Note[]> {
     try {
       const notesRef = collection(db, 'notes');
@@ -76,21 +70,20 @@ export const firebaseNotesService = {
       return snapshot.docs.map(doc => {
         const data = doc.data();
         return {
-          id: data.id, // Use the numeric ID stored in the document
+          id: data.id, 
           content: data.content || "",
           noteTitle: data.noteTitle || "Untitled",
           createdAt: convertTimestamp(data.createdAt),
           filePath: data.filePath || undefined,
-          slug: data.slug || createSlugFromTitle(data.noteTitle || "Untitled-note")
+          slug: data.slug || ""
         };
       });
     } catch (error) {
       console.error('Error getting notes:', error);
-      throw error;
+      return []; // Return empty array on error
     }
   },
 
-  // Add a new note
   async addNote(userId: string, noteTitle: string): Promise<Note> {
     try {
       // Generate a numeric ID for the note
@@ -101,13 +94,13 @@ export const firebaseNotesService = {
       const slug = await getUniqueSlug(baseSlug);
       
       const noteData = {
-        id: numericId, // Store the numeric ID in the document
+        id: numericId,
         content: "",
         noteTitle,
         createdAt: serverTimestamp(),
-        filePath: `notes/${slug}.md`, // Example file path
         userId,
-        slug
+        slug,
+        filePath: `notes/${slug}.md`
       };
       
       // Create document with slug as the document ID
@@ -115,12 +108,12 @@ export const firebaseNotesService = {
       await setDoc(docRef, noteData);
       
       return {
-        id: numericId, // Return the numeric ID as part of the Note
-        content: noteData.content,
-        noteTitle: noteData.noteTitle,
+        id: numericId,
+        content: "",
+        noteTitle,
         createdAt: new Date(),
-        filePath: noteData.filePath || undefined,
-        slug: noteData.slug
+        filePath: noteData.filePath,
+        slug
       };
     } catch (error) {
       console.error('Error adding note:', error);
@@ -128,19 +121,16 @@ export const firebaseNotesService = {
     }
   },
 
-  // Update a note's content
-  async updateNoteContent(noteId: number, content: string): Promise<void> {
+  async updateNoteContent(id: number, content: string): Promise<void> {
     try {
-      // Find the document by numeric ID
       const notesRef = collection(db, 'notes');
-      const q = query(notesRef, where("id", "==", noteId));
+      const q = query(notesRef, where("id", "==", id));
       const snapshot = await getDocs(q);
       
       if (snapshot.empty) {
-        throw new Error(`Note with ID ${noteId} not found`);
+        throw new Error(`Note with ID ${id} not found`);
       }
       
-      // Update the first matching document
       const docRef = doc(db, 'notes', snapshot.docs[0].id);
       await updateDoc(docRef, { content });
     } catch (error) {
@@ -149,54 +139,50 @@ export const firebaseNotesService = {
     }
   },
   
-  // Update a note's title
-  async updateNoteTitle(noteId: number, noteTitle: string): Promise<void> {
+  async updateNoteTitle(id: number, noteTitle: string): Promise<string> {
     try {
-      // Find the document by numeric ID
       const notesRef = collection(db, 'notes');
-      const q = query(notesRef, where("id", "==", noteId));
+      const q = query(notesRef, where("id", "==", id));
       const snapshot = await getDocs(q);
       
       if (snapshot.empty) {
-        throw new Error(`Note with ID ${noteId} not found`);
+        throw new Error(`Note with ID ${id} not found`);
       }
       
-      // Generate new slug from updated title
       const baseSlug = createSlugFromTitle(noteTitle);
       const newSlug = await getUniqueSlug(baseSlug);
+      const filePath = `notes/${newSlug}.md`;
       
       const oldDocRef = doc(db, 'notes', snapshot.docs[0].id);
       const oldData = snapshot.docs[0].data();
       
-      // Create new document with updated slug
       const newDocRef = doc(db, 'notes', newSlug);
       await setDoc(newDocRef, {
         ...oldData,
         noteTitle,
-        slug: newSlug
+        slug: newSlug,
+        filePath
       });
       
-      // Delete the old document
       await deleteDoc(oldDocRef);
+      
+      return filePath;
     } catch (error) {
       console.error('Error updating note title:', error);
       throw new Error(`Failed to update note title: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
   
-  // Delete a note
-  async deleteNote(noteId: number): Promise<void> {
+  async deleteNote(id: number): Promise<void> {
     try {
-      // Find the document by numeric ID
       const notesRef = collection(db, 'notes');
-      const q = query(notesRef, where("id", "==", noteId));
+      const q = query(notesRef, where("id", "==", id));
       const snapshot = await getDocs(q);
       
       if (snapshot.empty) {
-        throw new Error(`Note with ID ${noteId} not found`);
+        throw new Error(`Note with ID ${id} not found`);
       }
       
-      // Delete the document
       const docRef = doc(db, 'notes', snapshot.docs[0].id);
       await deleteDoc(docRef);
     } catch (error) {

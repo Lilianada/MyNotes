@@ -2,7 +2,7 @@
 
 import { Note } from '@/types';
 
-// Local storage notes service
+// Export as named export
 export const localStorageNotesService = {
   // Get all notes
   getNotes(): Note[] {
@@ -10,63 +10,91 @@ export const localStorageNotesService = {
       return [];
     }
     
-    const notesString = localStorage.getItem('notes');
-    return notesString ? JSON.parse(notesString) : [];
+    try {
+      const notesString = window.localStorage.getItem('notes');
+      if (!notesString) {
+        return [];
+      }
+      
+      const notes = JSON.parse(notesString);
+      return notes.map((note: any) => ({
+        ...note,
+        id: Number(note.id), // Ensure ID is a number
+        createdAt: new Date(note.createdAt),
+        slug: note.slug || createSlugFromTitle(note.noteTitle)
+      }));
+    } catch (error) {
+      console.error('Failed to parse notes from localStorage:', error);
+      return [];
+    }
   },
-
+  
   // Add a new note
   addNote(noteTitle: string): Note {
     const notes = this.getNotes();
     
-    // Find the next available ID
-    const nextId = notes.length > 0 ? Math.max(...notes.map(note => note.id)) + 1 : 1;
+    // Generate a numeric ID
+    const numericId = Date.now();
     
-    const filePath = `notes/${noteTitle.toLowerCase().replace(/\s+/g, '-')}.md`;
+    // Create a slug from the note title
+    const slug = createSlugFromTitle(noteTitle);
     
     const newNote: Note = {
-      id: nextId,
+      id: numericId,
       content: "",
       noteTitle,
       createdAt: new Date(),
-      filePath,
-      slug: ""
+      slug
     };
     
-    // Add the note to local storage
-    notes.push(newNote);
-    localStorage.setItem('notes', JSON.stringify(notes));
+    const updatedNotes = [newNote, ...notes];
+    window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
     
     return newNote;
   },
-
+  
   // Update a note's content
-  updateNoteContent(noteId: number, content: string): void {
+  updateNoteContent(id: number, content: string): void {
     const notes = this.getNotes();
     const updatedNotes = notes.map(note => 
-      note.id === noteId ? { ...note, content } : note
+      note.id === id ? { ...note, content } : note
     );
-    
-    localStorage.setItem('notes', JSON.stringify(updatedNotes));
+    window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
   },
-
+  
   // Update a note's title
-  updateNoteTitle(noteId: number, noteTitle: string): string {
+  updateNoteTitle(id: number, noteTitle: string): string {
     const notes = this.getNotes();
-    const filePath = `notes/${noteTitle.toLowerCase().replace(/\s+/g, '-')}.md`;
+    const slug = createSlugFromTitle(noteTitle);
+    const filePath = `notes/${slug}.md`;
     
     const updatedNotes = notes.map(note => 
-      note.id === noteId ? { ...note, noteTitle, filePath } : note
+      note.id === id ? { 
+        ...note, 
+        noteTitle,
+        slug,
+        filePath
+      } : note
     );
+    window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
     
-    localStorage.setItem('notes', JSON.stringify(updatedNotes));
     return filePath;
   },
-
+  
   // Delete a note
-  deleteNote(noteId: number): void {
+  deleteNote(id: number): void {
     const notes = this.getNotes();
-    const filteredNotes = notes.filter(note => note.id !== noteId);
-    
-    localStorage.setItem('notes', JSON.stringify(filteredNotes));
+    const updatedNotes = notes.filter(note => note.id !== id);
+    window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
   }
 };
+
+// Helper function
+function createSlugFromTitle(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "") 
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    || "untitled";
+}
