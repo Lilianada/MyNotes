@@ -4,6 +4,9 @@ import { createContext, useState, useContext, useEffect, ReactNode } from "react
 import { Note } from "@/types";
 import { loadNotesFromFiles } from "@/lib/note-loader";
 import { saveNoteToFile, createEmptyNoteFile } from "@/app/actions";
+import { firebaseNotesService } from "@/lib/firebase-notes";
+import { localStorageNotesService } from "@/lib/local-storage-notes";
+import { useAuth } from "@/contexts/auth-context";
 
 interface NoteContextType {
   notes: Note[];
@@ -21,38 +24,75 @@ const NoteContext = createContext<NoteContextType | undefined>(undefined);
 export function NoteProvider({ children }: { children: ReactNode }) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<number | null>(null);
+  const { user, isAdmin } = useAuth();
 
   useEffect(() => {
     const initializeNotes = async () => {
       try {
-        // Load notes from the file system
-        const loadedNotes = await loadNotesFromFiles();
+        let loadedNotes: Note[] = [];
         
+        // Determine which storage method to use
+        if (isAdmin && user) {
+          // Use Firebase for admins
+          loadedNotes = await firebaseNotesService.getNotes(user.uid);
+        } else if (typeof window !== 'undefined') {
+          // Use localStorage for non-admins
+          loadedNotes = localStorageNotesService.getNotes();
+          
+          // If localStorage is empty, try to get notes from the file system (for first-time users)
+          if (loadedNotes.length === 0) {
+            loadedNotes = await loadNotesFromFiles();
+            
+            // Save to localStorage if we got notes from the file system
+            if (loadedNotes.length > 0) {
+              localStorage.setItem('notes', JSON.stringify(loadedNotes));
+            }
+          }
+        }
+        
+        // If we have notes, set them up
         if (loadedNotes.length > 0) {
           setNotes(loadedNotes);
           // Select the first note if one exists
           setSelectedNoteId(loadedNotes[0].id);
         } else {
-          // If no notes exist, create a welcome note
-          const result = await createEmptyNoteFile("Welcome");
+          // Create a welcome note
+          let welcomeNote: Note;
+          const welcomeContent = "# Welcome to MyNotes\n\nStart typing to create your first note.";
           
-          if (result.success) {
-            const welcomeContent = "# Welcome to Lily's Notes\n\nStart typing to create your first note.";
+          if (isAdmin && user) {
+            // Create in Firebase for admin
+            welcomeNote = await firebaseNotesService.addNote(user.uid, "Welcome");
+            await firebaseNotesService.updateNoteContent(welcomeNote.id, welcomeContent);
+            welcomeNote.content = welcomeContent;
+          } else {
+            // Create in localStorage for non-admin
+            const result = await createEmptyNoteFile("Welcome");
             
-            // Save the welcome content
-            await saveNoteToFile(welcomeContent, 1, "Welcome");
-            
-            const welcomeNote: Note = {
-              id: 1,
-              content: welcomeContent,
-              createdAt: new Date(),
-              noteTitle: "Welcome",
-              filePath: result.filePath
-            };
-            
-            setNotes([welcomeNote]);
-            setSelectedNoteId(welcomeNote.id);
+            if (result.success) {
+              // Save the welcome content for file system (fallback)
+              await saveNoteToFile(welcomeContent, 1, "Welcome", "welcome-note");
+              
+              // Also create it in localStorage
+              welcomeNote = localStorageNotesService.addNote("Welcome");
+              localStorageNotesService.updateNoteContent(welcomeNote.id, welcomeContent);
+              welcomeNote.content = welcomeContent;
+              welcomeNote.filePath = result.filePath;
+            } else {
+              // Fallback if createEmptyNoteFile fails
+              welcomeNote = {
+                id: 1,
+                content: welcomeContent,
+                createdAt: new Date(),
+                noteTitle: "Welcome",
+                filePath: "notes/welcome.md",
+                slug: "welcome-note",
+              };
+            }
           }
+          
+          setNotes([welcomeNote]);
+          setSelectedNoteId(welcomeNote.id);
         }
       } catch (error) {
         console.error("Failed to load notes:", error);
@@ -60,34 +100,35 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     };
 
     initializeNotes();
-  }, []);
+  }, [isAdmin, user]);
 
   const addNote = async (noteTitle: string): Promise<Note> => {
-    const nextId = notes.length > 0 
-      ? Math.max(...notes.map(note => note.id)) + 1
-      : 1;
+    let newNote: Note;
+    
+    try {
+      if (isAdmin && user) {
+        // Use Firebase for admins
+        newNote = await firebaseNotesService.addNote(user.uid, noteTitle);
+      } else {
+        // Use localStorage for non-admins
+        newNote = localStorageNotesService.addNote(noteTitle);
+        
+        // Also create the file for backwards compatibility
+        const result = await createEmptyNoteFile(noteTitle);
+        if (result.success) {
+          newNote.filePath = result.filePath;
+        }
+      }
       
-    // Create an empty file first
-    const result = await createEmptyNoteFile(noteTitle);
-    
-    if (!result.success) {
-      throw new Error("Failed to create note file");
+      // Add to state
+      setNotes(prevNotes => [...prevNotes, newNote]);
+      setSelectedNoteId(newNote.id);
+      
+      return newNote;
+    } catch (error) {
+      console.error("Failed to add note:", error);
+      throw new Error("Failed to create note");
     }
-    
-    // Create a new note object
-    const newNote: Note = {
-      id: nextId,
-      content: "",
-      createdAt: new Date(),
-      noteTitle,
-      filePath: result.filePath
-    };
-    
-    // Add to state
-    setNotes(prevNotes => [...prevNotes, newNote]);
-    setSelectedNoteId(newNote.id);
-    
-    return newNote;
   };
 
   const updateNote = async (id: number, content: string) => {
@@ -102,10 +143,18 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     );
     
     try {
-      // Then save to the file system
-      await saveNoteToFile(content, id, noteToUpdate.noteTitle);
+      if (isAdmin && user) {
+        // Use Firebase for admins
+        await firebaseNotesService.updateNoteContent(id, content);
+      } else {
+        // Use localStorage for non-admins
+        localStorageNotesService.updateNoteContent(id, content);
+        
+        // Also update file for backwards compatibility
+        await saveNoteToFile(content, id, noteToUpdate.noteTitle, noteToUpdate.slug);
+      }
     } catch (error) {
-      console.error("Failed to save note to file:", error);
+      console.error("Failed to update note content:", error);
     }
   };
 
@@ -121,19 +170,28 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     );
     
     try {
-      // Then save with the new title to create a new file
-      const result = await saveNoteToFile(noteToUpdate.content, id, title);
+      let filePath: string;
       
-      // Update the file path in state if successful
-      if (result.success) {
-        setNotes(prevNotes =>
-          prevNotes.map(note => 
-            note.id === id ? { ...note, filePath: result.filePath } : note
-          )
-        );
+      if (isAdmin && user) {
+        // Use Firebase for admins
+        filePath = await firebaseNotesService.updateNoteTitle(id, title);
+      } else {
+        // Use localStorage for non-admins
+        filePath = localStorageNotesService.updateNoteTitle(id, title);
         
-        // TODO: Delete the old file if we want to implement that
+        // Also update file for backwards compatibility
+        const result = await saveNoteToFile(noteToUpdate.content, id, title, noteToUpdate.slug);
+        if (result.success && result.filePath) {
+          filePath = result.filePath;
+        }
       }
+      
+      // Update the file path in state
+      setNotes(prevNotes =>
+        prevNotes.map(note => 
+          note.id === id ? { ...note, filePath } : note
+        )
+      );
     } catch (error) {
       console.error("Failed to update note title:", error);
     }
@@ -162,15 +220,23 @@ export function NoteProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // Now handle the actual file deletion on the server
+    // Delete the note from storage
     try {
-      // Import the deleteNoteFile dynamically to avoid issues with "use server" directive
-      const { deleteNoteFile } = await import("@/app/delete-actions");
-      if (noteToDelete.filePath) {
-        await deleteNoteFile(noteToDelete.filePath);
+      if (isAdmin && user) {
+        // Use Firebase for admins
+        await firebaseNotesService.deleteNote(id);
+      } else {
+        // Use localStorage for non-admins
+        localStorageNotesService.deleteNote(id);
+        
+        // Also delete file for backwards compatibility
+        if (noteToDelete.filePath) {
+          const { deleteNoteFile } = await import("@/app/delete-actions");
+          await deleteNoteFile(noteToDelete.filePath);
+        }
       }
     } catch (error) {
-      console.error("Failed to delete note file:", error);
+      console.error("Failed to delete note:", error);
     }
   };
 

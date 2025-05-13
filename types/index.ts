@@ -6,4 +6,5 @@ export type Note = {
   createdAt: Date;
   noteTitle: string;
   filePath?: string;
+  slug: string;
 };
