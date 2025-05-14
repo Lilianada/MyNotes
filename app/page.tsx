@@ -4,7 +4,7 @@ import List from "@/components/List"
 import FontSwitcher from "@/components/font-switcher"
 import { useState, useEffect } from "react"
 import { useNotes } from "@/contexts/note-context"
-import { SimpleNotes } from "@/components/notes"
+import { Notes } from "@/components/notes"
 import { Header } from "@/components/header"
 
 export default function Home() {
@@ -28,7 +28,7 @@ export default function Home() {
   }
   
   const handleNewNote = () => {
-    // This will be passed to SimpleNotes
+    // This will be passed to Notes
     document.dispatchEvent(new CustomEvent('create-new-note'))
     // Close sidebar on mobile when creating a new note
     setIsSidebarOpen(false)
@@ -60,7 +60,7 @@ export default function Home() {
             }}
           />
           <div className="p-4">
-            <SimpleNotes />
+            <Notes />
           </div>
         </main>
       </div>
