@@ -14,11 +14,7 @@ A minimalist notes application built with Next.js and TypeScript that saves note
   - Checkboxes ([ ] todo, [x] done)
 - Powerful search functionality to find notes by title or content
 - Light and dark mode support
-- Multiple storage options:
-  - Server-side file storage using markdown (.md) files
-  - Local browser storage for offline use
-  - Firebase integration for authenticated admin users
-- Google authentication with role-based permissions
+- Server-side file storage using markdown (.md) files
 - Keyboard shortcuts for efficient use
 
 ## Tech Stack
@@ -27,8 +23,6 @@ A minimalist notes application built with Next.js and TypeScript that saves note
 - TypeScript
 - Tailwind CSS
 - Server Actions for file operations
-- Firebase (Authentication & Firestore)
-- React Context API for state management
 
 ## Getting Started
 
@@ -91,25 +85,6 @@ NoteItDown offers flexible storage options to meet different needs:
 - Notes are saved as Markdown (.md) files on the server
 - Perfect for self-hosted deployments
 - Requires file system access on the server
-
-### Local Storage
-- Notes are saved in the browser's local storage
-- Works offline and doesn't require server-side storage
-- Data persists between sessions until browser cache is cleared
-
-### Firebase Integration (New)
-- Google authentication for users
-- Role-based permissions (admin vs standard users)
-- Cloud Firestore database for secure note storage
-- Real-time updates and cross-device synchronization for admin users
-
-To set up Firebase integration:
-1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable Authentication with Google provider
-3. Create a Firestore database
-4. Add your Firebase config to `.env.local` (see `.env.local` for format)
-5. Create an 'admins' collection in Firestore with a document ID matching your email
-6. See the detailed setup guide in `FIREBASE_SETUP.md`
 
 ### Notion Integration (Optional)
 NoteItDown can be configured to use Notion as a database backend:

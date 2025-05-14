@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useState } from "react"
 import type { Note } from "@/types"
 import { KeyboardEvent } from 'react';
-import ModernMarkdownRenderer from "./modern-markdown-renderer";
+import MarkdownRenderer from "./md-renderer";
 import NoteTitleEditor from "./note-title-editor";
 
 interface NoteEditorProps {
@@ -110,7 +110,7 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(funct
       
       {renderHTML ? (
         <div className="flex-1 h-full overflow-hidden">
-          <ModernMarkdownRenderer 
+          <MarkdownRenderer 
             content={note.content}
             onChange={onChange}
           />

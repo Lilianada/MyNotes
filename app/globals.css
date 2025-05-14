@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Import highlight.js styles for syntax highlighting */
 @import 'highlight.js/styles/github.css';
 
 @layer base {
@@ -236,4 +235,15 @@ hr {
       transform: translateY(0);
     }
   }
+}
+
+/* For checkbox styles */
+input[type="checkbox"] {
+  cursor: pointer;
+}
+
+/* Additional task list styling */
+ul li.task-list-item {
+  list-style-type: none;
+  padding-left: 0;
 }

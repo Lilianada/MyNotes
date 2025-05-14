@@ -22,6 +22,9 @@ interface NoteContextType {
 
 const NoteContext = createContext<NoteContextType | undefined>(undefined);
 
+
+
+// Function to create a welcome note content
 const getWelcomeContent = () => {
   return `# Welcome to NoteItDown! 🚀
 
@@ -52,6 +55,21 @@ const getWelcomeContent = () => {
 > 💡 Type -> to automatically convert to → arrow
 > 
 > Use Ctrl+S or Cmd+S to save notes
+>
+> Your notes are saved in localStorage so do not clear site data to preserve them or export them using the export button in the \`...\` menu.
+>
+> You can change the note's title by clicking the title on the editor to edit it
+
+## Firebase Integration (Optional)
+
+If you want to enable cloud storage:
+
+1. Fork the repository at github.com/mynotes
+2. Clone and install the app locally
+3. Create a Firebase project and enable Google authentication
+4. Add your email to the "admins" collection
+5. Add your Firebase keys to .env.local file
+6. Run the app and sign in with Google
 
 Happy note-taking! 📝`;
 };
