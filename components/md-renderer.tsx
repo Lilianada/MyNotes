@@ -15,6 +15,24 @@ interface MarkdownRendererProps {
   className?: string;
 }
 
+const taskListStyles = `
+  ul.task-list {
+    list-style: none !important;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+  }
+  
+  li.task-list-item {
+    list-style-type: none !important;
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+    display: flex;
+  }
+  
+  li.task-list-item::before {
+    content: none !important;
+  }
+`;
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   onChange,
@@ -103,8 +121,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           return (
             <li
               {...props}
-              className="my-1 flex items-start"
-              style={{ listStyleType: "none" }}
+              className="task-list-item my-1 !list-none"
+              style={{
+                listStyleType: "none !important",
+                paddingLeft: 0,
+                marginLeft: 0,
+                display: "flex",
+              }}
             >
               <input
                 type="checkbox"
@@ -121,7 +144,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                     onChange(newContent);
                   }
                 }}
-                className="mt-1 mr-2 h-4 w-4 rounded-sm bg-white border border-gray-300"
+                className="mt-1 mr-2 h-4 w-4 rounded-sm bg-white border border-gray-300 flex-shrink-0"
               />
               <span className={checked ? "line-through text-gray-500" : ""}>
                 {textContent}
@@ -142,56 +165,63 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     },
 
     // Style code blocks
-    code: ({
-      node,
-      inline,
-      className,
-      children,
-      ...props
-    }: {
-      node?: any;
-      inline?: boolean;
-      className?: string;
-      children: React.ReactNode;
-      [key: string]: any;
-    }) => {
-      const match = /language-(\w+)/.exec(className || "");
+code: ({
+  node,
+  inline,
+  className,
+  children,
+  ...props
+}: {
+  node?: any;
+  inline?: boolean;
+  className?: string;
+  children: React.ReactNode;
+  [key: string]: any;
+}) => {
+  const match = /language-(\w+)/.exec(className || "");
 
-      useEffect(() => {
-        // Re-highlight code blocks when content changes
-        if (!inline && match) {
-          hljs.highlightAll();
-        }
-      }, [children, inline, match]);
+  useEffect(() => {
+    // Re-highlight code blocks when content changes
+    if (!inline && match) {
+      hljs.highlightAll();
+    }
+  }, [children, inline, match]);
 
-      if (!inline && match) {
-        return (
-          <pre className="bg-gray-50 border border-gray-200 p-4 rounded-md my-4 overflow-auto">
-            <code
-              className={`${className} hljs language-${match[1]}`}
-              {...props}
-            >
-              {children}
-            </code>
-          </pre>
-        );
-      }
-
-      return inline ? (
+  if (!inline && match) {
+    return (
+      <pre className="bg-gray-50 border border-gray-200 p-4 rounded-md my-4 overflow-auto">
         <code
-          className="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-sm text-pink-600"
+          className={`${className} hljs language-${match[1]}`}
           {...props}
         >
           {children}
         </code>
-      ) : (
-        <pre className="bg-gray-50 border border-gray-200 p-4 rounded-md my-4 overflow-auto">
-          <code className="font-mono text-sm" {...props}>
-            {children}
-          </code>
-        </pre>
-      );
-    },
+      </pre>
+    );
+  }
+  
+  return inline ? (
+    <code
+      className="bg-rose-50 px-1.5 py-0.5 rounded font-mono text-xs text-rose-700 border-rose-100 border"
+      style={{ 
+        display: "inline-block", 
+        lineHeight: "normal",
+        whiteSpace: "pre",
+        maxWidth: "100%",
+        verticalAlign: "middle"
+      }}
+      {...props}
+    >
+      {children}
+    </code>
+  ) : (
+    <pre className="bg-slate-50 border border-slate-200 p-4 rounded-md my-4 overflow-auto shadow-sm">
+      <code className="font-mono text-sm block text-slate-800" {...props}>
+        {children}
+      </code>
+    </pre>
+  );
+},
 
     // Style headings
     h1: ({ children }: { children: React.ReactNode }) => (
@@ -279,9 +309,32 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     tr: ({ children }: { children: React.ReactNode }) => (
       <tr className="hover:bg-gray-50 transition-colors">{children}</tr>
     ),
-    ul: ({ children }: { children: React.ReactNode }) => (
-      <ul className="pl-6 my-2 list-disc text-[14px]">{children}</ul>
-    ),
+    
+    ul: ({
+      children,
+      className,
+      ...props
+    }: {
+      children: React.ReactNode;
+      className?: string;
+    }) => {
+      // Check if this list contains task items
+      const hasTaskItems = React.Children.toArray(children).some((child: any) =>
+        child?.props?.node?.children?.[0]?.children?.[0]?.value?.startsWith("[")
+      );
+
+      return (
+        <ul
+          className={`my-2 ${
+            hasTaskItems ? "task-list pl-0" : "pl-6 list-disc"
+          } text-[14px] ${className || ""}`}
+          style={hasTaskItems ? { listStyle: "none" } : {}}
+          {...props}
+        >
+          {children}
+        </ul>
+      );
+    },
     ol: ({ children }: { children: React.ReactNode }) => (
       <ol className="pl-6 my-2 list-decimal text-[14px]">{children}</ol>
     ),
@@ -304,6 +357,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       ref={markdownRef}
       className={`h-full overflow-auto p-4 text-sm ${className || ""}`}
     >
+      <style jsx global>
+        {taskListStyles}
+      </style>
       <ReactMarkdown
         remarkPlugins={[
           [remarkGfm, { singleTilde: false }], // Enable GFM with task lists

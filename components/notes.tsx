@@ -6,7 +6,7 @@ import { useNotes } from "@/contexts/note-context"
 import ContextNoteEditor from "./context-note-editor"
 import type { Note } from "@/types"
 
-export function SimpleNotes() {
+export function Notes() {
   const { notes, addNote, selectedNoteId } = useNotes()
   
   const [nextId, setNextId] = useState<number>(() => {

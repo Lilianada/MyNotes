@@ -1,8 +1,11 @@
 "use client"
+import { useState } from "react"
 import type { Note } from "@/types"
 import { useFont } from "@/contexts/font-context"
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import HelpModal from "@/components/help-modal"
+import { HelpCircle } from "lucide-react"
 
 interface MenuProps {
   isOpen: boolean
@@ -11,6 +14,7 @@ interface MenuProps {
 
 export function Menu({isOpen, setIsOpen }: MenuProps) {
   const { fontType, toggleFont } = useFont();
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   
   const toggleMenu = () => {
     setIsOpen(!isOpen)
@@ -44,8 +48,32 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
               </span>
             </button>
           </div>
+          
+          <div className="border-t border-gray-100 mt-2 pt-2">
+            <div className="py-1 px-4">
+              <p className="text-xs text-gray-500">Help</p>
+            </div>
+            <div className="p-2">
+              <button
+                onClick={() => {
+                  setIsHelpModalOpen(true);
+                  setIsOpen(false);
+                }}
+                className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50"
+              >
+                <HelpCircle className="w-4 h-4 mr-2" />
+                <span>Help</span>
+              </button>
+            </div>
+          </div>
         </div>
       )}
+      
+      {/* Help Modal */}
+      <HelpModal 
+        isOpen={isHelpModalOpen} 
+        onClose={() => setIsHelpModalOpen(false)} 
+      />
     </div>
   )
 }
