@@ -1,0 +1,41 @@
+/* Styles for markdown rendering */
+
+/* Task lists */
+.markdown-body ul.task-list {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+.markdown-body li.task-list-item {
+  list-style-type: none !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  display: flex;
+  align-items: flex-start;
+}
+
+.markdown-body li.task-list-item::before {
+  content: none !important;
+}
+
+/* Code highlighting improvements */
+.markdown-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.markdown-body code.language-plaintext {
+  background-color: #f5f5f5;
+}
+
+/* Fix for double-highlighting issue */
+.markdown-body pre code[data-highlighted="yes"] {
+  background-color: transparent;
+}
+
+/* Fix errors with regex in the highlighting logic */
+.markdown-body pre {
+  position: relative;
+}
+
+/* Language indicator is now handled by the component */

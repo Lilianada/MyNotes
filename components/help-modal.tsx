@@ -69,7 +69,14 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
                     <li>Numbered lists (1. 2. 3.)</li>
                   </ul>
                 </li>
-                <li><strong>Code:</strong> `inline code` or code blocks with ```</li>
+                <li>
+                  <strong>Code:</strong>
+                  <ul className="list-disc pl-5 mt-1">
+                    <li>Inline code with backticks: `code`</li>
+                    <li>Code blocks with triple backticks: ```language</li>
+                    <li>Supported languages: javascript, typescript, python, css, html, json...</li>
+                  </ul>
+                </li>
                 <li><strong>Links:</strong> [text](url)</li>
                 <li>
                   <strong>Tasks:</strong>

@@ -7,7 +7,42 @@ import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import "highlight.js/styles/github.css";
+
+// Import highlight.js with all common languages
 import hljs from "highlight.js";
+import javascript from "highlight.js/lib/languages/javascript";
+import typescript from "highlight.js/lib/languages/typescript";
+import python from "highlight.js/lib/languages/python";
+import css from "highlight.js/lib/languages/css";
+import html from "highlight.js/lib/languages/xml";
+import json from "highlight.js/lib/languages/json";
+import bash from "highlight.js/lib/languages/bash";
+import markdown from "highlight.js/lib/languages/markdown";
+import sql from "highlight.js/lib/languages/sql";
+
+// Register commonly used languages
+hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage('js', javascript); // alias
+hljs.registerLanguage('typescript', typescript);
+hljs.registerLanguage('ts', typescript); // alias
+hljs.registerLanguage('python', python);
+hljs.registerLanguage('py', python); // alias
+hljs.registerLanguage('css', css);
+hljs.registerLanguage('html', html);
+hljs.registerLanguage('xml', html); // html is actually XML in highlight.js
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('bash', bash);
+hljs.registerLanguage('sh', bash); // alias
+hljs.registerLanguage('markdown', markdown);
+hljs.registerLanguage('md', markdown); // alias
+hljs.registerLanguage('sql', sql);
+
+// Set default options for better error handling
+hljs.configure({
+  ignoreUnescapedHTML: true, // Ignore unsafe HTML in code blocks
+  throwUnescapedHTML: false, // Don't throw errors for HTML in code
+  languages: ['plaintext'] // Always have plaintext as a fallback
+});
 
 interface MarkdownRendererProps {
   content: string;
@@ -40,14 +75,17 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 }) => {
   const markdownRef = useRef<HTMLDivElement>(null);
 
-  // Highlight code blocks after render
+  // We'll handle highlighting for each code block individually in the code component
+  // This effect will handle any global markdown container setup
   useEffect(() => {
-    if (markdownRef.current) {
-      const codeBlocks = markdownRef.current.querySelectorAll("pre code");
-      codeBlocks.forEach((block) => {
-        hljs.highlightElement(block as HTMLElement);
-      });
-    }
+    if (!markdownRef.current) return;
+    
+    // Add data attribute to prevent duplicate highlighting
+    const codeBlocks = markdownRef.current.querySelectorAll("pre code:not([data-initialized])");
+    codeBlocks.forEach((block) => {
+      block.setAttribute('data-initialized', 'true');
+    });
+    
   }, [content]);
 
   // Handle checkbox changes
@@ -178,20 +216,123 @@ code: ({
   children: React.ReactNode;
   [key: string]: any;
 }) => {
+  // Extract language from className if present
   const match = /language-(\w+)/.exec(className || "");
-
-  useEffect(() => {
-    // Re-highlight code blocks when content changes
-    if (!inline && match) {
-      hljs.highlightAll();
+  const languageSpecified = match ? match[1].toLowerCase() : null;
+  
+  // Safely determine if a language is supported 
+  const getSupportedLanguage = (lang?: string | null): string => {
+    if (!lang) return "plaintext";
+    
+    try {
+      // Test if the language is supported
+      return hljs.getLanguage(lang) ? lang : "plaintext";
+    } catch (e) {
+      return "plaintext";
     }
-  }, [children, inline, match]);
+  };
 
-  if (!inline && match) {
+  // Get safe language
+  const safeLanguage = getSupportedLanguage(languageSpecified);
+  
+  // Special handling for common non-standard language identifiers
+  const normalizeLanguage = (lang: string | null): string | null => {
+    if (!lang) return null;
+    
+    // Map non-standard language names to standard ones
+    const langMap: Record<string, string> = {
+      'jsx': 'javascript',
+      'tsx': 'typescript',
+      'vue': 'html',
+      'yml': 'yaml',
+      'shell': 'bash',
+      'zsh': 'bash',
+      'console': 'bash',
+      'text': 'plaintext',
+      'txt': 'plaintext',
+      'code': 'plaintext'
+    };
+    
+    return langMap[lang.toLowerCase()] || lang;
+  };
+  
+  const normalizedLanguage = normalizeLanguage(languageSpecified);
+  const finalSafeLanguage = normalizedLanguage ? getSupportedLanguage(normalizedLanguage) : safeLanguage;
+  
+  // Handle code block
+  if (!inline) {
+    // Create a unique key for this code block to avoid highlight.js conflicts
+    const codeKey = `code-${Math.random().toString(36).substring(2, 9)}`;
+    
+    // Add effect for highlighting
+    useEffect(() => {
+      if (!markdownRef.current) return;
+      
+      try {
+        // Reference element by the unique key
+        const codeElement = markdownRef.current.querySelector(`[data-code-id="${codeKey}"]`);
+        if (codeElement && !codeElement.hasAttribute('data-highlighted')) {
+          // Set a flag to prevent duplicate highlighting
+          codeElement.setAttribute('data-highlighted', 'true');
+          
+          // Apply highlighting with safety checks
+          try {
+            hljs.highlightElement(codeElement as HTMLElement);
+          } catch (highlightError) {
+            console.warn("Highlight.js error:", highlightError);
+            
+            // If highlighting fails, apply a simple plaintext class as fallback
+            (codeElement as HTMLElement).className = 'language-plaintext';
+            (codeElement as HTMLElement).style.backgroundColor = '#f5f5f5';
+          }
+        }
+      } catch (error) {
+        console.warn("Highlighting process failed:", error);
+      }
+    }, [codeKey, children]);
+
+    // Get language display name and style class
+    const getLanguageDisplay = (lang: string | null): { display: string, class: string } => {
+      if (!lang) return { display: "text", class: "bg-gray-100 text-gray-600" };
+      
+      // Map common languages to nice displays and colors
+      const langMap: Record<string, { display: string, class: string }> = {
+        javascript: { display: "JavaScript", class: "bg-yellow-100 text-yellow-800" },
+        js: { display: "JavaScript", class: "bg-yellow-100 text-yellow-800" },
+        typescript: { display: "TypeScript", class: "bg-blue-100 text-blue-800" },
+        ts: { display: "TypeScript", class: "bg-blue-100 text-blue-800" },
+        python: { display: "Python", class: "bg-green-100 text-green-800" },
+        py: { display: "Python", class: "bg-green-100 text-green-800" },
+        css: { display: "CSS", class: "bg-purple-100 text-purple-800" },
+        html: { display: "HTML", class: "bg-orange-100 text-orange-800" },
+        xml: { display: "XML", class: "bg-orange-100 text-orange-800" },
+        json: { display: "JSON", class: "bg-amber-100 text-amber-800" },
+        bash: { display: "Bash", class: "bg-gray-200 text-gray-800" },
+        sh: { display: "Shell", class: "bg-gray-200 text-gray-800" },
+        sql: { display: "SQL", class: "bg-cyan-100 text-cyan-800" },
+        markdown: { display: "Markdown", class: "bg-indigo-100 text-indigo-800" },
+        md: { display: "Markdown", class: "bg-indigo-100 text-indigo-800" },
+      };
+      
+      return langMap[lang.toLowerCase()] || { 
+        display: lang.charAt(0).toUpperCase() + lang.slice(1), 
+        class: "bg-gray-100 text-gray-600" 
+      };
+    };
+    
+    const langInfo = getLanguageDisplay(languageSpecified);
+
     return (
-      <pre className="bg-gray-50 border border-gray-200 p-4 rounded-md my-4 overflow-auto">
+      <pre 
+        className="bg-slate-50 border border-slate-200 p-4 rounded-md my-4 overflow-auto shadow-sm relative" 
+        data-language={languageSpecified || "text"}
+      >
+        <div className={`absolute top-0 right-0 px-2 py-1 text-xs rounded-bl ${langInfo.class}`} style={{ fontSize: '10px' }}>
+          {langInfo.display}
+        </div>
         <code
-          className={`${className} hljs language-${match[1]}`}
+          data-code-id={codeKey}
+          className={`font-mono text-sm block text-slate-800 language-${finalSafeLanguage} pt-5`}
           {...props}
         >
           {children}
@@ -360,16 +501,20 @@ code: ({
       <style jsx global>
         {taskListStyles}
       </style>
-      <ReactMarkdown
-        remarkPlugins={[
-          [remarkGfm, { singleTilde: false }], // Enable GFM with task lists
-          remarkBreaks,
-        ]}
-        rehypePlugins={[rehypeRaw, rehypeSanitize]}
-        components={components}
-      >
-        {content}
-      </ReactMarkdown>
+      <div className="markdown-body">
+        <ReactMarkdown
+          remarkPlugins={[
+            [remarkGfm, { singleTilde: false }], // Enable GFM with task lists
+            remarkBreaks,
+          ]}
+          rehypePlugins={[rehypeRaw, rehypeSanitize]}
+          components={components}
+          urlTransform={(uri: string) => uri} // Don't transform valid URIs
+          skipHtml={false} // Allow HTML in markdown
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
     </div>
   );
 };
