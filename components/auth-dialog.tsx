@@ -1,20 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { User } from "firebase/auth";
 import { LucideProps, CloudCog } from "lucide-react";
-import { SyncDialog } from "./sync-dialog";
 import { cn } from "@/lib/utils"; // Make sure you have this utils function
 
 // Google icon
@@ -53,21 +43,38 @@ export function AuthDialog({
       onOpenChange(newOpen);
     }
   };
+  
+  // Handle clicking outside to close
+  const handleClickOutside = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      handleOpenChange(false);
+    }
+  };
+  
+  // If dialog trigger is provided but not open, just render the trigger
+  if (!open && trigger) {
+    return <div onClick={() => handleOpenChange(true)}>{trigger}</div>;
+  }
+  
+  // If dialog isn't open and no trigger is forced open, don't render
+  if (!open && !showDialog) {
+    return null;
+  }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{user ? "Account" : "Sign In"}</DialogTitle>
-          <DialogDescription>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]" onClick={handleClickOutside} style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0}}>
+      <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="mb-4">
+          <h2 className="text-lg font-bold">{user ? "Account" : "Sign In"}</h2>
+          <p className="text-sm text-gray-500 mt-1">
             {user
               ? isAdmin
                 ? "You are signed in as an administrator."
                 : "You are signed in, but are not an admin. Your notes are stored locally."
               : "Sign in to sync your notes across devices."}
-          </DialogDescription>
-        </DialogHeader>
+          </p>
+        </div>
+        
         <div className="flex flex-col gap-4 py-4">
           {user ? (
             <UserInfo user={user} isAdmin={isAdmin} />
@@ -82,7 +89,8 @@ export function AuthDialog({
             </Button>
           )}
         </div>
-        <DialogFooter>
+        
+        <div className="flex justify-end space-x-3 mt-4">
           {user && (
             <Button variant="outline" onClick={signOut} disabled={loading}>
               Sign Out
@@ -91,9 +99,9 @@ export function AuthDialog({
           <Button variant="ghost" onClick={() => handleOpenChange(false)}>
             Close
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -14,6 +14,7 @@ interface HeaderProps {
   onNewNote: () => void
   toggleSidebar: () => void
   isSidebarOpen: boolean
+  isCreatingNote?: boolean
 }
 
 // Storage mode indicator component
@@ -40,7 +41,7 @@ function StorageModeIndicator() {
   );
 }
 
-export function Header({ onNewNote, toggleSidebar, isSidebarOpen }: HeaderProps) {
+export function Header({ onNewNote, toggleSidebar, isSidebarOpen, isCreatingNote = false }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
@@ -62,7 +63,7 @@ export function Header({ onNewNote, toggleSidebar, isSidebarOpen }: HeaderProps)
   }, [])
   
   return (
-    <header className="flex items-center py-3 px-4 sm:px-8 bg-white border-b border-gray-200 shadow-sm z-20 relative">
+    <header className="flex items-center py-3 px-4 sm:px-8 bg-white border-b border-gray-200 shadow-sm z-40 relative">
       <div>
         <button 
           onClick={toggleSidebar}
@@ -120,16 +121,20 @@ export function Header({ onNewNote, toggleSidebar, isSidebarOpen }: HeaderProps)
       </div>
       
       {/* We've replaced the mobile overlay with a universal dropdown approach */}
-      
-      <div className="flex items-center space-x-1">
+      <div className="flex items-center gap-4">
         <button
           onClick={onNewNote}
-          className="p-1.5 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          disabled={isCreatingNote}
+          className={`p-1.5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 
+            ${isCreatingNote 
+              ? "text-gray-300 cursor-not-allowed" 
+              : "text-gray-600 hover:text-gray-800 hover:bg-gray-100"}`}
           aria-label="Add new note"
-          title="Add new note"
+          title={isCreatingNote ? "Creating note..." : "Add new note"}
         >
-          <Plus size={18} />
+          <Plus size={18} className={isCreatingNote ? "animate-pulse" : ""} />
         </button>
+        <Menu isOpen={menuOpen} setIsOpen={setMenuOpen} />
         <AuthDialog
           trigger={
             <button 
@@ -141,7 +146,6 @@ export function Header({ onNewNote, toggleSidebar, isSidebarOpen }: HeaderProps)
             </button>
           }
         />
-        <Menu isOpen={menuOpen} setIsOpen={setMenuOpen} />
         <StorageModeIndicator />
       </div>
     </header>

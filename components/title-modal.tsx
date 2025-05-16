@@ -29,9 +29,16 @@ const TitleModal: React.FC<TitleModalProps> = ({
       document.removeEventListener('keydown', handleKeyDown as any);
     };
   }, []);
+  // Handle clicking outside to close
+  const handleClickOutside = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      cancelTitleInput();
+    }
+  };
+  
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30">
-      <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]" onClick={handleClickOutside} style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0}}>
+      <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-md" onClick={e => e.stopPropagation()}>
         <h3 className="text-lg font-medium mb-3">Create New Note</h3>
         <form onSubmit={handleTitleSubmit}>
           <div className="mb-4">
@@ -58,7 +65,7 @@ const TitleModal: React.FC<TitleModalProps> = ({
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             >
               Create Note
             </button>

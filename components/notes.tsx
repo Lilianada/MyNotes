@@ -76,6 +76,9 @@ export function Notes() {
       // Update the next ID after successful creation
       setNextId(prev => prev + 1)
       setShowTitleInput(false)
+      
+      // Dispatch event to notify that the note creation process is complete
+      document.dispatchEvent(new CustomEvent('note-modal-closed'))
     } catch (error) {
       console.error("Failed to create new note:", error)
       // You could add error handling UI here
@@ -92,11 +95,21 @@ export function Notes() {
 
   const handleTitleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    createNewNote(newNoteTitle)
+    
+    // Add validation to prevent empty titles
+    if (newNoteTitle.trim() === '') {
+      // Could show an error message here
+      // For now, just use the default title
+      createNewNote()
+    } else {
+      createNewNote(newNoteTitle)
+    }
   }
 
   const cancelTitleInput = () => {
     setShowTitleInput(false)
+    // Dispatch event to notify that the modal was closed
+    document.dispatchEvent(new CustomEvent('note-modal-closed'))
   }
 
   // Get activeNote state from context

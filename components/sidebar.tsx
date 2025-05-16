@@ -4,17 +4,17 @@ import { useNotes } from "@/contexts/note-context";
 import { Trash2 } from "lucide-react";
 import DeleteConfirmation from "./delete-confirmation";
 
-interface ListProps {
+interface SidebarProps {
   isSidebarOpen: boolean;
   onSelectNote: (note: Note) => void;
   onUpdateNoteTitle?: (id: number, newTitle: string) => string;
 }
 
-export default function List({
+export default function Sidebar({
   isSidebarOpen,
   onSelectNote,
   onUpdateNoteTitle,
-}: ListProps) {
+}: SidebarProps) {
   // Use notes from context
   const { notes, selectNote, selectedNoteId, deleteNote } = useNotes();
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
@@ -51,6 +51,7 @@ export default function List({
   };
   
   return (
+    <>
     <aside 
       id="sidebar"
       className={`fixed inset-y-0 left-0 z-30 w-80 bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg ${
@@ -106,19 +107,21 @@ export default function List({
         <p className="text-center text-gray-400 p-4">No notes yet</p>
       )}
       
-      {/* Delete Confirmation Dialog */}
-      {noteToDelete && (
-        <DeleteConfirmation
-          isOpen={isDeleteDialogOpen}
-          onClose={() => {
-            setIsDeleteDialogOpen(false);
-            setNoteToDelete(null);
-          }}
-          onConfirm={confirmDelete}
-          title="Delete Note"
-          description={`Are you sure you want to delete "${noteToDelete.noteTitle}"? This action cannot be undone.`}
-        />
-      )}
     </aside>
+
+    {/* Delete Confirmation Dialog - Positioned outside the sidebar container */}
+    {noteToDelete && (
+      <DeleteConfirmation
+        isOpen={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setNoteToDelete(null);
+        }}
+        onConfirm={confirmDelete}
+        title="Delete Note"
+        description={`Are you sure you want to delete "${noteToDelete.noteTitle}"? This action cannot be undone.`}
+      />
+    )}
+    </>
   );
 }

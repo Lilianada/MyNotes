@@ -1,14 +1,6 @@
 "use client";
 
 import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -18,15 +10,25 @@ interface HelpModalProps {
 }
 
 export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
+  // If the modal isn't open, don't render anything
+  if (!isOpen) return null;
+  
+  // Handle clicking outside to close
+  const handleClickOutside = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+  
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold">NoteItDown Help</DialogTitle>
-          <DialogDescription>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]" onClick={handleClickOutside} style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0}}>
+      <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-[600px] max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="mb-4">
+          <h2 className="text-xl font-bold">NoteItDown Help</h2>
+          <p className="text-sm text-gray-500 mt-1">
             Learn how to get the most out of NoteItDown
-          </DialogDescription>
-        </DialogHeader>
+          </p>
+        </div>
 
         <Tabs defaultValue="basics" className="mt-2">
           <TabsList className="grid grid-cols-3 mb-4">
@@ -72,8 +74,8 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
                 <li>
                   <strong>Code:</strong>
                   <ul className="list-disc pl-5 mt-1">
-                    <li>Inline code with backticks: `code`</li>
-                    <li>Code blocks with triple backticks: ```language</li>
+                    <li>Inline code with backticks: \`code\`</li>
+                    <li>Code blocks with triple backticks: \`\`\`language</li>
                     <li>Supported languages: javascript, typescript, python, css, html, json...</li>
                   </ul>
                 </li>
@@ -121,10 +123,10 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="pt-4">
+        <div className="flex justify-end space-x-3 mt-4">
           <Button onClick={onClose}>Close</Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        </div>
+      </div>
+    </div>
   );
 }
