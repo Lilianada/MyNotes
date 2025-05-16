@@ -51,7 +51,7 @@ export default function Sidebar({
   };
   
   return (
-    <div className="">
+    <>
     <aside 
       id="sidebar"
       className={`fixed inset-y-0 left-0 z-30 w-80 bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg ${
@@ -123,6 +123,6 @@ export default function Sidebar({
         />
       )}
 
-    </div>
+    </>
   );
 }
