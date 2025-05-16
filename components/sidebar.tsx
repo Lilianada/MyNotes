@@ -51,7 +51,7 @@ export default function Sidebar({
   };
   
   return (
-    <>
+    <div className="">
     <aside 
       id="sidebar"
       className={`fixed inset-y-0 left-0 z-30 w-80 bg-white border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg ${
@@ -109,19 +109,20 @@ export default function Sidebar({
       
     </aside>
 
-    {/* Delete Confirmation Dialog - Positioned outside the sidebar container */}
-    {noteToDelete && (
-      <DeleteConfirmation
-        isOpen={isDeleteDialogOpen}
-        onClose={() => {
-          setIsDeleteDialogOpen(false);
-          setNoteToDelete(null);
-        }}
-        onConfirm={confirmDelete}
-        title="Delete Note"
-        description={`Are you sure you want to delete "${noteToDelete.noteTitle}"? This action cannot be undone.`}
-      />
-    )}
-    </>
+      {/* Delete Confirmation Dialog */}
+      {noteToDelete && (
+        <DeleteConfirmation
+          isOpen={isDeleteDialogOpen}
+          onClose={() => {
+            setIsDeleteDialogOpen(false);
+            setNoteToDelete(null);
+          }}
+          onConfirm={confirmDelete}
+          title="Delete Note"
+          description={`Are you sure you want to delete "${noteToDelete.noteTitle}"? This action cannot be undone.`}
+        />
+      )}
+
+    </div>
   );
 }
