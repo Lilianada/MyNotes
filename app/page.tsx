@@ -1,6 +1,6 @@
 "use client"
 
-import List from "@/components/List"
+import List from "@/components/sidebar"
 import FontSwitcher from "@/components/font-switcher"
 import { useState, useEffect } from "react"
 import { useNotes } from "@/contexts/note-context"
@@ -9,6 +9,7 @@ import { Header } from "@/components/header"
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const [isCreatingNote, setIsCreatingNote] = useState(false)
   const { notes, selectNote } = useNotes()
   
   useEffect(() => {
@@ -23,11 +24,30 @@ export default function Home() {
     }
   }, [])
   
+  // Listen for when the modal is closed
+  useEffect(() => {
+    const handleModalClosed = () => {
+      setIsCreatingNote(false)
+    }
+    
+    document.addEventListener('note-modal-closed', handleModalClosed)
+    
+    return () => {
+      document.removeEventListener('note-modal-closed', handleModalClosed)
+    }
+  }, [])
+  
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen)
   }
   
   const handleNewNote = () => {
+    // Prevent multiple clicks
+    if (isCreatingNote) return
+    
+    // Set creating state
+    setIsCreatingNote(true)
+    
     // This will be passed to Notes
     document.dispatchEvent(new CustomEvent('create-new-note'))
     // Close sidebar on mobile when creating a new note
@@ -41,6 +61,7 @@ export default function Home() {
           onNewNote={handleNewNote}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
+          isCreatingNote={isCreatingNote}
         />
         <main className="flex-1 grid gap-4 md:grid-cols-[24%_75%] overflow-hidden relative">
           {/* Mobile overlay to close sidebar when clicking outside */}
