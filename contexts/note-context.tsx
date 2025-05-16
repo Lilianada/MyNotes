@@ -69,8 +69,24 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         // If we have notes, set them up
         if (loadedNotes.length > 0) {
           setNotes(loadedNotes);
-          // Select the first note if one exists
-          setSelectedNoteId(loadedNotes[0].id);
+          
+          // Try to restore the previously selected note from localStorage
+          const lastSelectedNoteId = typeof window !== 'undefined' ? 
+            localStorage.getItem('lastSelectedNoteId') : null;
+          
+          if (lastSelectedNoteId) {
+            const noteId = parseInt(lastSelectedNoteId, 10);
+            // Only restore if the note still exists
+            if (loadedNotes.some(note => note.id === noteId)) {
+              setSelectedNoteId(noteId);
+            } else {
+              // Fallback to first note if the saved note doesn't exist anymore
+              setSelectedNoteId(loadedNotes[0].id);
+            }
+          } else {
+            // No saved note, select the first one
+            setSelectedNoteId(loadedNotes[0].id);
+          }
         } else {
           // Create a first empty note for the user
           let newNote: Note;
@@ -266,8 +282,17 @@ export function NoteProvider({ children }: { children: ReactNode }) {
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )[0];
         setSelectedNoteId(newestNote.id);
+        
+        // Update localStorage with the new selected note
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lastSelectedNoteId', newestNote.id.toString());
+        }
       } else {
         setSelectedNoteId(null);
+        // Remove from localStorage since there are no notes left
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('lastSelectedNoteId');
+        }
       }
     }
 
@@ -293,6 +318,10 @@ export function NoteProvider({ children }: { children: ReactNode }) {
 
   const selectNote = (id: number | null) => {
     setSelectedNoteId(id);
+    // Save selected note ID to localStorage for persistence
+    if (id !== null && typeof window !== 'undefined') {
+      localStorage.setItem('lastSelectedNoteId', id.toString());
+    }
   };
 
   return (
