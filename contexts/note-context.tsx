@@ -28,6 +28,13 @@ interface NoteContextType {
 
 const NoteContext = createContext<NoteContextType | undefined>(undefined);
 
+// Helper function to get the most recent note by creation date
+const getMostRecentNote = (notes: Note[]): Note => {
+  return [...notes].sort((a, b) => 
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )[0];
+};
+
 // Empty initial note for new users
 const getEmptyNote = () => {
   return `# New Note
@@ -46,22 +53,41 @@ export function NoteProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       try {
         let loadedNotes: Note[] = [];
+        let notesLoadedFromStorage = false;
 
         // Determine which storage method to use
         if (isAdmin && user && firebaseNotesService) {
           // Use Firebase for admins
           loadedNotes = await firebaseNotesService.getNotes(user.uid);
+          notesLoadedFromStorage = loadedNotes.length > 0;
         } else if (typeof window !== "undefined") {
           // Use localStorage for non-admins
           loadedNotes = localStorageNotesService.getNotes();
+          notesLoadedFromStorage = loadedNotes.length > 0;
 
           // If localStorage is empty, try to get notes from the file system (for first-time users)
           if (loadedNotes.length === 0) {
-            loadedNotes = await loadNotesFromFiles();
+            // In production, add a small delay to ensure any async loading has time to complete
+            if (process.env.NODE_ENV === 'production') {
+              await new Promise(resolve => setTimeout(resolve, 500));
+              
+              // Check localStorage again after the delay
+              const retryNotes = localStorageNotesService.getNotes();
+              if (retryNotes.length > 0) {
+                loadedNotes = retryNotes;
+                notesLoadedFromStorage = true;
+              }
+            }
+            
+            // If still no notes, try loading from files
+            if (loadedNotes.length === 0) {
+              loadedNotes = await loadNotesFromFiles();
 
-            // Save to localStorage if we got notes from the file system
-            if (loadedNotes.length > 0) {
-              localStorage.setItem("notes", JSON.stringify(loadedNotes));
+              // Save to localStorage if we got notes from the file system
+              if (loadedNotes.length > 0) {
+                localStorage.setItem("notes", JSON.stringify(loadedNotes));
+                notesLoadedFromStorage = true;
+              }
             }
           }
         }
@@ -80,83 +106,66 @@ export function NoteProvider({ children }: { children: ReactNode }) {
             if (loadedNotes.some(note => note.id === noteId)) {
               setSelectedNoteId(noteId);
             } else {
-              // Fallback to first note if the saved note doesn't exist anymore
-              setSelectedNoteId(loadedNotes[0].id);
+              // If the saved note doesn't exist anymore, select the most recent note
+              const mostRecentNote = getMostRecentNote(loadedNotes);
+              setSelectedNoteId(mostRecentNote.id);
+              // Update localStorage with the new selected note
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('lastSelectedNoteId', mostRecentNote.id.toString());
+              }
             }
           } else {
-            // No saved note, select the first one
-            setSelectedNoteId(loadedNotes[0].id);
+            // No saved note in localStorage, select the most recent note
+            const mostRecentNote = getMostRecentNote(loadedNotes);
+            setSelectedNoteId(mostRecentNote.id);
+            // Save to localStorage for persistence
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('lastSelectedNoteId', mostRecentNote.id.toString());
+            }
           }
         } else {
-          // Create a first empty note for the user
-          let newNote: Note;
-          const emptyContent = getEmptyNote();
-
-          if (isAdmin && user && firebaseNotesService) {
-            // Create in Firebase for admin
-            newNote = await firebaseNotesService.addNote(
-              user.uid,
-              "New Note"
-            );
-            await firebaseNotesService.updateNoteContent(
-              newNote.id,
-              emptyContent
-            );
-            newNote.content = emptyContent;
-          } else {
-            // Create in localStorage for non-admin
-            const result = await createEmptyNoteFile("New Note");
-
-            if (result.success) {
-              // Save the content for file system (fallback)
-              await saveNoteToFile(
-                emptyContent,
-                1,
-                "New Note",
-                "new-note"
-              );
-
-              // Also create it in localStorage
-              newNote = localStorageNotesService.addNote("New Note");
-              localStorageNotesService.updateNoteContent(
-                newNote.id,
-                emptyContent
-              );
-              newNote.content = emptyContent;
-              newNote.filePath = result.filePath;
-            } else {
-              // Fallback if createEmptyNoteFile fails
-              newNote = {
-                id: 1,
-                content: emptyContent,
-                createdAt: new Date(),
-                noteTitle: "New Note",
-                filePath: "notes/new-note.md",
-                slug: "new-note",
-              };
+          // Only check one more time in production before giving up
+          if (process.env.NODE_ENV === 'production' && !notesLoadedFromStorage) {
+            // Check one more time after a delay
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Try loading notes one final time
+            if (typeof window !== "undefined") {
+              const finalCheckNotes = localStorageNotesService.getNotes();
+              if (finalCheckNotes.length > 0) {
+                setNotes(finalCheckNotes);
+                // Select the most recent note
+                const mostRecentNote = getMostRecentNote(finalCheckNotes);
+                setSelectedNoteId(mostRecentNote.id);
+                // Save to localStorage
+                localStorage.setItem('lastSelectedNoteId', mostRecentNote.id.toString());
+                setIsLoading(false);
+                return; // Exit early if we found notes
+              }
             }
           }
-
-          setNotes([newNote]);
-          setSelectedNoteId(newNote.id);
-        }
-      } catch (error) {
-        console.error("Failed to load notes:", error);
-        // Fallback to local storage if Firebase fails
-        if (typeof window !== "undefined") {
-          const loadedNotes = localStorageNotesService.getNotes();
-          if (loadedNotes.length > 0) {
-            setNotes(loadedNotes);
-            setSelectedNoteId(loadedNotes[0].id);
+          
+          // We don't have any notes and couldn't find any after multiple attempts
+          // Don't create a new note automatically, just set empty state
+          setNotes([]);
+          setSelectedNoteId(null);
+          // Remove from localStorage since there are no notes
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('lastSelectedNoteId');
           }
         }
+      } catch (error) {
+        console.error("Failed to initialize notes:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    initializeNotes();
-  }, [isAdmin, user]);
+    // Only initialize if the user state is settled
+    if (user !== undefined) {
+      initializeNotes();
+    }
+  }, [user, isAdmin]);
 
   const addNote = async (noteTitle: string): Promise<Note> => {
     let newNote: Note;
