@@ -170,35 +170,14 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         if (loadedNotes.length > 0) {
           setNotes(loadedNotes);
           
-          // Try to restore the previously selected note from localStorage
-          const lastSelectedNoteId = typeof window !== 'undefined' ? 
-            localStorage.getItem('lastSelectedNoteId') : null;
+          // Always select the most recent note when loading
+          const mostRecentNote = getMostRecentNote(loadedNotes);
+          console.log(`Using most recent note: ${mostRecentNote.id}`);
+          setSelectedNoteId(mostRecentNote.id);
           
-          if (lastSelectedNoteId) {
-            const noteId = parseInt(lastSelectedNoteId, 10);
-            // Only restore if the note still exists
-            if (loadedNotes.some(note => note.id === noteId)) {
-              console.log(`Restoring previously selected note: ${noteId}`);
-              setSelectedNoteId(noteId);
-            } else {
-              // If the saved note doesn't exist anymore, select the most recent note
-              const mostRecentNote = getMostRecentNote(loadedNotes);
-              console.log(`Selected note not found, using most recent: ${mostRecentNote.id}`);
-              setSelectedNoteId(mostRecentNote.id);
-              // Update localStorage with the new selected note
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('lastSelectedNoteId', mostRecentNote.id.toString());
-              }
-            }
-          } else {
-            // No saved note in localStorage, select the most recent note
-            const mostRecentNote = getMostRecentNote(loadedNotes);
-            console.log(`No saved note, using most recent: ${mostRecentNote.id}`);
-            setSelectedNoteId(mostRecentNote.id);
-            // Save to localStorage for persistence
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('lastSelectedNoteId', mostRecentNote.id.toString());
-            }
+          // Update localStorage with the selected note
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('lastSelectedNoteId', mostRecentNote.id.toString());
           }
         } else {
           // Only check one more time in production before giving up
@@ -214,8 +193,6 @@ export function NoteProvider({ children }: { children: ReactNode }) {
                 // Select the most recent note
                 const mostRecentNote = getMostRecentNote(finalCheckNotes);
                 setSelectedNoteId(mostRecentNote.id);
-                // Save to localStorage
-                localStorage.setItem('lastSelectedNoteId', mostRecentNote.id.toString());
                 setIsLoading(false);
                 return; // Exit early if we found notes
               }
@@ -368,17 +345,8 @@ export function NoteProvider({ children }: { children: ReactNode }) {
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         )[0];
         setSelectedNoteId(newestNote.id);
-        
-        // Update localStorage with the new selected note
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('lastSelectedNoteId', newestNote.id.toString());
-        }
       } else {
         setSelectedNoteId(null);
-        // Remove from localStorage since there are no notes left
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('lastSelectedNoteId');
-        }
       }
     }
 
@@ -404,10 +372,7 @@ export function NoteProvider({ children }: { children: ReactNode }) {
 
   const selectNote = (id: number | null) => {
     setSelectedNoteId(id);
-    // Save selected note ID to localStorage for persistence
-    if (id !== null && typeof window !== 'undefined') {
-      localStorage.setItem('lastSelectedNoteId', id.toString());
-    }
+    // Don't save to localStorage anymore to prevent conflicts
   };
 
   // Add syncLocalNotesToFirebase function to sync local notes to Firebase
@@ -447,9 +412,6 @@ export function NoteProvider({ children }: { children: ReactNode }) {
       if (firebaseNotes.length > 0) {
         const mostRecentNote = getMostRecentNote(firebaseNotes);
         setSelectedNoteId(mostRecentNote.id);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('lastSelectedNoteId', mostRecentNote.id.toString());
-        }
       }
     } catch (error) {
       console.error("Error syncing notes to Firebase:", error);
