@@ -79,7 +79,12 @@ export const firebaseNotesService = {
         };
       });
     } catch (error) {
-      console.error('Error getting notes:', error);
+      // Specifically handle potential cross-origin errors
+      if (error instanceof DOMException && error.name === "SecurityError") {
+        console.error('Cross-origin security error getting notes:', error);
+      } else {
+        console.error('Error getting notes:', error);
+      }
       return []; // Return empty array on error
     }
   },

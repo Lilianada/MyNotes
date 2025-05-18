@@ -6,6 +6,8 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import HelpModal from "@/components/help-modal"
 import { HelpCircle } from "lucide-react"
+import { useAuth } from "@/contexts/auth-context"
+import { useNotes } from "@/contexts/note-context"
 
 interface MenuProps {
   isOpen: boolean

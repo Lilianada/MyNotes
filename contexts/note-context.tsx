@@ -13,7 +13,6 @@ import { saveNoteToFile, createEmptyNoteFile } from "@/app/actions";
 import { firebaseNotesService } from "@/lib/firebase-notes";
 import { localStorageNotesService } from "@/lib/local-storage-notes";
 import { useAuth } from "@/contexts/auth-context";
-import { get } from "http";
 
 interface NoteContextType {
   notes: Note[];
@@ -24,6 +23,7 @@ interface NoteContextType {
   updateNoteTitle: (id: number, title: string) => void;
   deleteNote: (id: number) => void;
   selectNote: (id: number | null) => void;
+  syncLocalNotesToFirebase: () => Promise<void>;
 }
 
 const NoteContext = createContext<NoteContextType | undefined>(undefined);
@@ -58,10 +58,84 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         // Determine which storage method to use
         if (isAdmin && user && firebaseNotesService) {
           // Use Firebase for admins
+          console.log("Loading notes from Firebase for admin user");
           loadedNotes = await firebaseNotesService.getNotes(user.uid);
           notesLoadedFromStorage = loadedNotes.length > 0;
+          
+          // If no notes in Firebase but there are notes in localStorage, automatically sync them
+          if (loadedNotes.length === 0 && typeof window !== "undefined") {
+            const localNotes = localStorageNotesService.getNotes();
+            if (localNotes.length > 0) {
+              console.log("Found local notes but no Firebase notes - automatically syncing");
+              
+              // Sync local notes to Firebase immediately
+              try {
+                let syncedCount = 0;
+                for (const note of localNotes) {
+                  try {
+                    // Create a new note with the title
+                    const newNote = await firebaseNotesService.addNote(user.uid, note.noteTitle);
+                    // Update its content
+                    await firebaseNotesService.updateNoteContent(newNote.id, note.content);
+                    syncedCount++;
+                  } catch (err) {
+                    console.error(`Failed to sync note "${note.noteTitle}":`, err);
+                  }
+                }
+                console.log(`Successfully synced ${syncedCount} of ${localNotes.length} notes to Firebase`);
+                
+                // Load the newly synced notes from Firebase
+                loadedNotes = await firebaseNotesService.getNotes(user.uid);
+                notesLoadedFromStorage = loadedNotes.length > 0;
+              } catch (syncError) {
+                console.error("Error syncing notes to Firebase:", syncError);
+                // Fall back to local notes if sync fails
+                loadedNotes = localNotes;
+                notesLoadedFromStorage = true;
+              }
+            }
+          }
+        } else if (user && firebaseNotesService) {
+          // For regular authenticated users, also use Firebase
+          console.log("Loading notes from Firebase for regular authenticated user");
+          loadedNotes = await firebaseNotesService.getNotes(user.uid);
+          notesLoadedFromStorage = loadedNotes.length > 0;
+          
+          // If no notes in Firebase but there are notes in localStorage, automatically sync them
+          if (loadedNotes.length === 0 && typeof window !== "undefined") {
+            const localNotes = localStorageNotesService.getNotes();
+            if (localNotes.length > 0) {
+              console.log("Found local notes but no Firebase notes - automatically syncing for regular user");
+              
+              // Sync local notes to Firebase immediately
+              try {
+                let syncedCount = 0;
+                for (const note of localNotes) {
+                  try {
+                    // Create a new note with the title
+                    const newNote = await firebaseNotesService.addNote(user.uid, note.noteTitle);
+                    // Update its content
+                    await firebaseNotesService.updateNoteContent(newNote.id, note.content);
+                    syncedCount++;
+                  } catch (err) {
+                    console.error(`Failed to sync note "${note.noteTitle}":`, err);
+                  }
+                }
+                console.log(`Successfully synced ${syncedCount} of ${localNotes.length} notes to Firebase`);
+                
+                // Load the newly synced notes from Firebase
+                loadedNotes = await firebaseNotesService.getNotes(user.uid);
+                notesLoadedFromStorage = loadedNotes.length > 0;
+              } catch (syncError) {
+                console.error("Error syncing notes to Firebase:", syncError);
+                // Fall back to local notes if sync fails
+                loadedNotes = localNotes;
+                notesLoadedFromStorage = true;
+              }
+            }
+          }
         } else if (typeof window !== "undefined") {
-          // Use localStorage for non-admins
+          // Use localStorage for anonymous users (not logged in)
           loadedNotes = localStorageNotesService.getNotes();
           notesLoadedFromStorage = loadedNotes.length > 0;
 
@@ -104,10 +178,12 @@ export function NoteProvider({ children }: { children: ReactNode }) {
             const noteId = parseInt(lastSelectedNoteId, 10);
             // Only restore if the note still exists
             if (loadedNotes.some(note => note.id === noteId)) {
+              console.log(`Restoring previously selected note: ${noteId}`);
               setSelectedNoteId(noteId);
             } else {
               // If the saved note doesn't exist anymore, select the most recent note
               const mostRecentNote = getMostRecentNote(loadedNotes);
+              console.log(`Selected note not found, using most recent: ${mostRecentNote.id}`);
               setSelectedNoteId(mostRecentNote.id);
               // Update localStorage with the new selected note
               if (typeof window !== 'undefined') {
@@ -117,6 +193,7 @@ export function NoteProvider({ children }: { children: ReactNode }) {
           } else {
             // No saved note in localStorage, select the most recent note
             const mostRecentNote = getMostRecentNote(loadedNotes);
+            console.log(`No saved note, using most recent: ${mostRecentNote.id}`);
             setSelectedNoteId(mostRecentNote.id);
             // Save to localStorage for persistence
             if (typeof window !== 'undefined') {
@@ -333,6 +410,52 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Add syncLocalNotesToFirebase function to sync local notes to Firebase
+  const syncLocalNotesToFirebase = async (): Promise<void> => {
+    if (!user || !firebaseNotesService) {
+      console.error("Cannot sync notes - user is not authenticated or Firebase service is not available");
+      return;
+    }
+
+    try {
+      console.log("Starting sync of local notes to Firebase");
+      const localNotes = localStorageNotesService.getNotes();
+      let syncedCount = 0;
+
+      // Create a copy of each local note in Firebase
+      for (const note of localNotes) {
+        try {
+          // First create a new note with the title
+          const newNote = await firebaseNotesService.addNote(user.uid, note.noteTitle);
+          
+          // Then update its content
+          await firebaseNotesService.updateNoteContent(newNote.id, note.content);
+          
+          syncedCount++;
+        } catch (err) {
+          console.error(`Failed to sync note "${note.noteTitle}":`, err);
+        }
+      }
+
+      console.log(`Successfully synced ${syncedCount} of ${localNotes.length} notes to Firebase`);
+      
+      // After syncing, reload notes from Firebase
+      const firebaseNotes = await firebaseNotesService.getNotes(user.uid);
+      setNotes(firebaseNotes);
+      
+      // If there are notes, select the most recent one
+      if (firebaseNotes.length > 0) {
+        const mostRecentNote = getMostRecentNote(firebaseNotes);
+        setSelectedNoteId(mostRecentNote.id);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('lastSelectedNoteId', mostRecentNote.id.toString());
+        }
+      }
+    } catch (error) {
+      console.error("Error syncing notes to Firebase:", error);
+    }
+  };
+
   return (
     <NoteContext.Provider
       value={{
@@ -344,6 +467,7 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         updateNoteTitle,
         deleteNote,
         selectNote,
+        syncLocalNotesToFirebase,
       }}
     >
       {children}
