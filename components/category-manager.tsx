@@ -24,6 +24,7 @@ export function CategoryManager({
   const [isCreating, setIsCreating] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryColor, setNewCategoryColor] = useState('#60a5fa'); // Default blue
+  const [nameError, setNameError] = useState<string | null>(null);
   
   const COLOR_OPTIONS = [
     { name: 'Red', value: '#f87171' },
@@ -34,10 +35,26 @@ export function CategoryManager({
     { name: 'Purple', value: '#a78bfa' },
     { name: 'Pink', value: '#f472b6' },
     { name: 'Gray', value: '#9ca3af' },
+    // Additional color options
+    { name: 'Teal', value: '#2dd4bf' },
+    { name: 'Indigo', value: '#818cf8' },
+    { name: 'Rose', value: '#fb7185' },
+    { name: 'Amber', value: '#fbbf24' },
+    { name: 'Lime', value: '#a3e635' },
   ];
 
   const handleCreateCategory = () => {
     if (newCategoryName.trim() === '') return;
+    
+    // Check if a category with the same name already exists
+    const categoryNameExists = categories.some(
+      category => category.name.toLowerCase() === newCategoryName.trim().toLowerCase()
+    );
+    
+    if (categoryNameExists) {
+      setNameError('A category with this name already exists');
+      return;
+    }
     
     const newCategory: NoteCategory = {
       id: `cat_${Date.now()}`,
@@ -48,6 +65,7 @@ export function CategoryManager({
     onSaveCategory(newCategory);
     setIsCreating(false);
     setNewCategoryName('');
+    setNameError(null);
   };
   
   return (
@@ -90,11 +108,19 @@ export function CategoryManager({
               type="text"
               id="new-category-name"
               value={newCategoryName}
-              onChange={(e) => setNewCategoryName(e.target.value)}
+              onChange={(e) => {
+                setNewCategoryName(e.target.value);
+                setNameError(null); // Clear error when input changes
+              }}
               placeholder="Enter category name"
-              className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md"
+              className={`w-full px-2 py-1 text-sm border rounded-md ${
+                nameError ? 'border-red-500' : 'border-gray-300'
+              }`}
               autoFocus
             />
+            {nameError && (
+              <p className="text-xs text-red-500 mt-1">{nameError}</p>
+            )}
           </div>
           
           <div className="mb-3">

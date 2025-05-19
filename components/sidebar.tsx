@@ -4,6 +4,7 @@ import { useNotes } from "@/contexts/note-context";
 import { Trash2, Info } from "lucide-react";
 import DeleteConfirmation from "./delete-confirmation";
 import NoteDetails from "./note-details";
+import { useToast } from "@/hooks/use-toast";
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -23,6 +24,7 @@ export default function Sidebar({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
+  const { toast } = useToast();
   
   // Sort notes from newest to oldest
   const sortedNotes = [...notes].sort((a, b) => 
@@ -43,8 +45,22 @@ export default function Sidebar({
       try {
         // The deleteNote function in the context now handles both state and file deletion
         await deleteNote(noteToDelete.id);
+        
+        // Show success toast
+        toast({
+          title: "Note deleted",
+          description: `"${noteToDelete.noteTitle || `Note #${noteToDelete.id}`}" has been deleted.`,
+          variant: "default",
+        });
       } catch (error) {
         console.error("Error deleting note:", error);
+        
+        // Show error toast
+        toast({
+          title: "Error",
+          description: "Failed to delete note. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setIsDeleting(null);
         setNoteToDelete(null);

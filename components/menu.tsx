@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import type { Note } from "@/types"
 import { useFont } from "@/contexts/font-context"
 import { GeistSans } from 'geist/font/sans'
@@ -20,15 +20,34 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const { notes, selectedNoteId } = useNotes();
+  const menuRef = useRef<HTMLDivElement>(null);
   
   const currentNote = selectedNoteId ? notes.find(note => note.id === selectedNoteId) : null;
   
   const toggleMenu = () => {
-    setIsOpen(!isOpen)
+    setIsOpen(!isOpen);
   }
+  
+  // Handle clicking outside of menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    
+    // Add event listener only when menu is open
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen, setIsOpen]);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       <button onClick={toggleMenu} className="p-1 text-gray-500 hover:text-gray-700" aria-label="Menu">
         •••
       </button>

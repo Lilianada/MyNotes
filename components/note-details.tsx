@@ -196,10 +196,14 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
             </div>
           ) : (
             <CategoryManager
-              initialCategory={note.category || null}
-              onSave={handleCategorySave}
-              onCancel={() => setActiveTab('details')}
               categories={categories}
+              onSaveCategory={(category) => {
+                handleCategorySave(category);
+              }}
+              onSelectCategory={(category) => {
+                handleCategorySave(category);
+              }}
+              selectedCategoryId={note.category?.id}
             />
           )}
         </div>
