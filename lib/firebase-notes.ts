@@ -1,4 +1,4 @@
-import { Note } from '@/types';
+import { Note, NoteCategory, NoteEditHistory } from '@/types';
 import { db } from './firebase';
 import { 
   collection, 
@@ -11,8 +11,11 @@ import {
   serverTimestamp, 
   query, 
   where, 
-  Timestamp 
+  Timestamp,
+  addDoc,
+  collectionGroup
 } from 'firebase/firestore';
+import { countWords } from './word-count';
 
 // Helper functions
 const createSlugFromTitle = (title: string): string => {
@@ -75,7 +78,9 @@ export const firebaseNotesService = {
           noteTitle: data.noteTitle || "Untitled",
           createdAt: convertTimestamp(data.createdAt),
           filePath: data.filePath || undefined,
-          slug: data.slug || ""
+          slug: data.slug || "",
+          category: data.category || undefined,
+          wordCount: data.wordCount || (data.content ? countWords(data.content) : 0)
         };
       });
     } catch (error) {
@@ -105,12 +110,20 @@ export const firebaseNotesService = {
         createdAt: serverTimestamp(),
         userId,
         slug,
-        filePath: `notes/${slug}.md`
+        filePath: `notes/${slug}.md`,
+        wordCount: 0
       };
       
       // Create document with slug as the document ID
       const docRef = doc(db, 'notes', slug);
       await setDoc(docRef, noteData);
+      
+      // Add initial entry to edit history
+      const historyRef = collection(db, 'notes', slug, 'history');
+      await addDoc(historyRef, {
+        timestamp: serverTimestamp(),
+        editType: 'create'
+      });
       
       return {
         id: numericId,
@@ -118,7 +131,8 @@ export const firebaseNotesService = {
         noteTitle,
         createdAt: new Date(),
         filePath: noteData.filePath,
-        slug
+        slug,
+        wordCount: 0
       };
     } catch (error) {
       console.error('Error adding note:', error);
@@ -137,7 +151,19 @@ export const firebaseNotesService = {
       }
       
       const docRef = doc(db, 'notes', snapshot.docs[0].id);
-      await updateDoc(docRef, { content });
+      const wordCount = countWords(content);
+      
+      await updateDoc(docRef, { 
+        content,
+        wordCount
+      });
+      
+      // Add entry to edit history
+      const historyRef = collection(db, 'notes', snapshot.docs[0].id, 'history');
+      await addDoc(historyRef, {
+        timestamp: serverTimestamp(),
+        editType: 'update'
+      });
     } catch (error) {
       console.error('Error updating note content:', error);
       throw new Error(`Failed to update note content: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -161,6 +187,12 @@ export const firebaseNotesService = {
       const oldDocRef = doc(db, 'notes', snapshot.docs[0].id);
       const oldData = snapshot.docs[0].data();
       
+      // Get existing history
+      const historyRef = collection(db, 'notes', snapshot.docs[0].id, 'history');
+      const historySnapshot = await getDocs(historyRef);
+      const historyItems = historySnapshot.docs.map(doc => doc.data());
+      
+      // Create new note document with updated title
       const newDocRef = doc(db, 'notes', newSlug);
       await setDoc(newDocRef, {
         ...oldData,
@@ -169,6 +201,21 @@ export const firebaseNotesService = {
         filePath
       });
       
+      // Add title update to history
+      const newHistoryRef = collection(db, 'notes', newSlug, 'history');
+      
+      // Copy existing history to new document
+      for (const item of historyItems) {
+        await addDoc(newHistoryRef, item);
+      }
+      
+      // Add title update entry
+      await addDoc(newHistoryRef, {
+        timestamp: serverTimestamp(),
+        editType: 'title'
+      });
+      
+      // Delete old document after migration
       await deleteDoc(oldDocRef);
       
       return filePath;
@@ -193,6 +240,58 @@ export const firebaseNotesService = {
     } catch (error) {
       console.error('Error deleting note:', error);
       throw new Error(`Failed to delete note: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+  
+  async updateNoteCategory(id: number, category: NoteCategory | null): Promise<void> {
+    try {
+      const notesRef = collection(db, 'notes');
+      const q = query(notesRef, where("id", "==", id));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        throw new Error(`Note with ID ${id} not found`);
+      }
+      
+      const docRef = doc(db, 'notes', snapshot.docs[0].id);
+      
+      if (category) {
+        await updateDoc(docRef, { category });
+      } else {
+        // Remove category if null
+        await updateDoc(docRef, { 
+          category: null 
+        });
+      }
+    } catch (error) {
+      console.error('Error updating note category:', error);
+      throw new Error(`Failed to update note category: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+  
+  async getNoteHistory(id: number): Promise<NoteEditHistory[]> {
+    try {
+      const notesRef = collection(db, 'notes');
+      const q = query(notesRef, where("id", "==", id));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        throw new Error(`Note with ID ${id} not found`);
+      }
+      
+      const historyRef = collection(db, 'notes', snapshot.docs[0].id, 'history');
+      const historySnapshot = await getDocs(historyRef);
+      
+      return historySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          timestamp: convertTimestamp(data.timestamp),
+          editType: data.editType
+        };
+      }).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    } catch (error) {
+      console.error('Error getting note history:', error);
+      return [];
     }
   }
 };
