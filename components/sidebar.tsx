@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import type { Note } from "@/types";
 import { useNotes } from "@/contexts/note-context";
-import { Trash2 } from "lucide-react";
+import { Trash2, Info } from "lucide-react";
 import DeleteConfirmation from "./delete-confirmation";
+import NoteDetails from "./note-details";
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -20,6 +21,8 @@ export default function Sidebar({
   const [isDeleting, setIsDeleting] = useState<number | null>(null);
   const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [activeNote, setActiveNote] = useState<Note | null>(null);
   
   // Sort notes from newest to oldest
   const sortedNotes = [...notes].sort((a, b) => 
@@ -49,6 +52,12 @@ export default function Sidebar({
       }
     }
   };
+
+  const handleOpenDetails = (note: Note, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveNote(note);
+    setIsDetailsOpen(true);
+  };
   
   return (
     <>
@@ -65,7 +74,7 @@ export default function Sidebar({
       </div>
 
       {notes.length > 0 ? (
-        <ul className="max-h-[calc(100vh-200px)] overflow-y-auto p-2">
+        <ul className="max-h-[calc(100vh-125px)] overflow-y-auto p-2 scrollbar-hide">
           {sortedNotes.map((note) => (
             <li
               key={note.id}
@@ -84,22 +93,38 @@ export default function Sidebar({
                 }}
                 className="flex-1 text-left truncate"
               >
+                {note.category && (
+                  <span 
+                    className="w-3 h-3 rounded-full mr-2 inline-block"
+                    style={{ backgroundColor: note.category.color }}
+                    title={note.category.name}
+                  />
+                )}
                 <span className="truncate capitalize">
                   {note.noteTitle || `Note #${note.id}`}
                 </span>
               </button>
-              <button
-                onClick={(e) => handleDeleteNote(note, e)}
-                disabled={isDeleting === note.id}
-                className={`ml-2 p-1 ${
-                  isDeleting === note.id 
-                    ? "text-gray-300" 
-                    : "text-gray-400 hover:text-red-500"
-                }`}
-                aria-label={`Delete note ${note.noteTitle}`}
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="flex items-center">
+                <button
+                  onClick={(e) => handleOpenDetails(note, e)}
+                  className="p-1 text-gray-400 hover:text-blue-500"
+                  aria-label={`View details of note ${note.noteTitle}`}
+                >
+                  <Info size={16} />
+                </button>
+                <button
+                  onClick={(e) => handleDeleteNote(note, e)}
+                  disabled={isDeleting === note.id}
+                  className={`ml-2 p-1 ${
+                    isDeleting === note.id 
+                      ? "text-gray-300" 
+                      : "text-gray-400 hover:text-red-500"
+                  }`}
+                  aria-label={`Delete note ${note.noteTitle}`}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -123,6 +148,14 @@ export default function Sidebar({
         />
       )}
 
+      {/* Note Details Dialog */}
+      {activeNote && isDetailsOpen && (
+        <NoteDetails
+          isOpen={isDetailsOpen}
+          onClose={() => setIsDetailsOpen(false)}
+          note={activeNote}
+        />
+      )}
     </>
   );
 }

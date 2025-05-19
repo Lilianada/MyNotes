@@ -5,7 +5,8 @@ import { useFont } from "@/contexts/font-context"
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import HelpModal from "@/components/help-modal"
-import { HelpCircle } from "lucide-react"
+import ExportDialog from "@/components/export-dialog"
+import { HelpCircle, Download } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useNotes } from "@/contexts/note-context"
 
@@ -17,6 +18,10 @@ interface MenuProps {
 export function Menu({isOpen, setIsOpen }: MenuProps) {
   const { fontType, toggleFont } = useFont();
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const { notes, selectedNoteId } = useNotes();
+  
+  const currentNote = selectedNoteId ? notes.find(note => note.id === selectedNoteId) : null;
   
   const toggleMenu = () => {
     setIsOpen(!isOpen)
@@ -53,6 +58,25 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
           
           <div className="border-t border-gray-100 mt-2 pt-2">
             <div className="py-1 px-4">
+              <p className="text-xs text-gray-500">Tools</p>
+            </div>
+            <div className="p-2">
+              <button
+                onClick={() => {
+                  setIsExportModalOpen(true);
+                  setIsOpen(false);
+                }}
+                className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50"
+                disabled={notes.length === 0}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                <span>Export</span>
+              </button>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-100 mt-2 pt-2">
+            <div className="py-1 px-4">
               <p className="text-xs text-gray-500">Help</p>
             </div>
             <div className="p-2">
@@ -75,6 +99,14 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
       <HelpModal 
         isOpen={isHelpModalOpen} 
         onClose={() => setIsHelpModalOpen(false)} 
+      />
+      
+      {/* Export Dialog */}
+      <ExportDialog
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        currentNote={currentNote}
+        allNotes={notes}
       />
     </div>
   )

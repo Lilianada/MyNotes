@@ -5,6 +5,7 @@ import type { Note } from "@/types"
 import { KeyboardEvent } from 'react';
 import MarkdownRenderer from "./md-renderer";
 import NoteTitleEditor from "./note-title-editor";
+import WordCount from './word-count';
 
 interface NoteEditorProps {
   note: Note
@@ -113,6 +114,7 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(funct
           onUpdateTitle={onUpdateTitle}
         />
         <div className="flex items-center space-x-2">
+          <WordCount content={note.content} />
           <button 
             onClick={toggleView} 
             className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
