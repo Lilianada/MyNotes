@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import type { Note } from "@/types";
 import { useNotes } from "@/contexts/note-context";
-import { Trash2, Info } from "lucide-react";
+import { GripVertical, Trash2,  } from "lucide-react";
 import DeleteConfirmation from "./delete-confirmation";
 import NoteDetails from "./note-details";
 import { useToast } from "@/hooks/use-toast";
@@ -111,7 +111,7 @@ export default function Sidebar({
               >
                 {note.category && (
                   <span 
-                    className="w-3 h-3 rounded-full mr-2 inline-block"
+                    className="w-2 h-2 rounded-full mr-2 inline-block"
                     style={{ backgroundColor: note.category.color }}
                     title={note.category.name}
                   />
@@ -120,18 +120,18 @@ export default function Sidebar({
                   {note.noteTitle || `Note #${note.id}`}
                 </span>
               </button>
-              <div className="flex items-center">
+              <div className="flex items-center gap-1">
                 <button
                   onClick={(e) => handleOpenDetails(note, e)}
                   className="p-1 text-gray-400 hover:text-blue-500"
                   aria-label={`View details of note ${note.noteTitle}`}
                 >
-                  <Info size={16} />
+                  <GripVertical size={16} />
                 </button>
                 <button
                   onClick={(e) => handleDeleteNote(note, e)}
                   disabled={isDeleting === note.id}
-                  className={`ml-2 p-1 ${
+                  className={`p-1 ${
                     isDeleting === note.id 
                       ? "text-gray-300" 
                       : "text-gray-400 hover:text-red-500"

@@ -22,7 +22,7 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<NoteCategory[]>([]);
   const { user, isAdmin } = useAuth();
-  const { updateNoteCategory, notes } = useNotes();
+  const { updateNoteCategory, notes, deleteCategory, updateCategory } = useNotes();
   
   // Extract all unique categories from notes
   useEffect(() => {
@@ -202,6 +202,26 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
               }}
               onSelectCategory={(category) => {
                 handleCategorySave(category);
+              }}
+              onUpdateCategory={async (category) => {
+                try {
+                  await updateCategory(category);
+                  // Update local categories state
+                  setCategories(prev => 
+                    prev.map(c => c.id === category.id ? category : c)
+                  );
+                } catch (error) {
+                  console.error("Failed to update category:", error);
+                }
+              }}
+              onDeleteCategory={async (categoryId) => {
+                try {
+                  await deleteCategory(categoryId);
+                  // Update local categories state
+                  setCategories(prev => prev.filter(c => c.id !== categoryId));
+                } catch (error) {
+                  console.error("Failed to delete category:", error);
+                }
               }}
               selectedCategoryId={note.category?.id}
             />

@@ -1,7 +1,6 @@
 import { Note } from '@/types';
 import { saveAs } from 'file-saver';
 import { jsPDF } from 'jspdf';
-import { toPng } from 'html-to-image';
 
 type ExportFormat = 'markdown' | 'txt' | 'pdf';
 

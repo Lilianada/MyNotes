@@ -33,7 +33,7 @@ export const ContextNoteEditor = forwardRef<HTMLTextAreaElement>((props, ref) =>
       onChange={handleContentChange}
       onSave={handleSave}
       onUpdateTitle={handleTitleUpdate}
-      ref={ref}
+      ref={ref} // <--- THIS IS THE FIX!
     />
   )
 })

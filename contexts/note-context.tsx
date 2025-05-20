@@ -26,6 +26,8 @@ interface NoteContextType {
   updateNote: (id: number, content: string) => void;
   updateNoteTitle: (id: number, title: string) => void;
   updateNoteCategory: (id: number, category: NoteCategory | null) => Promise<void>;
+  updateCategory: (category: NoteCategory) => Promise<void>;
+  deleteCategory: (categoryId: string) => Promise<void>;
   getNoteHistory: (id: number) => Promise<NoteEditHistory[]>;
   deleteNote: (id: number) => void;
   selectNote: (id: number | null) => void;
@@ -136,7 +138,12 @@ export function NoteProvider({ children }: { children: ReactNode }) {
 
     if (!noteToUpdate) return;
     
-    // Update the note
+    // Update state immediately for responsive UI
+    setNotes((prevNotes) =>
+      prevNotes.map((note) => (note.id === id ? { ...note, content } : note))
+    );
+    
+    // Calculate word count and update in the background
     const { wordCount } = await NoteOperations.updateNote(
       id, 
       content, 
@@ -145,10 +152,12 @@ export function NoteProvider({ children }: { children: ReactNode }) {
       user
     );
 
-    // Update in state for immediate UI update
-    setNotes((prevNotes) =>
-      prevNotes.map((note) => (note.id === id ? { ...note, content, wordCount } : note))
-    );
+    // Update word count after operation completes
+    if (wordCount !== noteToUpdate.wordCount) {
+      setNotes((prevNotes) =>
+        prevNotes.map((note) => (note.id === id ? { ...note, wordCount } : note))
+      );
+    }
   };
 
   const updateNoteTitle = async (id: number, title: string) => {
@@ -203,6 +212,25 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const deleteCategory = async (categoryId: string) => {
+    try {
+      // Remove the category from all notes
+      await NoteOperations.removeCategory(categoryId, Boolean(isAdmin), user, notes);
+      
+      // Update the state for all notes that had this category
+      setNotes(prevNotes => 
+        prevNotes.map(note => 
+          note.category && note.category.id === categoryId
+            ? { ...note, category: null }
+            : note
+        )
+      );
+    } catch (error) {
+      console.error("Failed to delete category:", error);
+      throw error;
+    }
+  };
+
   const getNoteHistory = async (id: number): Promise<NoteEditHistory[]> => {
     return NoteOperations.getNoteHistory(id, Boolean(isAdmin), user);
   };
@@ -235,6 +263,38 @@ export function NoteProvider({ children }: { children: ReactNode }) {
   const selectNote = (id: number | null) => {
     setSelectedNoteId(id);
     // Don't save to localStorage anymore to prevent conflicts
+  };
+
+  const updateCategory = async (updatedCategory: NoteCategory): Promise<void> => {
+    try {
+      // First, update all notes that use this category
+      const notesWithCategory = notes.filter(note => note.category?.id === updatedCategory.id);
+      
+      // Update each note's category separately
+      const updatePromises = notesWithCategory.map(note => {
+        return NoteOperations.updateNoteCategory(
+          note.id,
+          updatedCategory,
+          Boolean(isAdmin),
+          user
+        );
+      });
+      
+      // Wait for all updates to complete
+      await Promise.all(updatePromises);
+      
+      // Now update the local state
+      setNotes(prevNotes => 
+        prevNotes.map(note => 
+          note.category?.id === updatedCategory.id
+            ? { ...note, category: updatedCategory }
+            : note
+        )
+      );
+    } catch (error) {
+      console.error("Failed to update category:", error);
+      throw error;
+    }
   };
 
   const syncLocalNotesToFirebase = async (): Promise<void> => {
@@ -274,6 +334,8 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         updateNote,
         updateNoteTitle,
         updateNoteCategory,
+        updateCategory,
+        deleteCategory,
         deleteNote,
         selectNote,
         getNoteHistory,

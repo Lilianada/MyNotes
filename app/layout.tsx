@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import "./globals.css"
-import "./highlight.css"
+import "./markdown.css"
 import { FontProvider } from "@/contexts/font-context"
 import { NoteProvider } from "@/contexts/note-context"
 import { AuthProvider } from "@/contexts/auth-context"
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  // Default to mono font at initial render
+  // Use GeistSans as the default font for better editing experience
   return (
     <html lang="en">
       <body className={GeistMono.className}>
