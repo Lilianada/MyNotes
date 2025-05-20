@@ -4,6 +4,8 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import "./globals.css"
 import "./markdown.css"
+import "./editor-preview.css"
+import "./monaco-editor.css"
 import { FontProvider } from "@/contexts/font-context"
 import { NoteProvider } from "@/contexts/note-context"
 import { AuthProvider } from "@/contexts/auth-context"

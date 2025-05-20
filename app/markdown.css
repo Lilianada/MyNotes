@@ -2,75 +2,75 @@
 
 /* Fix for inline code - ensure it displays properly inline */
 code.inline-code {
-  display: inline !important;
-  vertical-align: baseline !important;
-  padding: 0.2em 0.4em !important;
-  font-size: 85% !important;
-  white-space: pre-wrap !important;
-  overflow-wrap: break-word !important;
-  font-family: var(--font-mono) !important;
-  background-color: #fef2f2 !important;
-  color: #b91c1c !important;
-  border: 1px solid #fecaca !important;
-  border-radius: 0.25rem !important;
+  display: inline;
+  vertical-align: baseline;
+  padding: 0.2em 0.4em;
+  font-size: 85%;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-family: var(--font-mono);
+  background-color: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 0.25rem;
 }
 
 /* Ensure code inside pre (code blocks) displays properly */
 pre code {
-  display: block !important;
-  white-space: pre !important;
-  overflow-x: auto !important;
-  background-color: transparent !important;
-  border: none !important;
-  padding: 0 !important;
+  display: block;
+  white-space: pre;
+  overflow-x: auto;
+  background-color: transparent;
+  border: none;
+  padding: 0;
 }
 
 /* Style for code blocks */
 pre code {
-  display: block !important;
-  padding: 1em !important;
-  overflow-x: auto !important;
-  white-space: pre !important;
-  background-color: #f5f7f9 !important;
-  border: 1px solid #e5e7eb !important;
+  display: block;
+  padding: 1em;
+  overflow-x: auto;
+  white-space: pre;
+  background-color: #f5f7f9;
+  border: 1px solid #e5e7eb;
 }
 
 /* Fix for task lists - remove disc markers */
 ul.task-list {
-  list-style: none !important;
-  padding-left: 0 !important;
-  margin-left: 0 !important;
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0;
 }
 
 li.task-list-item {
-  list-style-type: none !important;
-  padding-left: 0 !important;
-  margin-left: 0 !important;
-  display: flex !important;
-  position: relative !important;
+  list-style-type: none;
+  padding-left: 0;
+  margin-left: 0;
+  display: flex;
+  position: relative;
 }
 
 li.task-list-item::before {
-  content: none !important;
-  display: none !important;
+  content: none;
+  display: none;
 }
 
 ul.task-list li::before {
-  display: none !important;
+  display: none;
 }
 
 /* Headings styles from the original renderer */
-.markdown-body h1 { font-size: 1.5rem !important; font-weight: 700 !important; margin: 1rem 0 !important; color: #4338ca !important; }
-.markdown-body h2 { font-size: 1.25rem !important; font-weight: 700 !important; margin: 0.75rem 0 !important; color: #1d4ed8 !important; }
-.markdown-body h3 { font-size: 1.125rem !important; font-weight: 700 !important; margin: 0.5rem 0 !important; color: #0891b2 !important; }
-.markdown-body h4 { font-size: 1rem !important; font-weight: 700 !important; margin: 0.5rem 0 !important; color: #0d9488 !important; }
-.markdown-body h5 { font-size: 0.875rem !important; font-weight: 700 !important; margin: 0.25rem 0 !important; color: #16a34a !important; }
-.markdown-body h6 { font-size: 0.75rem !important; font-weight: 700 !important; margin: 0.25rem 0 !important; color: #059669 !important; }
+.markdown-body h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0; color: #4338ca; }
+.markdown-body h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0; color: #1d4ed8; }
+.markdown-body h3 { font-size: 1.125rem; font-weight: 700; margin: 0.5rem 0; color: #0891b2; }
+.markdown-body h4 { font-size: 1rem; font-weight: 700; margin: 0.5rem 0; color: #0d9488; }
+.markdown-body h5 { font-size: 0.875rem; font-weight: 700; margin: 0.25rem 0; color: #16a34a; }
+.markdown-body h6 { font-size: 0.75rem; font-weight: 700; margin: 0.25rem 0; color: #059669; }
 
 /* Text formatting styles from the original renderer */
-.markdown-body strong { color: #d97706 !important; font-weight: bold !important; }
-.markdown-body em { color: #b45309 !important; font-style: italic !important; }
-.markdown-body del { text-decoration: line-through !important; color: #6b7280 !important; }
+.markdown-body strong { color: #d97706; font-weight: bold; }
+.markdown-body em { color: #b45309; font-style: italic; }
+.markdown-body del { text-decoration: line-through; color: #6b7280; }
 
 /* Arrow character styling */
 .arrow-character {
@@ -82,5 +82,5 @@ ul.task-list li::before {
 
 /* Ensure arrow character is visible and properly styled */
 p:contains('→') {
-  white-space: pre-wrap !important;
+  white-space: pre-wrap;
 }

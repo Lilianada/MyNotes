@@ -1,0 +1,102 @@
+/* Monaco Editor specific styles */
+.monaco-editor-container {
+  overflow: hidden;
+  border-radius: 0;
+  box-shadow: none;
+  height: 100%;
+  padding: 0;
+}
+
+/* Custom styles for Monaco editor */
+.monaco-editor .line-numbers {
+  color: #6e7781;
+}
+
+.monaco-editor .current-line {
+  border: none !important;
+  background-color: rgba(240, 246, 252, 0.4);
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .monaco-editor .current-line {
+  background-color: rgba(33, 38, 45, 0.4);
+}
+
+/* Editor cursor */
+.monaco-editor .cursor {
+  background-color: #0969da !important;
+  border-color: #0969da !important;
+}
+
+/* Font styles */
+.monaco-editor .view-lines {
+  font-family: var(--font-mono), monospace;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Hide scrollbar unless hovering */
+.monaco-editor .scrollbar {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.monaco-editor .scrollbar:hover {
+  opacity: 1;
+}
+
+/* Override default focus styles */
+.monaco-editor-container:focus-within {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(3, 102, 214, 0.3);
+}
+
+/* Syntax highlighting for markdown */
+.monaco-editor .mtk1 {
+  color: var(--color-text, #24292E);
+}
+
+/* Headers */
+.monaco-editor .mtk8 {
+  color: var(--color-primary, #0969da);
+  font-weight: 600;
+}
+
+/* Special characters */
+.monaco-editor .special-character {
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+/* Improve code block appearance */
+.monaco-editor .margin,
+.monaco-editor .monaco-editor-background {
+  background-color: var(--color-bg, #ffffff);
+}
+
+[data-theme="dark"] .monaco-editor .margin,
+[data-theme="dark"] .monaco-editor .monaco-editor-background {
+  background-color: var(--color-bg, #1e1e1e);
+}
+
+/* Override editor component height */
+.monaco-editor,
+.monaco-editor .overflow-guard {
+  height: 100% !important;
+}
+
+/* Make suggestions more readable */
+.monaco-editor .suggest-widget {
+  border-radius: 6px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
+  background-color: #f0f6fc;
+  color: #24292e;
+}
+
+[data-theme="dark"] .monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
+  background-color: #2d333b;
+  color: #e6edf3;
+}
