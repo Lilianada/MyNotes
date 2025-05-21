@@ -10,8 +10,8 @@ import { useAuth } from '@/contexts/auth-context';
 import { localStorageNotesService } from '@/lib/local-storage-notes';
 import { formatDistanceToNow, format } from 'date-fns';
 import NoteRelationships from './note-relationships';
-import TagManagerV2 from './tag-manager-v2';
 import TagManagerSystem from './tag-manager-system';
+import { toast } from '@/components/ui/use-toast';
 
 interface NoteDetailsProps {
   note: Note;
@@ -84,6 +84,66 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
       setActiveTab('details');
     } catch (error) {
       console.error('Failed to update category:', error);
+    }
+  };
+  
+  /**
+   * Updates the tags for the current note
+   * @param tags - Array of tags to set
+   */
+  const handleTagsUpdated = async (tags: string[]) => {
+    console.log(`[NOTE DETAILS] Updating tags for note ${note.id}:`, JSON.stringify(tags));
+    
+    // Validate tag limit
+    const MAX_TAGS = 5;
+    if (tags.length > MAX_TAGS) {
+      console.warn(`[NOTE DETAILS] Tag limit exceeded. Max ${MAX_TAGS} allowed, got ${tags.length}`);
+      tags = tags.slice(0, MAX_TAGS);
+    }
+    
+    try {
+      // Show loading toast
+      const { dismiss } = toast({
+        title: "Updating tags...",
+        description: "Saving your changes...",
+      });
+      
+      // Normalize tags (lowercase, trim, remove duplicates)
+      const normalizedTags = Array.from(
+        new Set(tags.map(tag => tag.trim().toLowerCase()))
+      ).filter(Boolean);
+      
+      console.log(`[NOTE DETAILS] Normalized tags:`, JSON.stringify(normalizedTags));
+      
+      // Update tags in the note and get the updated tags
+      console.log(`[NOTE DETAILS] Calling updateNoteTags with:`, JSON.stringify(normalizedTags));
+      const updatedTags = await updateNoteTags(note.id, normalizedTags);
+      
+      // Dismiss loading toast
+      dismiss();
+      
+      // Use the returned tags directly from the update operation
+      console.log(`[NOTE DETAILS] Tags after update:`, JSON.stringify(updatedTags));
+      
+      // Update the local note reference to have the latest tags
+      // This ensures that subsequent operations in this component have the latest data
+      if (note && updatedTags) {
+        note.tags = updatedTags;
+      }
+      
+      // Show success toast
+      toast({
+        title: "Tags updated",
+        description: "Your note tags have been updated successfully.",
+      });
+    } catch (error) {
+      console.error("Failed to update tags:", error);
+      
+      toast({
+        title: "Error updating tags",
+        description: "There was a problem updating your tags. Please try again.",
+        variant: "destructive",
+      });
     }
   };
   
@@ -291,26 +351,48 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
           ) : activeTab === 'relationships' ? (
             <NoteRelationships note={note} />
           ) : activeTab === 'tags' ? (
-            <TagManagerSystem 
-              allNotes={notes}
-              onUpdateTagAcrossNotes={updateTagAcrossNotes}
-              onDeleteTagFromAllNotes={deleteTagFromAllNotes}
-              selectedTags={note.tags || []}
-              maxTagsAllowed={5}
-              onSelectTag={(tag) => {
-                // When a tag is selected, add it to the note if not already present
-                const currentTags = note.tags || [];
-                if (!currentTags.includes(tag)) {
-                  // Check the tag limit before adding
-                  if (currentTags.length < 5) {
-                    updateNoteTags(note.id, [...currentTags, tag]);
+            <>
+              <div className="bg-gray-50 dark:bg-gray-700 p-2 mb-4 rounded-md">
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <strong>Note:</strong> You can add up to 5 tags per note to help with organization.
+                </p>
+              </div>
+              <TagManagerSystem 
+                key={`tag-manager-${note.id}`}
+                allNotes={notes}
+                onUpdateTagAcrossNotes={updateTagAcrossNotes}
+                onDeleteTagFromAllNotes={deleteTagFromAllNotes}
+                selectedTags={note.tags || []}
+                maxTagsAllowed={5}
+                onSelectTag={(tag) => {
+                  console.log(`[NOTE DETAILS] Tag selection requested: "${tag}"`);
+                  const currentTags = note.tags || [];
+                  
+                  // Check if this was triggered from a tag removal button (with X)
+                  const isFromRemoveButton = document.activeElement?.getAttribute('aria-label') === `Remove tag ${tag}`;
+                  
+                  if (currentTags.includes(tag) && isFromRemoveButton) {
+                    // Only remove tags when explicitly clicking the X button
+                    console.log(`[NOTE DETAILS] Removing tag from note: "${tag}"`);
+                    handleTagsUpdated(currentTags.filter(t => t !== tag));
+                  } else if (!currentTags.includes(tag)) {
+                    // If not selected and we have room, add it
+                    if (currentTags.length < 5) {
+                      console.log(`[NOTE DETAILS] Adding tag to note: "${tag}"`);
+                      handleTagsUpdated([...currentTags, tag]);
+                    } else {
+                      // We've hit the tag limit
+                      console.log(`[NOTE DETAILS] Tag limit reached (5), cannot add: "${tag}"`);
+                      toast({
+                        title: "Tag limit reached",
+                        description: "You can only add up to 5 tags per note. Remove a tag first.",
+                        variant: "destructive"
+                      });
+                    }
                   }
-                } else {
-                  // If tag is already on the note, remove it (toggle behavior)
-                  updateNoteTags(note.id, currentTags.filter(t => t !== tag));
-                }
-              }}
-            />
+                }}
+              />
+            </>
           ) : null}
         </div>
       </div>

@@ -174,11 +174,82 @@ export const localStorageNotesService = {
   },
   
   // Update any note data fields
-  updateNoteData(id: number, updatedNote: Note): void {
+  updateNoteData(id: number, updatedNote: Partial<Note>): void {
     const notes = this.getNotes();
-    const updatedNotes = notes.map(note => 
-      note.id === id ? { ...note, ...updatedNote } : note
-    );
+    
+    // Find the existing note
+    const existingNoteIndex = notes.findIndex(note => note.id === id);
+    if (existingNoteIndex === -1) {
+      console.error(`Note with ID ${id} not found in local storage`);
+      return;
+    }
+    
+    // Create updated note with special handling for tags
+    const updatedNotes = notes.map(note => {
+      if (note.id !== id) return note;
+      
+      // Create a new note object with the updates
+      const newNote = { ...note, ...updatedNote };
+      
+      // Special handling for tags to ensure they're properly managed
+      if (updatedNote.tags !== undefined) {
+        // Make sure tags is an array
+        newNote.tags = Array.isArray(updatedNote.tags) ? 
+          [...updatedNote.tags] : [];
+        console.log(`[LOCAL STORAGE] Setting tags for note ${id} to:`, JSON.stringify(newNote.tags));
+      }
+      
+      // Set the update timestamp
+      newNote.updatedAt = new Date();
+      
+      return newNote;
+    });
+    
+    // Save to local storage
     window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
-  }
+    
+    // Add history entry if this was a significant update
+    if (updatedNote.content !== undefined || 
+        updatedNote.noteTitle !== undefined ||
+        updatedNote.tags !== undefined) {
+      const historyType = updatedNote.noteTitle !== undefined ? 'title' : 'update';
+      this.addHistoryEntry(id, historyType);
+    }
+  },
+  
+  // Update note tags
+  updateNoteTags(id: number, tags: string[]): string[] {
+    if (typeof window === 'undefined') {
+      return [];
+    }
+    
+    // Get all notes
+    const notes = this.getNotes();
+    
+    // Find the note
+    const note = notes.find(note => note.id === id);
+    if (!note) {
+      console.error(`Note with ID ${id} not found in local storage`);
+      return [];
+    }
+    
+    // Clean and normalize tags
+    const cleanTags = Array.isArray(tags) ? 
+      [...tags].filter(Boolean).map(tag => tag.trim().toLowerCase()) : [];
+    
+    console.log(`[LOCAL STORAGE] Setting tags for note ${id} to:`, JSON.stringify(cleanTags));
+    
+    // Update the note
+    note.tags = cleanTags;
+    note.updatedAt = new Date();
+    
+    // Save to localStorage
+    window.localStorage.setItem('notes', JSON.stringify(notes));
+    
+    // Add history entry
+    this.addHistoryEntry(id, 'tags');
+    
+    // Return the cleaned tags
+    return cleanTags;
+  },
 };

@@ -1,5 +1,5 @@
 import { Note, NoteCategory, NoteEditHistory } from '@/types';
-import { db } from './firebase';
+import { db, auth } from './firebase';
 import { 
   collection, 
   doc, 
@@ -62,6 +62,16 @@ const convertTimestamp = (timestamp: any): Date => {
   return new Date(timestamp);
 };
 
+// Convert Firebase history entries to typed NoteEditHistory objects
+const convertEditHistory = (history: any[]): NoteEditHistory[] => {
+  if (!history || !Array.isArray(history)) return [];
+  
+  return history.map(entry => ({
+    timestamp: convertTimestamp(entry.timestamp),
+    editType: entry.editType
+  }));
+};
+
 // Export as a named export, not default export
 export const firebaseNotesService = {
   async getNotes(userId: string): Promise<Note[]> {
@@ -85,7 +95,8 @@ export const firebaseNotesService = {
           parentId: data.parentId !== undefined ? data.parentId : null,
           linkedNoteIds: data.linkedNoteIds || [],
           wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
-          publish: data.publish || false
+          publish: data.publish || false,
+          editHistory: data.editHistory ? convertEditHistory(data.editHistory) : []
         };
       });
     } catch (error) {
@@ -108,6 +119,12 @@ export const firebaseNotesService = {
       const baseSlug = createSlugFromTitle(noteTitle);
       const slug = await getUniqueSlug(baseSlug);
       
+      // Create initial history entry
+      const initialHistory = [{
+        timestamp: new Date(),  // Use regular Date instead of serverTimestamp in arrays
+        editType: 'create'
+      }];
+
       const noteData = {
         id: numericId,
         content: "",
@@ -116,28 +133,26 @@ export const firebaseNotesService = {
         userId,
         slug,
         filePath: `notes/${slug}.md`,
-        wordCount: 0
+        wordCount: 0,
+        editHistory: initialHistory
       };
       
       // Create document with slug as the document ID
       const docRef = doc(db, 'notes', slug);
       await setDoc(docRef, noteData);
       
-      // Add initial entry to edit history
-      const historyRef = collection(db, 'notes', slug, 'history');
-      await addDoc(historyRef, {
-        timestamp: serverTimestamp(),
-        editType: 'create'
-      });
-      
       return {
         id: numericId,
         content: "",
         noteTitle,
         createdAt: new Date(),
-        filePath: noteData.filePath,
+        filePath: noteData?.filePath,
         slug,
-        wordCount: 0
+        wordCount: 0,
+        editHistory: [{
+          timestamp: new Date(),
+          editType: 'create'
+        }]
       };
     } catch (error) {
       console.error('Error adding note:', error);
@@ -158,16 +173,29 @@ export const firebaseNotesService = {
       const docRef = doc(db, 'notes', snapshot.docs[0].id);
       const wordCount = countWords(content);
       
+      // Get the current document to access its edit history
+      const noteDoc = await getDoc(docRef);
+      const noteData = noteDoc.data();
+      
+      // Create new history entry with regular Date object for arrays
+      // Firebase doesn't support serverTimestamp() in arrays
+      const newHistoryEntry = {
+        timestamp: new Date(),
+        editType: 'update'
+      };
+      
+      // Get existing history or create empty array if none exists
+      const existingHistory = noteData?.editHistory || [];
+      
+      // Add new history entry (keeping history limited to most recent 20 entries)
+      const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
+      
+      // Update the document with content and new history
       await updateDoc(docRef, { 
         content,
-        wordCount
-      });
-      
-      // Add entry to edit history
-      const historyRef = collection(db, 'notes', snapshot.docs[0].id, 'history');
-      await addDoc(historyRef, {
-        timestamp: serverTimestamp(),
-        editType: 'update'
+        wordCount,
+        updatedAt: serverTimestamp(), // This is fine outside arrays
+        editHistory: updatedHistory
       });
     } catch (error) {
       console.error('Error updating note content:', error);
@@ -192,10 +220,18 @@ export const firebaseNotesService = {
       const oldDocRef = doc(db, 'notes', snapshot.docs[0].id);
       const oldData = snapshot.docs[0].data();
       
-      // Get existing history
-      const historyRef = collection(db, 'notes', snapshot.docs[0].id, 'history');
-      const historySnapshot = await getDocs(historyRef);
-      const historyItems = historySnapshot.docs.map(doc => doc.data());
+      // Create new history entry with regular Date object for arrays
+      // Firebase doesn't support serverTimestamp() in arrays
+      const newHistoryEntry = {
+        timestamp: new Date(),
+        editType: 'title'
+      };
+      
+      // Get existing history or create empty array if none exists
+      const existingHistory = oldData.editHistory || [];
+      
+      // Add new history entry (keeping history limited to most recent 20 entries)
+      const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
       
       // Create new note document with updated title
       const newDocRef = doc(db, 'notes', newSlug);
@@ -203,21 +239,9 @@ export const firebaseNotesService = {
         ...oldData,
         noteTitle,
         slug: newSlug,
-        filePath
-      });
-      
-      // Add title update to history
-      const newHistoryRef = collection(db, 'notes', newSlug, 'history');
-      
-      // Copy existing history to new document
-      for (const item of historyItems) {
-        await addDoc(newHistoryRef, item);
-      }
-      
-      // Add title update entry
-      await addDoc(newHistoryRef, {
-        timestamp: serverTimestamp(),
-        editType: 'title'
+        filePath,
+        updatedAt: serverTimestamp(),
+        editHistory: updatedHistory
       });
       
       // Delete old document after migration
@@ -260,12 +284,34 @@ export const firebaseNotesService = {
       
       const docRef = doc(db, 'notes', snapshot.docs[0].id);
       
+      // Get the current document to access its edit history
+      const noteDoc = await getDoc(docRef);
+      const noteData = noteDoc.data();
+      
+      // Create new history entry with regular Date object
+      const newHistoryEntry = {
+        timestamp: new Date(),
+        editType: 'category'
+      };
+      
+      // Get existing history or create empty array if none exists
+      const existingHistory = noteData?.editHistory || [];
+      
+      // Add new history entry (keeping history limited to most recent 20 entries)
+      const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
+      
       if (category) {
-        await updateDoc(docRef, { category });
+        await updateDoc(docRef, { 
+          category, 
+          updatedAt: serverTimestamp(),
+          editHistory: updatedHistory
+        });
       } else {
         // Remove category if null
         await updateDoc(docRef, { 
-          category: null 
+          category: null,
+          updatedAt: serverTimestamp(),
+          editHistory: updatedHistory
         });
       }
     } catch (error) {
@@ -284,24 +330,24 @@ export const firebaseNotesService = {
         throw new Error(`Note with ID ${id} not found`);
       }
       
-      const historyRef = collection(db, 'notes', snapshot.docs[0].id, 'history');
-      const historySnapshot = await getDocs(historyRef);
+      // Get the note document
+      const noteDoc = await getDoc(doc(db, 'notes', snapshot.docs[0].id));
+      const noteData = noteDoc.data();
       
-      return historySnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-          timestamp: convertTimestamp(data.timestamp),
-          editType: data.editType
-        };
-      }).sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+      // If the note has no edit history, return an empty array
+      if (!noteData?.editHistory || !Array.isArray(noteData?.editHistory)) {
+        return [];
+      }
+      
+      // Convert and return the edit history
+      return convertEditHistory(noteData?.editHistory);
     } catch (error) {
       console.error('Error getting note history:', error);
       return [];
     }
   },
 
-  // Update any note data fields
-  async updateNoteData(id: number, updatedNote: Note): Promise<void> {
+  async updateNoteTags(id: number, tags: string[]): Promise<string[]> {
     try {
       const notesRef = collection(db, 'notes');
       const q = query(notesRef, where("id", "==", id));
@@ -313,53 +359,107 @@ export const firebaseNotesService = {
       
       const docRef = doc(db, 'notes', snapshot.docs[0].id);
       
-      // Process the note to be Firestore-friendly
-      const processedNote: Record<string, any> = {};
+      // Get the current document to access its edit history
+      const noteDoc = await getDoc(docRef);
+      const noteData = noteDoc.data();
       
-      // Copy primitive fields and handle dates
-      Object.entries(updatedNote).forEach(([key, value]) => {
-        // Skip undefined values
-        if (value === undefined) return;
-        
-        // Convert Date objects to Firestore timestamps
-        if (value instanceof Date) {
-          processedNote[key] = Timestamp.fromDate(value);
-        } 
-        // Handle category specifically
-        else if (key === 'category') {
-          // If null, explicitly set to null (don't skip)
-          if (value === null) {
-            processedNote[key] = null;
-          } 
-          // If valid category object, include it
-          else if (value && typeof value === 'object') {
-            processedNote[key] = value;
-          }
-          // If undefined, don't include
-        } 
-        // Copy other values directly
-        else {
-          processedNote[key] = value;
-        }
+      // Create new history entry
+      const newHistoryEntry = {
+        timestamp: new Date(),
+        editType: 'tags'
+      };
+      
+      // Get existing history or create empty array if none exists
+      const existingHistory = noteData?.editHistory || [];
+      
+      // Add new history entry (keeping history limited to most recent 20 entries)
+      const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
+      
+      // Ensure tags are properly cleaned
+      const cleanTags = Array.isArray(tags) ? 
+        [...tags].filter(Boolean).map(tag => tag.trim().toLowerCase()) : [];
+      
+      await updateDoc(docRef, { 
+        tags: cleanTags,
+        updatedAt: serverTimestamp(),
+        editHistory: updatedHistory
       });
       
-      // Update the document with the processed note data
-      await updateDoc(docRef, processedNote);
+      // Return the clean tags array so callers have access to the normalized values
+      return cleanTags;
+    } catch (error) {
+      console.error('Error updating note tags:', error);
+      throw new Error(`Failed to update note tags: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  },
+
+  async updateNoteData(id: number, updatedNote: Partial<Note>): Promise<void> {
+    try {
+      const notesRef = collection(db, 'notes');
+      const q = query(notesRef, where("id", "==", id));
+      const snapshot = await getDocs(q);
       
-      // Add to history
-      const historyRef = collection(db, 'notes', snapshot.docs[0].id, 'history');
-      await addDoc(historyRef, {
-        timestamp: serverTimestamp(),
-        editType: 'update'
+      if (snapshot.empty) {
+        throw new Error(`Note with ID ${id} not found`);
+      }
+      
+      const docRef = doc(db, 'notes', snapshot.docs[0].id);
+      const currentDoc = await getDoc(docRef);
+      const currentData = currentDoc.data();
+      
+      // Determine edit type based on what fields are being updated
+      let editType: NoteEditHistory['editType'] = 'update';
+      if (updatedNote.noteTitle !== undefined) editType = 'title';
+      else if (updatedNote.tags !== undefined) editType = 'tags';
+      else if (updatedNote.category !== undefined) editType = 'category';
+      
+      // Create new history entry
+      const newHistoryEntry = {
+        timestamp: new Date(),
+        editType
+      };
+      
+      // Get existing history or create empty array if none exists
+      const existingHistory = currentData?.editHistory || [];
+      
+      // Add new history entry (keeping history limited to most recent 20 entries)
+      const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
+      
+      // Special handling for tags - ensure it's always an array
+      const cleanData: Record<string, any> = {};
+      
+      // Process each field for Firestore
+      if (updatedNote.noteTitle !== undefined) cleanData.noteTitle = updatedNote.noteTitle;
+      if (updatedNote.content !== undefined) cleanData.content = updatedNote.content;
+      if (updatedNote.category !== undefined) cleanData.category = updatedNote.category;
+      if (updatedNote.parentId !== undefined) cleanData.parentId = updatedNote.parentId;
+      
+      // Special handling for tags - make a direct copy
+      if (updatedNote.tags !== undefined) {
+        cleanData.tags = Array.isArray(updatedNote.tags) ? [...updatedNote.tags] : [];
+        console.log(`[FIREBASE] Setting tags for note ${id} to:`, JSON.stringify(cleanData.tags));
+      }
+      
+      // Handle linked notes
+      if (updatedNote.linkedNoteIds !== undefined) {
+        cleanData.linkedNoteIds = Array.isArray(updatedNote.linkedNoteIds) ? 
+          [...updatedNote.linkedNoteIds] : [];
+      }
+      
+      // Update the document with new data and history
+      await updateDoc(docRef, {
+        ...cleanData,
+        updatedAt: serverTimestamp(),
+        editHistory: updatedHistory
       });
       
-      console.log('Successfully updated note data in Firebase', { id, processedNote });
+      console.log(`[FIREBASE] Note ${id} updated successfully in Firestore`);
     } catch (error) {
       console.error('Error updating note data:', error);
       throw new Error(`Failed to update note data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
-
+  
   // Get a specific note by ID
   async getNote(id: number): Promise<Note | null> {
     try {
@@ -385,7 +485,8 @@ export const firebaseNotesService = {
         parentId: data.parentId !== undefined ? data.parentId : null,
         linkedNoteIds: data.linkedNoteIds || [],
         wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
-        publish: data.publish || false
+        publish: data.publish || false,
+        editHistory: data.editHistory ? convertEditHistory(data.editHistory) : []
       };
     } catch (error) {
       console.error('Error getting note:', error);
@@ -418,7 +519,8 @@ export const firebaseNotesService = {
           parentId: data.parentId !== undefined ? data.parentId : null,
           linkedNoteIds: data.linkedNoteIds || [],
           wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
-          publish: data.publish || false
+          publish: data.publish || false,
+          editHistory: data.editHistory ? convertEditHistory(data.editHistory) : []
         };
       });
     } catch (error) {
@@ -427,3 +529,5 @@ export const firebaseNotesService = {
     }
   },
 };
+
+export default firebaseNotesService;

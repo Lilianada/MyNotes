@@ -42,10 +42,18 @@ export default function Sidebar({
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const { toast } = useToast();
   
-  // Sort notes from newest to oldest
-  const sortedNotes = [...notes].sort((a, b) => 
-    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  // Sort notes by last updated date, then by creation date if updatedAt is the same
+  const sortedNotes = [...notes].sort((a, b) => {
+    // If both notes have updatedAt timestamps, sort by that first
+    if (a.updatedAt && b.updatedAt) {
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    }
+    // If only one has updatedAt, prioritize that one
+    if (a.updatedAt) return -1;
+    if (b.updatedAt) return 1;
+    // Fall back to createdAt if neither has updatedAt
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+  });
   
   // Filter notes by selected tag if a tag is selected
   const filteredNotes = selectedTag 

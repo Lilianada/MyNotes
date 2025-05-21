@@ -8,7 +8,7 @@ export interface NoteCategory {
 
 export interface NoteEditHistory {
   timestamp: Date;
-  editType: 'create' | 'update' | 'title';
+  editType: 'create' | 'update' | 'title' | 'tags' | 'category';
 }
 
 export interface Note {
@@ -25,4 +25,5 @@ export interface Note {
   linkedNoteIds?: number[];
   updatedAt?: Date;
   publish?: boolean;
+  editHistory?: NoteEditHistory[];
 }

@@ -12,8 +12,8 @@ interface TagManagerSystemProps {
   allNotes: Note[];
   onUpdateTagAcrossNotes: (oldTag: string, newTag: string) => Promise<void>;
   onDeleteTagFromAllNotes: (tag: string) => Promise<void>;
-  selectedTags?: string[];
-  onSelectTag?: (tag: string) => void;
+  selectedTags: string[];
+  onSelectTag: (tag: string) => void;
   maxTagsAllowed?: number;
 }
 
@@ -57,26 +57,61 @@ export function TagManagerSystem({
     return a.tag.localeCompare(b.tag);
   });
 
-  const handleCreateTag = () => {
-    if (newTagName.trim() === '') return;
+  const handleCreateTag = async () => {
+    // Validate the tag name
+    const trimmedTagName = newTagName.trim();
+    if (!trimmedTagName) {
+      setNameError('Please enter a tag name');
+      return;
+    }
     
-    // Check if a tag with the same name already exists
+    // Normalize to lowercase for case-insensitive comparison
+    const normalizedTagName = trimmedTagName.toLowerCase();
+    
+    console.log(`[TAG UI] Attempting to create new tag: "${normalizedTagName}"`);
+    
+    // Check if this tag already exists
     const tagNameExists = sortedTags.some(
-      tagInfo => tagInfo.tag.toLowerCase() === newTagName.trim().toLowerCase()
+      tagInfo => tagInfo.tag.toLowerCase() === normalizedTagName
     );
     
     if (tagNameExists) {
+      console.log(`[TAG UI] Tag already exists: "${normalizedTagName}"`);
       setNameError('A tag with this name already exists');
       return;
     }
     
-    const newTag = newTagName.trim().toLowerCase();
-    
-    // Since this is a new tag, we'll create a placeholder with the old name as empty
-    onUpdateTagAcrossNotes('', newTag);
-    setIsCreating(false);
-    setNewTagName('');
-    setNameError(null);
+    try {
+      console.log(`[TAG UI] Registering new tag: "${normalizedTagName}"`);
+      
+      // Register the new tag in the system
+      await onUpdateTagAcrossNotes('', normalizedTagName);
+      console.log(`[TAG UI] Tag registered successfully: "${normalizedTagName}"`);
+      
+      // If we haven't reached the tag limit, add it to the current note
+      if (selectedTags.length < maxTagsAllowed) {
+        console.log(`[TAG UI] Adding tag to current note: "${normalizedTagName}"`);
+        try {
+          // Make sure we're not replacing existing tags, just adding the new one
+          onSelectTag(normalizedTagName);
+          console.log(`[TAG UI] Tag successfully added to current note: "${normalizedTagName}"`);
+        } catch (selectError) {
+          console.error('[TAG UI] Error adding tag to current note:', selectError);
+          // Still consider tag creation successful even if adding to note fails
+        }
+      } else {
+        console.log(`[TAG UI] Tag limit reached (${maxTagsAllowed}), not adding to current note`);
+      }
+      
+      // Reset input field but keep the form open to allow adding multiple tags
+      setNewTagName('');
+      setNameError(null);
+      
+      console.log(`[TAG UI] Tag creation complete for: "${normalizedTagName}"`);
+    } catch (error) {
+      console.error('[TAG UI] Failed to create tag:', error);
+      setNameError('Failed to create tag. Please try again.');
+    }
   };
 
   const handleStartEditing = (tag: string) => {
@@ -87,26 +122,39 @@ export function TagManagerSystem({
   const handleSaveEdit = (oldTag: string) => {
     if (editTagName.trim() === '') return;
     
+    const newTag = editTagName.trim().toLowerCase();
+    console.log(`[TAG UI] Attempting to edit tag: "${oldTag}" → "${newTag}"`);
+    
+    // No change case
+    if (oldTag.toLowerCase() === newTag) {
+      console.log(`[TAG UI] No change in tag name, canceling edit`);
+      setEditingTag(null);
+      setNameError(null);
+      return;
+    }
+    
     // Check if the name already exists (except for the current tag)
     const tagNameExists = sortedTags.some(
       tagInfo => tagInfo.tag !== oldTag && 
-      tagInfo.tag.toLowerCase() === editTagName.trim().toLowerCase()
+      tagInfo.tag.toLowerCase() === newTag
     );
     
     if (tagNameExists) {
+      console.log(`[TAG UI] Tag name "${newTag}" already exists`);
       setNameError('A tag with this name already exists');
       return;
     }
     
-    const newTag = editTagName.trim().toLowerCase();
+    console.log(`[TAG UI] Saving tag edit: "${oldTag}" → "${newTag}"`);
     
     onUpdateTagAcrossNotes(oldTag, newTag)
       .then(() => {
+        console.log(`[TAG UI] Tag successfully updated: "${oldTag}" → "${newTag}"`);
         setEditingTag(null);
         setNameError(null);
       })
       .catch(error => {
-        console.error('Failed to update tag:', error);
+        console.error('[TAG UI] Failed to update tag:', error);
         setNameError('Failed to update tag');
       });
   };
@@ -117,12 +165,21 @@ export function TagManagerSystem({
   };
   
   const handleDeleteTag = (tag: string) => {
+    console.log(`[TAG UI] Attempting to delete tag: "${tag}"`);
+    
     onDeleteTagFromAllNotes(tag)
       .then(() => {
+        console.log(`[TAG UI] Tag successfully deleted: "${tag}"`);
         setShowDeleteConfirm(null);
+        
+        // Check if this tag was on the current note and remove it from selectedTags
+        if (selectedTags.includes(tag)) {
+          console.log(`[TAG UI] Removing deleted tag from current note: "${tag}"`);
+          onSelectTag(tag); // This will toggle/remove the tag from the current note
+        }
       })
       .catch(error => {
-        console.error('Failed to delete tag:', error);
+        console.error('[TAG UI] Failed to delete tag:', error);
       });
   };
   
@@ -130,7 +187,7 @@ export function TagManagerSystem({
     <div className="space-y-4">
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-sm font-medium">Tags</h3>
-        <span className="text-xs text-gray-500">
+        <span className={`text-xs ${selectedTags.length >= maxTagsAllowed ? 'text-red-500 font-medium' : 'text-gray-500'}`}>
           {selectedTags.length} of {maxTagsAllowed} tags used
         </span>
       </div>
@@ -147,14 +204,23 @@ export function TagManagerSystem({
               >
                 <span className="mr-1">#{tag}</span>
                 <button
-                  onClick={() => onSelectTag && onSelectTag(tag)}
-                  className="text-blue-600 hover:text-red-500"
+                  onClick={() => onSelectTag(tag)}
+                  className="text-blue-600 hover:text-red-500 hover:bg-red-100 rounded-full p-0.5 transition-colors"
+                  aria-label={`Remove tag ${tag}`}
+                  title="Remove tag"
                 >
                   <X size={14} />
                 </button>
               </div>
             ))}
           </div>
+          
+          {/* Show warning message when tag limit is reached */}
+          {selectedTags.length >= maxTagsAllowed && (
+            <p className="text-xs text-orange-500 mt-2 font-medium">
+              Maximum of {maxTagsAllowed} tags reached. Remove a tag to add another.
+            </p>
+          )}
         </div>
       )}
       
@@ -210,34 +276,28 @@ export function TagManagerSystem({
                 <>
                   <button
                     onClick={() => {
-                      if (onSelectTag) {
-                        // If tag is already selected, we can remove it regardless of the limit
-                        if (selectedTags.includes(tag)) {
-                          onSelectTag(tag);
-                        } else {
-                          // If we're at the tag limit, don't add more
-                          if (selectedTags.length < maxTagsAllowed) {
-                            onSelectTag(tag);
-                          } else {
-                            // Could show a toast or alert here about the limit
-                            alert(`Maximum of ${maxTagsAllowed} tags per note allowed`);
-                          }
-                        }
+                      // Use the onSelectTag callback to add the tag if it's not already selected
+                      // Selection is now only additive - removal happens through the X button
+                      if (!selectedTags.includes(tag)) {
+                        onSelectTag(tag);
                       }
                     }}
                     className={`flex items-center flex-1 text-left group ${
                       !selectedTags.includes(tag) && selectedTags.length >= maxTagsAllowed
                         ? 'opacity-50 cursor-not-allowed'
-                        : ''
+                        : selectedTags.includes(tag) ? 'font-medium' : ''
                     }`}
                     disabled={!selectedTags.includes(tag) && selectedTags.length >= maxTagsAllowed}
                   >
-                    <Hash size={14} className="mr-2 text-blue-500" />
-                    <span className="text-sm group-hover:text-blue-600">{tag}</span>
-                    <span className="ml-2 text-xs text-gray-500">{count} {count === 1 ? 'note' : 'notes'}</span>
-                    {selectedTags.includes(tag) && (
-                      <Check size={14} className="ml-2 text-green-500" />
+                    {selectedTags.includes(tag) ? (
+                      <div className="flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 mr-2">
+                        <Check size={12} />
+                      </div>
+                    ) : (
+                      <Hash size={14} className="mr-2 text-blue-500" />
                     )}
+                    <span className={`text-sm group-hover:text-blue-600 ${selectedTags.includes(tag) ? 'text-blue-700' : ''}`}>{tag}</span>
+                    <span className="ml-2 text-xs text-gray-500">{count} {count === 1 ? 'note' : 'notes'}</span>
                   </button>
                   
                   {/* Action buttons */}
@@ -296,8 +356,8 @@ export function TagManagerSystem({
       {isCreating ? (
         <div className="border border-gray-200 rounded-md p-3 mt-2">
           <div className="mb-2">
-            <label htmlFor="new-tag-name" className="sr-only">
-              Tag Name
+            <label htmlFor="new-tag-name" className="block text-xs font-medium text-gray-700 mb-1">
+              Create a new tag
             </label>
             <input
               type="text"
@@ -316,36 +376,41 @@ export function TagManagerSystem({
             {nameError && (
               <p className="text-xs text-red-500 mt-1">{nameError}</p>
             )}
+            {selectedTags.length >= maxTagsAllowed && (
+              <p className="text-xs text-orange-500 mt-1">
+                <strong>Note:</strong> Tag limit reached ({maxTagsAllowed}). You can still create the tag, but it won't be added to the current note.
+              </p>
+            )}
           </div>
           
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={() => setIsCreating(false)}
-              className="px-2 py-1 text-xs border border-gray-300 rounded-md"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleCreateTag}
-              disabled={!newTagName.trim() || selectedTags.length >= maxTagsAllowed}
-              className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md disabled:opacity-50"
-            >
-              Save
-            </button>
+          <div className="flex justify-between items-center">
+          
+            <div className="flex space-x-2">
+              <button
+                type="button"
+                onClick={() => setIsCreating(false)}
+                className="px-2 py-1 text-xs border border-gray-300 rounded-md"
+              >
+                Done
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateTag}
+                disabled={!newTagName.trim()}
+                className="px-2 py-1 text-xs bg-blue-600 text-white rounded-md disabled:opacity-50"
+              >
+                Create Tag
+              </button>
+            </div>
           </div>
         </div>
       ) : (
         <button
           onClick={() => setIsCreating(true)}
-          className={`flex items-center text-sm text-blue-600 hover:text-blue-800 ${
-            selectedTags.length >= maxTagsAllowed ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          disabled={selectedTags.length >= maxTagsAllowed}
+          className="flex items-center text-sm text-blue-600 hover:text-blue-800"
         >
           <Plus size={14} className="mr-1" />
-          Create new tag {selectedTags.length >= maxTagsAllowed && "(max tags reached)"}
+          Create new tag
         </button>
       )}
     </div>
