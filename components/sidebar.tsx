@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import type { Note } from "@/types";
 import { useNotes } from "@/contexts/note-context";
-import { GripVertical, Trash2,  } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import DeleteConfirmation from "./delete-confirmation";
 import NoteDetails from "./note-details";
 import { useToast } from "@/hooks/use-toast";
+import TagFilter from "./tag-filter";
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -24,12 +25,18 @@ export default function Sidebar({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [activeNote, setActiveNote] = useState<Note | null>(null);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const { toast } = useToast();
   
   // Sort notes from newest to oldest
   const sortedNotes = [...notes].sort((a, b) => 
     new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
+  
+  // Filter notes by selected tag if a tag is selected
+  const filteredNotes = selectedTag 
+    ? sortedNotes.filter(note => note.tags?.includes(selectedTag))
+    : sortedNotes;
   
   const handleDeleteNote = async (note: Note, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -85,13 +92,25 @@ export default function Sidebar({
     >
       <div className="p-4 border-b border-gray-200">
         <header className="text-sm">
-          <p className="text-gray-500">You have {notes.length} saved notes</p>
+          <p className="text-gray-500">
+            {selectedTag 
+              ? `${filteredNotes.length} notes tagged with #${selectedTag}` 
+              : `You have ${notes.length} saved notes`}
+          </p>
         </header>
+      </div>
+
+      {/* Tag Filter */}
+      <div className="py-4 border-b border-gray-200">
+      <TagFilter
+        selectedTag={selectedTag}
+        onSelectTag={(tag) => setSelectedTag(tag)}
+      />
       </div>
 
       {notes.length > 0 ? (
         <ul className="max-h-[calc(100vh-125px)] overflow-y-auto p-2 scrollbar-hide">
-          {sortedNotes.map((note) => (
+          {filteredNotes.map((note) => (
             <li
               key={note.id}
               className={`p-2 text-sm hover:bg-gray-50 rounded cursor-pointer flex items-center justify-between ${

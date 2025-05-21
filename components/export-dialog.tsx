@@ -31,7 +31,7 @@ export function ExportDialog({ isOpen, onClose, currentNote, allNotes }: ExportD
     {
       id: 'markdown',
       label: 'Markdown',
-      description: 'Export as .md file with Markdown formatting',
+      description: 'Export as .md file with Markdown formatting, includes frontmatter',
       icon: <FileText size={18} />
     },
     {
@@ -54,7 +54,8 @@ export function ExportDialog({ isOpen, onClose, currentNote, allNotes }: ExportD
     
     try {
       if (exportType === 'current' && currentNote) {
-        await exportNote(currentNote, selectedFormat);
+        // Pass all notes to enable proper relationship sections
+        await exportNote(currentNote, selectedFormat, allNotes);
       } else {
         await exportAllNotes(allNotes, selectedFormat);
       }
@@ -146,6 +147,20 @@ export function ExportDialog({ isOpen, onClose, currentNote, allNotes }: ExportD
             </div>
           </div>
           
+          {selectedFormat === 'markdown' && (
+            <div className="mb-4 p-3 bg-blue-50 text-blue-700 rounded-md text-sm">
+              <p className="font-medium mb-1">Markdown Export Format</p>
+              <p>Your notes will be exported with YAML frontmatter containing:</p>
+              <ul className="list-disc ml-5 mt-1">
+                <li>Note metadata (ID, title, slug)</li>
+                <li>Tags and category information</li>
+                <li>Parent-child relationships</li>
+                <li>Linked note references</li>
+                <li>Timestamps (created/updated)</li>
+              </ul>
+            </div>
+          )}
+          
           {error && (
             <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md flex items-start">
               <AlertCircle size={18} className="flex-shrink-0 mt-0.5 mr-2" />
@@ -177,3 +192,10 @@ export function ExportDialog({ isOpen, onClose, currentNote, allNotes }: ExportD
 }
 
 export default ExportDialog;
+
+interface ExportDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  currentNote?: Note | null;
+  allNotes: Note[];
+}

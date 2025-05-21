@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { Note, NoteCategory, NoteEditHistory } from '@/types';
 import { CategoryManager } from './category-manager';
-import { MoreVertical, Tag, Calendar, Edit, History } from 'lucide-react';
+import { MoreVertical, Tag, Calendar, Edit, History, Link, Hash } from 'lucide-react';
 import { useNotes } from '@/contexts/note-context';
 import { firebaseNotesService } from '@/lib/firebase-notes';
 import { useAuth } from '@/contexts/auth-context';
 import { localStorageNotesService } from '@/lib/local-storage-notes';
 import { formatDistanceToNow, format } from 'date-fns';
+import NoteRelationships from './note-relationships';
+import TagManager from './tag-manager';
 
 interface NoteDetailsProps {
   note: Note;
@@ -17,12 +19,12 @@ interface NoteDetailsProps {
 }
 
 export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
-  const [activeTab, setActiveTab] = useState<'details' | 'category'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'category' | 'relationships'>('details');
   const [editHistory, setEditHistory] = useState<NoteEditHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<NoteCategory[]>([]);
   const { user, isAdmin } = useAuth();
-  const { updateNoteCategory, notes, deleteCategory, updateCategory } = useNotes();
+  const { updateNoteCategory, notes, deleteCategory, updateCategory, updateNoteTags } = useNotes();
   
   // Extract all unique categories from notes
   useEffect(() => {
@@ -119,6 +121,17 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
           >
             Category
           </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium flex items-center ${
+              activeTab === 'relationships'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('relationships')}
+          >
+            <Link className="h-3 w-3 mr-1" />
+            Links
+          </button>
         </div>
         
         <div className="p-4">
@@ -193,8 +206,21 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
                   </div>
                 </div>
               )}
+              
+              {/* Tags Section */}
+              <div className="flex items-start space-x-2">
+                <Hash size={18} className="text-gray-500 mt-0.5" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium">Tags</h3>
+                  <TagManager 
+                    key={`tag-manager-${note.id}`}
+                    noteId={note.id}
+                    initialTags={note.tags || []}
+                  />
+                </div>
+              </div>
             </div>
-          ) : (
+          ) : activeTab === 'category' ? (
             <CategoryManager
               categories={categories}
               onSaveCategory={(category) => {
@@ -225,7 +251,9 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
               }}
               selectedCategoryId={note.category?.id}
             />
-          )}
+          ) : activeTab === 'relationships' ? (
+            <NoteRelationships note={note} />
+          ) : null}
         </div>
       </div>
     </div>
