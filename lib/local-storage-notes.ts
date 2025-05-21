@@ -67,7 +67,7 @@ export const localStorageNotesService = {
   },
   
   // Add history entry
-  addHistoryEntry(id: number, editType: 'create' | 'update' | 'title'): void {
+  addHistoryEntry(id: number, editType: 'create' | 'update' | 'title' | 'tags'): void {
     if (typeof window === 'undefined') {
       return;
     }

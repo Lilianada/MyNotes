@@ -7,12 +7,13 @@ const defineMonacoThemes = () => {
   // Skip theme initialization during server-side rendering
   if (typeof window === 'undefined') return;
   
-  // Dynamically import Monaco editor only on the client side
-  const monaco = require('monaco-editor');
-  const monacoEditor = monaco.editor;
+  // Use dynamic import to load Monaco editor only on client side
+  // This prevents the build-time error with Next.js SSR
+  import('monaco-editor/esm/vs/editor/editor.api')
+    .then(monaco => {
   
   // Light theme that matches app design
-  monacoEditor.defineTheme('myNotes-light', {
+  monaco.editor.defineTheme('myNotes-light', {
     base: 'vs',
     inherit: true,
     rules: [
@@ -45,7 +46,7 @@ const defineMonacoThemes = () => {
   });
 
   // Dark theme that matches app design
-  monacoEditor.defineTheme('myNotes-dark', {
+  monaco.editor.defineTheme('myNotes-dark', {
     base: 'vs-dark',
     inherit: true,
     rules: [
@@ -76,6 +77,10 @@ const defineMonacoThemes = () => {
       'editorIndentGuide.activeBackground': '#444D56',
     }
   });
+    })
+    .catch(error => {
+      console.warn('Error loading Monaco editor:', error);
+    });
 };
 
 export function useMonacoThemes() {
