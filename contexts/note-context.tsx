@@ -32,6 +32,12 @@ interface NoteContextType {
   deleteNote: (id: number) => void;
   selectNote: (id: number | null) => void;
   syncLocalNotesToFirebase: () => Promise<void>;
+  // New functions for linking and hierarchies
+  updateNoteTags: (id: number, tags: string[]) => Promise<void>;
+  updateNoteParent: (id: number, parentId: number | null) => Promise<void>;
+  updateNoteLinks: (id: number, linkedNoteIds: number[]) => Promise<void>;
+  getChildNotes: (parentId: number) => Note[];
+  getLinkedNotes: (noteId: number) => Note[];
 }
 
 const NoteContext = createContext<NoteContextType | undefined>(undefined);
@@ -324,6 +330,151 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Handle updating note tags
+  const updateNoteTags = async (id: number, tags: string[]): Promise<void> => {
+    try {
+      console.log('Updating tags for note', id, tags);
+      
+      // Find the note to update
+      const noteToUpdate = notes.find(note => note.id === id);
+      if (!noteToUpdate) {
+        console.error(`Note with ID ${id} not found`);
+        throw new Error(`Note with ID ${id} not found`);
+      }
+
+      // Create updated note
+      // Make sure tags is an array, not undefined
+      const sanitizedTags = Array.isArray(tags) ? tags : [];
+      console.log('Sanitized tags:', sanitizedTags);
+      
+      const updatedNote = { 
+        ...noteToUpdate, 
+        tags: sanitizedTags, 
+        updatedAt: new Date() 
+      };
+
+      console.log('Updating local state with new note data:', updatedNote);
+      
+      // Update local state first for immediate feedback
+      setNotes(prevNotes => 
+        prevNotes.map(note => note.id === id ? updatedNote : note)
+      );
+
+      // Then save to storage
+      try {
+        await NoteOperations.updateNoteData(id, updatedNote, Boolean(isAdmin), user);
+        console.log('Successfully saved tags to storage');
+      } catch (error) {
+        // If storage update fails, revert the state change
+        console.error("Failed to update note tags in storage:", error);
+        setNotes(prevNotes => 
+          prevNotes.map(note => note.id === id ? noteToUpdate : note)
+        );
+        throw error;
+      }
+    } catch (error) {
+      console.error("Failed to update note tags:", error);
+      throw error;
+    }
+  };
+
+  // Handle updating note parent
+  const updateNoteParent = async (id: number, parentId: number | null): Promise<void> => {
+    try {
+      // Find the note to update
+      const noteToUpdate = notes.find(note => note.id === id);
+      if (!noteToUpdate) {
+        throw new Error(`Note with ID ${id} not found`);
+      }
+
+      // Create updated note
+      const updatedNote = { ...noteToUpdate, parentId, updatedAt: new Date() };
+
+      // Save to storage
+      await NoteOperations.updateNoteData(id, updatedNote, Boolean(isAdmin), user);
+
+      // Update local state
+      setNotes(prevNotes => 
+        prevNotes.map(note => note.id === id ? updatedNote : note)
+      );
+    } catch (error) {
+      console.error("Failed to update note parent:", error);
+      throw error;
+    }
+  };
+
+  // Handle updating note links (bidirectional)
+  const updateNoteLinks = async (id: number, linkedNoteIds: number[]): Promise<void> => {
+    try {
+      // Find the note to update
+      const noteToUpdate = notes.find(note => note.id === id);
+      if (!noteToUpdate) {
+        throw new Error(`Note with ID ${id} not found`);
+      }
+
+      // Create updated note
+      const updatedNote = { ...noteToUpdate, linkedNoteIds, updatedAt: new Date() };
+
+      // Save to storage
+      await NoteOperations.updateNoteData(id, updatedNote, Boolean(isAdmin), user);
+
+      // Update local state with this note's links
+      const updatedNotes = notes.map(note => note.id === id ? updatedNote : note);
+
+      // Implement bidirectional linking - update all linked notes to link back
+      const promises = linkedNoteIds.map(async linkedId => {
+        const linkedNote = updatedNotes.find(note => note.id === linkedId);
+        if (!linkedNote) return;
+
+        // If this note is not already in the linked note's links, add it
+        if (!linkedNote.linkedNoteIds?.includes(id)) {
+          const updatedLinks = [...(linkedNote.linkedNoteIds || []), id];
+          const updatedLinkedNote = { 
+            ...linkedNote, 
+            linkedNoteIds: updatedLinks,
+            updatedAt: new Date()
+          };
+
+          // Save to storage
+          await NoteOperations.updateNoteData(linkedId, updatedLinkedNote, Boolean(isAdmin), user);
+
+          // Update in our updatedNotes array
+          return updatedLinkedNote;
+        }
+        return linkedNote;
+      });
+
+      // Wait for all bidirectional link updates
+      const bidirectionalResults = await Promise.all(promises);
+
+      // Create final notes array with all updates
+      const finalUpdatedNotes = updatedNotes.map(note => {
+        const updatedLinkedNote = bidirectionalResults.find(ln => ln && ln.id === note.id);
+        return updatedLinkedNote || note;
+      });
+
+      // Update state with all changes
+      setNotes(finalUpdatedNotes);
+    } catch (error) {
+      console.error("Failed to update note links:", error);
+      throw error;
+    }
+  };
+
+  // Get all child notes for a given parent
+  const getChildNotes = (parentId: number): Note[] => {
+    return notes.filter(note => note.parentId === parentId);
+  };
+
+  // Get all linked notes for a given note
+  const getLinkedNotes = (noteId: number): Note[] => {
+    const note = notes.find(n => n.id === noteId);
+    if (!note || !note.linkedNoteIds || note.linkedNoteIds.length === 0) {
+      return [];
+    }
+    return notes.filter(n => note.linkedNoteIds?.includes(n.id));
+  };
+
   return (
     <NoteContext.Provider
       value={{
@@ -340,6 +491,11 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         selectNote,
         getNoteHistory,
         syncLocalNotesToFirebase,
+        updateNoteTags,
+        updateNoteParent,
+        updateNoteLinks,
+        getChildNotes,
+        getLinkedNotes
       }}
     >
       {children}

@@ -5,6 +5,7 @@ import { saveNoteToFile, createEmptyNoteFile } from "@/app/actions";
 import { firebaseNotesService } from "@/lib/firebase-notes";
 import { localStorageNotesService } from "@/lib/local-storage-notes";
 import { countWords } from "@/lib/word-count";
+import { sanitizeNoteData } from "@/lib/data-sanitizer";
 
 /**
  * Contains all note manipulation operations used by the context
@@ -219,6 +220,32 @@ export class NoteOperations {
       }
     } catch (error) {
       console.error("Failed to remove category from notes:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Updates a note with any changed data fields
+   */
+  static async updateNoteData(
+    id: number,
+    updatedNote: Note,
+    isAdmin: boolean,
+    user: { uid: string } | null | undefined
+  ): Promise<void> {
+    try {
+      // Sanitize the note data before saving
+      const sanitizedNote = sanitizeNoteData(updatedNote);
+      
+      if (isAdmin && user && firebaseNotesService) {
+        // Use Firebase for admins
+        await firebaseNotesService.updateNoteData(id, sanitizedNote);
+      } else {
+        // Use localStorage for non-admins
+        localStorageNotesService.updateNoteData(id, sanitizedNote);
+      }
+    } catch (error) {
+      console.error("Failed to update note data:", error);
       throw error;
     }
   }
