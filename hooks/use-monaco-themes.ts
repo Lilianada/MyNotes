@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect } from 'react';
-import { editor as monacoEditor } from 'monaco-editor';
 
 // Define the Monaco theme settings
 const defineMonacoThemes = () => {
+  // Skip theme initialization during server-side rendering
+  if (typeof window === 'undefined') return;
+  
+  // Dynamically import Monaco editor only on the client side
+  const monaco = require('monaco-editor');
+  const monacoEditor = monaco.editor;
+  
   // Light theme that matches app design
   monacoEditor.defineTheme('myNotes-light', {
     base: 'vs',

@@ -1,9 +1,10 @@
 "use client";
 
-import { Monaco } from '@monaco-editor/react';
-
-// Register a more advanced Markdown tokenizer for better syntax highlighting
-export function configureMarkdownLanguage(monaco: Monaco) {
+// Safely handle Monaco import for server-side rendering
+export function configureMarkdownLanguage(monaco: any) {
+  // Skip if running on server
+  if (typeof window === 'undefined') return;
+  
   // Define token types
   const tokenTypes = {
     header: 'keyword.md',
@@ -75,7 +76,7 @@ export function configureMarkdownLanguage(monaco: Monaco) {
   // Add Markdown-specific completions for snippets
   monaco.languages.registerCompletionItemProvider('markdown', {
     triggerCharacters: ['#', '-', '*', '>', '`', '[', '!'],
-    provideCompletionItems: (model, position) => {
+    provideCompletionItems: (model: { getWordUntilPosition: (arg0: any) => any; getLineContent: (arg0: any) => any; }, position: { lineNumber: any; column: number; }) => {
       const word = model.getWordUntilPosition(position);
       const range = {
         startLineNumber: position.lineNumber,
@@ -284,6 +285,54 @@ export function configureMarkdownLanguage(monaco: Monaco) {
       }
       
       return { suggestions };
+    }
+  });
+}
+
+// Configure auto-completion for wiki-style links
+export function configureWikiLinkCompletion(monaco: any, noteTitles: string[]) {
+  // Skip if running on server
+  if (typeof window === 'undefined' || !monaco || !noteTitles || !noteTitles.length) return;
+  
+  monaco.languages.registerCompletionItemProvider('markdown', {
+    triggerCharacters: ['['],
+    provideCompletionItems: (model: any, position: any) => {
+      // Get text up to the cursor position
+      const textUntilPosition = model.getValueInRange({
+        startLineNumber: position.lineNumber,
+        startColumn: 1,
+        endLineNumber: position.lineNumber,
+        endColumn: position.column
+      });
+      
+      // Check if we're in the middle of a wiki link
+      const wikiLinkMatch = textUntilPosition.match(/\[\[([^[\]]*?)$/);
+      if (!wikiLinkMatch) {
+        return { suggestions: [] };
+      }
+      
+      // Filter note titles based on user input
+      const filterText = wikiLinkMatch[1].toLowerCase();
+      const filteredTitles = noteTitles.filter(title => 
+        title.toLowerCase().includes(filterText)
+      );
+      
+      // Create completion items for each matching title
+      const suggestions = filteredTitles.map(title => ({
+        label: title,
+        kind: monaco.languages.CompletionItemKind.Reference,
+        insertText: title + ']]',
+        range: {
+          startLineNumber: position.lineNumber,
+          startColumn: position.column - filterText.length,
+          endLineNumber: position.lineNumber,
+          endColumn: position.column
+        }
+      }));
+      
+      return {
+        suggestions: suggestions
+      };
     }
   });
 }

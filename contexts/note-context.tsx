@@ -32,8 +32,10 @@ interface NoteContextType {
   deleteNote: (id: number) => void;
   selectNote: (id: number | null) => void;
   syncLocalNotesToFirebase: () => Promise<void>;
-  // New functions for linking and hierarchies
+  // Tags and relationships
   updateNoteTags: (id: number, tags: string[]) => Promise<void>;
+  updateTagAcrossNotes: (oldTag: string, newTag: string) => Promise<void>;
+  deleteTagFromAllNotes: (tag: string) => Promise<void>;
   updateNoteParent: (id: number, parentId: number | null) => Promise<void>;
   updateNoteLinks: (id: number, linkedNoteIds: number[]) => Promise<void>;
   getChildNotes: (parentId: number) => Note[];
@@ -475,6 +477,116 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     return notes.filter(n => note.linkedNoteIds?.includes(n.id));
   };
 
+  // Update a tag across all notes (rename)
+  const updateTagAcrossNotes = async (oldTag: string, newTag: string): Promise<void> => {
+    try {
+      if (newTag.trim() === '') {
+        throw new Error('New tag name cannot be empty');
+      }
+
+      // Skip if trying to create a new tag (when oldTag is empty)
+      // and the tag already exists
+      if (oldTag === '' && notes.some(note => note.tags?.includes(newTag))) {
+        throw new Error(`Tag "${newTag}" already exists`);
+      }
+
+      // Find all notes with this tag
+      let notesToUpdate: Note[] = [];
+      
+      if (oldTag === '') {
+        // If oldTag is empty, we're just creating a new tag but not actually
+        // updating any notes directly
+        return;
+      } else {
+        notesToUpdate = notes.filter(note => 
+          note.tags && note.tags.includes(oldTag)
+        );
+      }
+      
+      if (notesToUpdate.length === 0 && oldTag !== '') {
+        throw new Error(`No notes found with tag "${oldTag}"`);
+      }
+
+      // Update each note's tags
+      const updatePromises = notesToUpdate.map(async note => {
+        const updatedTags = note.tags?.map(tag => 
+          tag === oldTag ? newTag : tag
+        ) || [];
+        
+        // Create updated note
+        const updatedNote = { 
+          ...note, 
+          tags: updatedTags, 
+          updatedAt: new Date() 
+        };
+        
+        // Save to storage
+        await NoteOperations.updateNoteData(note.id, updatedNote, Boolean(isAdmin), user);
+        
+        return updatedNote;
+      });
+      
+      // Wait for all updates to complete
+      const updatedNotes = await Promise.all(updatePromises);
+      
+      // Update local state
+      setNotes(prevNotes => 
+        prevNotes.map(note => {
+          const updatedNote = updatedNotes.find(n => n.id === note.id);
+          return updatedNote || note;
+        })
+      );
+    } catch (error) {
+      console.error("Failed to update tag across notes:", error);
+      throw error;
+    }
+  };
+
+  // Delete a tag from all notes
+  const deleteTagFromAllNotes = async (tag: string): Promise<void> => {
+    try {
+      // Find all notes with this tag
+      const notesToUpdate = notes.filter(note => 
+        note.tags && note.tags.includes(tag)
+      );
+      
+      if (notesToUpdate.length === 0) {
+        throw new Error(`No notes found with tag "${tag}"`);
+      }
+
+      // Update each note's tags
+      const updatePromises = notesToUpdate.map(async note => {
+        const updatedTags = (note.tags || []).filter(t => t !== tag);
+        
+        // Create updated note
+        const updatedNote = { 
+          ...note, 
+          tags: updatedTags, 
+          updatedAt: new Date() 
+        };
+        
+        // Save to storage
+        await NoteOperations.updateNoteData(note.id, updatedNote, Boolean(isAdmin), user);
+        
+        return updatedNote;
+      });
+      
+      // Wait for all updates to complete
+      const updatedNotes = await Promise.all(updatePromises);
+      
+      // Update local state
+      setNotes(prevNotes => 
+        prevNotes.map(note => {
+          const updatedNote = updatedNotes.find(n => n.id === note.id);
+          return updatedNote || note;
+        })
+      );
+    } catch (error) {
+      console.error("Failed to delete tag from all notes:", error);
+      throw error;
+    }
+  };
+
   return (
     <NoteContext.Provider
       value={{
@@ -492,6 +604,8 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         getNoteHistory,
         syncLocalNotesToFirebase,
         updateNoteTags,
+        updateTagAcrossNotes,
+        deleteTagFromAllNotes,
         updateNoteParent,
         updateNoteLinks,
         getChildNotes,

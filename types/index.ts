@@ -20,4 +20,9 @@ export interface Note {
   slug: string;
   category?: NoteCategory | null;
   wordCount?: number;
+  tags?: string[];
+  parentId?: number | null;
+  linkedNoteIds?: number[];
+  updatedAt?: Date;
+  publish?: boolean;
 }

@@ -120,3 +120,39 @@ export function createPlainTextPreview(markdown: string, maxLength: number = 100
   
   return plainText.substring(0, maxLength) + '...';
 }
+
+// For internal note references with format [[Note Title]] or [[Note Title|Displayed Text]]
+export function processInternalLinks(markdown: string, notes: any[], navigateToNoteById: (id: number) => void): string {
+  if (!markdown || !notes || !notes.length) return markdown;
+  
+  return markdown.replace(/\[\[(.+?)(?:\|(.+?))?\]\]/g, (match, noteTitle, displayText) => {
+    // Find the note by title
+    const note = notes.find(n => 
+      n.noteTitle.toLowerCase() === noteTitle.toLowerCase().trim()
+    );
+    
+    if (note) {
+      // Create a clickable link that uses the navigateToNoteById function
+      return `<a href="#" class="text-purple-600 hover:underline cursor-pointer internal-note-link" data-note-id="${note.id}">${displayText || noteTitle}</a>`;
+    } else {
+      // Note not found - display as pending link
+      return `<span class="text-red-400 internal-note-link-missing">${displayText || noteTitle}</span>`;
+    }
+  });
+}
+
+// Attach click handlers to internal note links
+export function attachInternalLinkHandlers(containerElement: HTMLElement, navigateToNoteById: (id: number) => void): void {
+  if (!containerElement) return;
+  
+  const internalLinks = containerElement.querySelectorAll('.internal-note-link');
+  internalLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const noteId = (link as HTMLElement).getAttribute('data-note-id');
+      if (noteId) {
+        navigateToNoteById(parseInt(noteId, 10));
+      }
+    });
+  });
+}

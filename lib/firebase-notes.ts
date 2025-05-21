@@ -77,10 +77,15 @@ export const firebaseNotesService = {
           content: data.content || "",
           noteTitle: data.noteTitle || "Untitled",
           createdAt: convertTimestamp(data.createdAt),
+          updatedAt: data.updatedAt ? convertTimestamp(data.updatedAt) : undefined,
           filePath: data.filePath || undefined,
           slug: data.slug || "",
           category: data.category || undefined,
-          wordCount: data.wordCount || (data.content ? countWords(data.content) : 0)
+          tags: data.tags || [],
+          parentId: data.parentId !== undefined ? data.parentId : null,
+          linkedNoteIds: data.linkedNoteIds || [],
+          wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
+          publish: data.publish || false
         };
       });
     } catch (error) {
@@ -353,5 +358,72 @@ export const firebaseNotesService = {
       console.error('Error updating note data:', error);
       throw new Error(`Failed to update note data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  }
+  },
+
+  // Get a specific note by ID
+  async getNote(id: number): Promise<Note | null> {
+    try {
+      const notesRef = collection(db, 'notes');
+      const q = query(notesRef, where("id", "==", id));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        return null;
+      }
+      
+      const data = snapshot.docs[0].data();
+      return {
+        id: data.id, 
+        content: data.content || "",
+        noteTitle: data.noteTitle || "Untitled",
+        createdAt: convertTimestamp(data.createdAt),
+        updatedAt: data.updatedAt ? convertTimestamp(data.updatedAt) : undefined,
+        filePath: data.filePath || undefined,
+        slug: data.slug || "",
+        category: data.category || undefined,
+        tags: data.tags || [],
+        parentId: data.parentId !== undefined ? data.parentId : null,
+        linkedNoteIds: data.linkedNoteIds || [],
+        wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
+        publish: data.publish || false
+      };
+    } catch (error) {
+      console.error('Error getting note:', error);
+      return null;
+    }
+  },
+
+  // Get all child notes for a parent note ID
+  async getChildNotes(userId: string, parentId: number): Promise<Note[]> {
+    try {
+      const notesRef = collection(db, 'notes');
+      const q = query(notesRef, 
+        where("userId", "==", userId),
+        where("parentId", "==", parentId)
+      );
+      const snapshot = await getDocs(q);
+      
+      return snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: data.id, 
+          content: data.content || "",
+          noteTitle: data.noteTitle || "Untitled",
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: data.updatedAt ? convertTimestamp(data.updatedAt) : undefined,
+          filePath: data.filePath || undefined,
+          slug: data.slug || "",
+          category: data.category || undefined,
+          tags: data.tags || [],
+          parentId: data.parentId !== undefined ? data.parentId : null,
+          linkedNoteIds: data.linkedNoteIds || [],
+          wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
+          publish: data.publish || false
+        };
+      });
+    } catch (error) {
+      console.error('Error getting child notes:', error);
+      return [];
+    }
+  },
 };

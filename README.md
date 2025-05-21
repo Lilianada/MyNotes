@@ -12,6 +12,12 @@ A minimalist notes application built with Next.js and TypeScript that saves note
   - Inline code (`code`)
   - Lists (- item, 1. item)
   - Checkboxes ([ ] todo, [x] done)
+  - Wiki-style internal links ([[Note Title]]) for connecting notes
+- Note linking and hierarchies:
+  - Create parent-child relationships between notes
+  - Link notes bidirectionally
+  - Visual indicators for linked and hierarchical notes
+  - Navigate between related notes easily
 - Powerful search functionality to find notes by title or content
 - Light and dark mode support
 - Server-side file storage using markdown (.md) files
@@ -105,3 +111,32 @@ MIT
 ## Acknowledgements
 
 Built with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/).
+
+## Note Linking and Hierarchies
+
+The MyNotes app supports powerful note linking and hierarchy features:
+
+### Wiki-style Links
+- Use double brackets to create links between notes: `[[Note Title]]`
+- Add custom display text with a pipe: `[[Note Title|Display Text]]`
+- Auto-completion suggests existing note titles as you type
+- Clicking on links navigates directly to the linked note
+
+### Parent-Child Relationships
+- Set any note as a parent or child of another note
+- Create hierarchical structures for organizing related content
+- Visual indicators in the sidebar show parent/child relationships
+- Parent notes show a blue folder icon
+- Child notes show a green upward folder icon
+
+### Bidirectional Linking
+- Links between notes are automatically bidirectional
+- When you link Note A to Note B, Note B is also linked to Note A
+- Linked notes are indicated with a purple link icon in the sidebar
+- All relationships are preserved when moving notes
+
+### Managing Relationships
+1. Open the note details panel by clicking the vertical dots icon
+2. Navigate to the "Links" tab
+3. Use "Set Parent" to establish a parent-child relationship
+4. Use "Manage Links" to create connections between notes
