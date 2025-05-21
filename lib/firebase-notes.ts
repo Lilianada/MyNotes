@@ -293,5 +293,65 @@ export const firebaseNotesService = {
       console.error('Error getting note history:', error);
       return [];
     }
+  },
+
+  // Update any note data fields
+  async updateNoteData(id: number, updatedNote: Note): Promise<void> {
+    try {
+      const notesRef = collection(db, 'notes');
+      const q = query(notesRef, where("id", "==", id));
+      const snapshot = await getDocs(q);
+      
+      if (snapshot.empty) {
+        throw new Error(`Note with ID ${id} not found`);
+      }
+      
+      const docRef = doc(db, 'notes', snapshot.docs[0].id);
+      
+      // Process the note to be Firestore-friendly
+      const processedNote: Record<string, any> = {};
+      
+      // Copy primitive fields and handle dates
+      Object.entries(updatedNote).forEach(([key, value]) => {
+        // Skip undefined values
+        if (value === undefined) return;
+        
+        // Convert Date objects to Firestore timestamps
+        if (value instanceof Date) {
+          processedNote[key] = Timestamp.fromDate(value);
+        } 
+        // Handle category specifically
+        else if (key === 'category') {
+          // If null, explicitly set to null (don't skip)
+          if (value === null) {
+            processedNote[key] = null;
+          } 
+          // If valid category object, include it
+          else if (value && typeof value === 'object') {
+            processedNote[key] = value;
+          }
+          // If undefined, don't include
+        } 
+        // Copy other values directly
+        else {
+          processedNote[key] = value;
+        }
+      });
+      
+      // Update the document with the processed note data
+      await updateDoc(docRef, processedNote);
+      
+      // Add to history
+      const historyRef = collection(db, 'notes', snapshot.docs[0].id, 'history');
+      await addDoc(historyRef, {
+        timestamp: serverTimestamp(),
+        editType: 'update'
+      });
+      
+      console.log('Successfully updated note data in Firebase', { id, processedNote });
+    } catch (error) {
+      console.error('Error updating note data:', error);
+      throw new Error(`Failed to update note data: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 };

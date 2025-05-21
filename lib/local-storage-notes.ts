@@ -171,5 +171,14 @@ export const localStorageNotesService = {
       note.id === id ? { ...note, category } : note
     );
     window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
+  },
+  
+  // Update any note data fields
+  updateNoteData(id: number, updatedNote: Note): void {
+    const notes = this.getNotes();
+    const updatedNotes = notes.map(note => 
+      note.id === id ? { ...note, ...updatedNote } : note
+    );
+    window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
   }
 };
