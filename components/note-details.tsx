@@ -10,7 +10,8 @@ import { useAuth } from '@/contexts/auth-context';
 import { localStorageNotesService } from '@/lib/local-storage-notes';
 import { formatDistanceToNow, format } from 'date-fns';
 import NoteRelationships from './note-relationships';
-import TagManager from './tag-manager';
+import TagManagerV2 from './tag-manager-v2';
+import TagManagerSystem from './tag-manager-system';
 
 interface NoteDetailsProps {
   note: Note;
@@ -19,12 +20,20 @@ interface NoteDetailsProps {
 }
 
 export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
-  const [activeTab, setActiveTab] = useState<'details' | 'category' | 'relationships'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'category' | 'relationships' | 'tags'>('details');
   const [editHistory, setEditHistory] = useState<NoteEditHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<NoteCategory[]>([]);
   const { user, isAdmin } = useAuth();
-  const { updateNoteCategory, notes, deleteCategory, updateCategory, updateNoteTags } = useNotes();
+  const { 
+    updateNoteCategory, 
+    notes, 
+    deleteCategory, 
+    updateCategory, 
+    updateNoteTags,
+    updateTagAcrossNotes,
+    deleteTagFromAllNotes 
+  } = useNotes();
   
   // Extract all unique categories from notes
   useEffect(() => {
@@ -123,6 +132,17 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
           </button>
           <button
             className={`px-4 py-2 text-sm font-medium flex items-center ${
+              activeTab === 'tags'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('tags')}
+          >
+            <Hash className="h-3 w-3 mr-1" />
+            Tags
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium flex items-center ${
               activeTab === 'relationships'
                 ? 'text-blue-600 border-b-2 border-blue-600'
                 : 'text-gray-500 hover:text-gray-700'
@@ -212,11 +232,28 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
                 <Hash size={18} className="text-gray-500 mt-0.5" />
                 <div className="flex-1">
                   <h3 className="text-sm font-medium">Tags</h3>
-                  <TagManager 
-                    key={`tag-manager-${note.id}`}
-                    noteId={note.id}
-                    initialTags={note.tags || []}
-                  />
+                  {note.tags && note.tags.length > 0 ? (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {note.tags.map(tag => (
+                        <div 
+                          key={tag} 
+                          className="flex items-center bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full px-3 py-1 text-sm"
+                        >
+                          <span>#{tag}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 mt-1">No tags</p>
+                  )}
+                  <div className="mt-2">
+                    <button
+                      onClick={() => setActiveTab('tags')}
+                      className="text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      Manage tags
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -253,6 +290,27 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
             />
           ) : activeTab === 'relationships' ? (
             <NoteRelationships note={note} />
+          ) : activeTab === 'tags' ? (
+            <TagManagerSystem 
+              allNotes={notes}
+              onUpdateTagAcrossNotes={updateTagAcrossNotes}
+              onDeleteTagFromAllNotes={deleteTagFromAllNotes}
+              selectedTags={note.tags || []}
+              maxTagsAllowed={5}
+              onSelectTag={(tag) => {
+                // When a tag is selected, add it to the note if not already present
+                const currentTags = note.tags || [];
+                if (!currentTags.includes(tag)) {
+                  // Check the tag limit before adding
+                  if (currentTags.length < 5) {
+                    updateNoteTags(note.id, [...currentTags, tag]);
+                  }
+                } else {
+                  // If tag is already on the note, remove it (toggle behavior)
+                  updateNoteTags(note.id, currentTags.filter(t => t !== tag));
+                }
+              }}
+            />
           ) : null}
         </div>
       </div>

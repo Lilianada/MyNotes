@@ -80,6 +80,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
                   </ul>
                 </li>
                 <li><strong>Links:</strong> [text](url)</li>
+                <li><strong>Internal Links:</strong> [[Note Title]] or [[Note Title|Display Text]]</li>
                 <li>
                   <strong>Tasks:</strong>
                   <ul className="pl-5 mt-1">
@@ -101,6 +102,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
               <h3 className="font-bold text-lg mb-2">Pro Tips</h3>
               <div className="bg-gray-50 border border-gray-200 rounded-md p-3 text-gray-700 text-sm">
                 <p className="mb-2">💡 Type <code className="bg-rose-50 px-1.5 py-0.5 rounded font-mono text-xs text-rose-700 border-rose-100 border">-&gt;</code> to automatically convert to → arrow</p>
+                <p className="mb-2">💡 Use <code className="bg-rose-50 px-1.5 py-0.5 rounded font-mono text-xs text-rose-700 border-rose-100 border">[[Note Title]]</code> to create links between your notes</p>
                 <p className="mb-2">💡 Use Ctrl+S or Cmd+S to save notes</p>
                 <p className="mb-2">💡 Your notes are saved in localStorage so do not clear site data to preserve them</p>
                 <p className="mb-2">💡 Export your notes using the export button in the <code className="bg-rose-50 px-1.5 py-0.5 rounded font-mono text-xs text-rose-700 border-rose-100 border">...</code> menu</p>

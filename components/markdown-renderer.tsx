@@ -8,6 +8,8 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { merge } from "lodash";
 import "highlight.js/styles/github.css";
+import { useNotes } from "@/contexts/note-context";
+import { processInternalLinks, attachInternalLinkHandlers } from "@/lib/markdown-utils";
 
 // Import highlight.js with all common languages
 import hljs from "highlight.js";
@@ -161,6 +163,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   className,
 }) => {
   const markdownRef = useRef<HTMLDivElement>(null);
+  const { notes, selectNote } = useNotes();
 
   // Normalize language - unified function
   const normalizeLanguage = useCallback((language: string | null): string => {
@@ -216,6 +219,13 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     },
     [content, onChange]
   );
+
+  // Handle auto-replacement of symbols before rendering
+  const processedContent = useMemo(() => {
+    return content
+      .replace(/->/g, "→")       // Replace -> with arrow symbol
+      .replace(/--/g, "—");      // Replace -- with em dash
+  }, [content]);
 
   // Replace arrow notation in paragraphs and fix inline code display issues
   useEffect(() => {
@@ -290,12 +300,29 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     };
   }, [normalizeLanguage]);
 
-  // Handle auto-replacement of symbols before rendering
-  const processedContent = useMemo(() => {
-    return content
-      .replace(/->/g, "→")       // Replace -> with arrow symbol
-      .replace(/--/g, "—");      // Replace -- with em dash
-  }, [content]);
+  // Process internal links before rendering
+  const processedContentWithLinks = useMemo(() => {
+    // Process any internal note links
+    return processInternalLinks(
+      processedContent, 
+      notes, 
+      (id) => selectNote(id)
+    );
+  }, [processedContent, notes, selectNote]);
+  
+  // Attach event handlers to internal links after rendering
+  useEffect(() => {
+    if (markdownRef.current) {
+      attachInternalLinkHandlers(markdownRef.current, (id) => selectNote(id));
+    }
+  }, [content, selectNote]);
+  
+  // Attach event handlers to internal links after rendering
+  useEffect(() => {
+    if (markdownRef.current) {
+      attachInternalLinkHandlers(markdownRef.current, (id) => selectNote(id));
+    }
+  }, [content, selectNote]);
 
   // Custom component renderers
   const components = {
@@ -398,14 +425,38 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
     // Style other elements
     p: (props: any) => <p className="my-2 leading-relaxed text-gray-800 text-[14px]" {...props} />,
-    a: (props: any) => (
-      <a
-        target="_blank"
-        rel="noopener noreferrer"
-        className="text-blue-600 hover:text-blue-800 hover:underline"
-        {...props}
-      />
-    ),
+    a: (props: any) => {
+      // Check if this is an internal note link
+      const isInternalLink = props.className?.includes('internal-note-link') || 
+                              props['data-note-id'];
+      
+      if (isInternalLink) {
+        return (
+          <a
+            {...props}
+            className={`text-purple-600 hover:underline cursor-pointer ${props.className || ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              const noteId = props['data-note-id'];
+              if (noteId) {
+                selectNote(parseInt(noteId, 10));
+              }
+            }}
+          />
+        );
+      }
+      
+      // Regular external link
+      return (
+        <a
+          className="text-blue-600 hover:underline"
+          target="_blank"
+          rel="noopener noreferrer"
+          {...props}
+        />
+      );
+    },
+     
     blockquote: (props: any) => (
       <blockquote className="border-l-4 border-gray-300 pl-4 py-1 my-2 text-gray-600 italic" {...props} />
     ),
@@ -468,7 +519,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           urlTransform={(uri: string) => uri}
           skipHtml={false}
         >
-          {processedContent}
+          {processedContentWithLinks}
         </ReactMarkdown>
       </div>
     </div>

@@ -1,12 +1,20 @@
 "use client";
 
 import React, { useRef, useEffect, useState } from 'react';
-import Editor, { Monaco, OnMount } from '@monaco-editor/react';
+import dynamic from 'next/dynamic';
 import type { editor } from 'monaco-editor';
 import type { Note } from "@/types";
 import { useMonacoThemes } from '@/hooks/use-monaco-themes';
 import { useTheme } from 'next-themes';
-import { configureMarkdownLanguage } from '@/lib/monaco-markdown';
+import { configureMarkdownLanguage, configureWikiLinkCompletion } from '@/lib/monaco-markdown';
+import { useNotes } from "@/contexts/note-context";
+import type { OnMount } from '@monaco-editor/react';
+
+// Dynamically import Monaco Editor with no SSR
+const Editor = dynamic(
+  () => import('@monaco-editor/react').then(mod => mod.default),
+  { ssr: false }
+);
 
 interface MonacoEditorProps {
   note: Note;
@@ -14,11 +22,26 @@ interface MonacoEditorProps {
   onSave: () => void;
 }
 
+// Full Monaco interface including needed properties
+interface Monaco {
+  editor: typeof editor;
+  languages: any;
+  KeyMod: any;
+  KeyCode: any;
+  Range: any;
+  Position: any;
+  [key: string]: any;
+}
+
 const MonacoMarkdownEditor: React.FC<MonacoEditorProps> = ({ note, onChange, onSave }) => {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<Monaco | null>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
   const { theme } = useTheme();
+  const { notes } = useNotes();
+  
+  // Extract note titles for autocompletion
+  const noteTitles = notes.map(n => n.noteTitle).filter(title => title !== note.noteTitle);
   
   // Load custom Monaco themes
   useMonacoThemes();
@@ -34,6 +57,9 @@ const MonacoMarkdownEditor: React.FC<MonacoEditorProps> = ({ note, onChange, onS
     
     // Configure the enhanced Markdown language support
     configureMarkdownLanguage(monaco);
+    
+    // Configure wiki-style links completion
+    configureWikiLinkCompletion(monaco, noteTitles);
     
     // Add custom auto-pair completions
     configureBracketPairing(monaco);
