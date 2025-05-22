@@ -20,10 +20,13 @@ interface NoteDetailsProps {
 }
 
 export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
-  const [activeTab, setActiveTab] = useState<'details' | 'category' | 'relationships' | 'tags'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'category' | 'relationships' | 'tags' | 'metadata'>('details');
   const [editHistory, setEditHistory] = useState<NoteEditHistory[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [categories, setCategories] = useState<NoteCategory[]>([]);
+  const [description, setDescription] = useState<string>('');
+  const [publishStatus, setPublishStatus] = useState<boolean>(false);
+  
   const { user, isAdmin } = useAuth();
   const { 
     updateNoteCategory, 
@@ -32,7 +35,8 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
     updateCategory, 
     updateNoteTags,
     updateTagAcrossNotes,
-    deleteTagFromAllNotes 
+    deleteTagFromAllNotes,
+    updateNote 
   } = useNotes();
   
   // Extract all unique categories from notes
@@ -53,6 +57,9 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
   useEffect(() => {
     if (isOpen && note) {
       loadEditHistory();
+      // Initialize metadata fields
+      setDescription(note.description || '');
+      setPublishStatus(note.publish || false);
     }
   }, [isOpen, note]);
   
@@ -84,6 +91,79 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
       setActiveTab('details');
     } catch (error) {
       console.error('Failed to update category:', error);
+    }
+  };
+
+  const handleMetadataSave = async () => {
+    try {
+      // Show loading toast
+      const { dismiss } = toast({
+        title: "Updating metadata...",
+        description: "Saving your changes...",
+      });
+
+      // Update the note content with metadata in frontmatter format
+      let content = note.content || '';
+      
+      // Check if note has frontmatter already and update or add it
+      const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+      const hasFrontmatter = frontmatterRegex.test(content);
+      
+      // Create frontmatter object
+      const frontmatter = {
+        title: note.noteTitle,
+        description: description,
+        publish: publishStatus,
+        tags: note.tags || [],
+        category: note.category?.name || '',
+        // Keep other existing frontmatter data if any
+      };
+      
+      // Convert to YAML format string
+      const frontmatterString = Object.entries(frontmatter)
+        .map(([key, value]) => {
+          if (Array.isArray(value)) {
+            return `${key}: [${value.map(tag => `"${tag}"`).join(', ')}]`;
+          }
+          if (typeof value === 'boolean') {
+            return `${key}: ${value}`;
+          }
+          return `${key}: "${value}"`;
+        })
+        .join('\n');
+        
+      // Update content with new frontmatter
+      if (hasFrontmatter) {
+        content = content.replace(frontmatterRegex, `---\n${frontmatterString}\n---\n`);
+      } else {
+        content = `---\n${frontmatterString}\n---\n\n${content}`;
+      }
+      
+      // Update the note
+      await updateNote(note.id, content);
+      
+      // Update local note object
+      note.description = description;
+      note.publish = publishStatus;
+      
+      // Dismiss loading toast and show success
+      dismiss();
+      
+      toast({
+        title: "Metadata updated",
+        description: "Your note metadata has been updated successfully.",
+      });
+      
+      // Switch back to details tab
+      setActiveTab('details');
+    } catch (error) {
+      console.error('Failed to update metadata:', error);
+      
+      toast({
+        title: "Error updating metadata",
+        description: "There was a problem updating your metadata. Please try again.",
+        variant: "destructive",
+      });
     }
   };
   
@@ -211,6 +291,17 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
           >
             <Link className="h-3 w-3 mr-1" />
             Links
+          </button>
+          <button
+            className={`px-4 py-2 text-sm font-medium flex items-center ${
+              activeTab === 'metadata'
+                ? 'text-blue-600 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+            onClick={() => setActiveTab('metadata')}
+          >
+            <Edit className="h-3 w-3 mr-1" />
+            Meta
           </button>
         </div>
         
@@ -350,6 +441,89 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
             />
           ) : activeTab === 'relationships' ? (
             <NoteRelationships note={note} />
+          ) : activeTab === 'metadata' ? (
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  value={note.noteTitle}
+                  readOnly
+                  className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded-md text-sm"
+                  rows={3}
+                  placeholder="Enter a description of this note..."
+                />
+              </div>
+              
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="publish"
+                  checked={publishStatus}
+                  onChange={(e) => setPublishStatus(e.target.checked)}
+                  className="mr-2"
+                />
+                <label htmlFor="publish" className="text-sm font-medium text-gray-700">
+                  Publish
+                </label>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tags
+                </label>
+                <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md bg-gray-50">
+                  {note.tags && note.tags.length > 0 ? (
+                    note.tags.map(tag => (
+                      <span key={tag} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                        #{tag}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-gray-400 text-sm">No tags added</span>
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Category
+                </label>
+                <div className="flex items-center p-2 border border-gray-300 rounded-md bg-gray-50">
+                  {note.category ? (
+                    <div className="flex items-center">
+                      <span
+                        className="w-3 h-3 rounded-full mr-2"
+                        style={{ backgroundColor: note.category.color }}
+                      />
+                      <span className="text-sm">{note.category.name}</span>
+                    </div>
+                  ) : (
+                    <span className="text-gray-400 text-sm">No category assigned</span>
+                  )}
+                </div>
+              </div>
+              
+              <button
+                onClick={handleMetadataSave}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 w-full"
+              >
+                Save Metadata
+              </button>
+            </div>
           ) : activeTab === 'tags' ? (
             <>
               <div className="bg-gray-50 dark:bg-gray-700 p-2 mb-4 rounded-md">

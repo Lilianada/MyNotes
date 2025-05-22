@@ -440,11 +440,36 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     
     const now = new Date();
     
+    // Extract metadata from content if it contains frontmatter
+    let description = noteToUpdate.description;
+    let publish = noteToUpdate.publish;
+    
+    // Parse frontmatter if present
+    const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n/;
+    const frontmatterMatch = content.match(frontmatterRegex);
+    
+    if (frontmatterMatch) {
+      const frontmatter = frontmatterMatch[1];
+      // Extract description if present
+      const descriptionMatch = frontmatter.match(/description:\s*"(.*)"/i);
+      if (descriptionMatch) {
+        description = descriptionMatch[1];
+      }
+      
+      // Extract publish status if present
+      const publishMatch = frontmatter.match(/publish:\s*(true|false)/i);
+      if (publishMatch) {
+        publish = publishMatch[1].toLowerCase() === 'true';
+      }
+    }
+    
     // Update state immediately for responsive UI with updated timestamp
     setNotes((prevNotes) =>
       prevNotes.map((note) => (note.id === id ? { 
         ...note, 
         content, 
+        description,
+        publish,
         updatedAt: now 
       } : note))
     );
@@ -453,7 +478,7 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     const { wordCount } = await NoteOperations.updateNote(
       id, 
       content, 
-      noteToUpdate, 
+      {...noteToUpdate, description, publish}, 
       Boolean(isAdmin), 
       user
     );

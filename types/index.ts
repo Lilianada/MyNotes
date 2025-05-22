@@ -25,5 +25,6 @@ export interface Note {
   linkedNoteIds?: number[];
   updatedAt?: Date;
   publish?: boolean;
+  description?: string;
   editHistory?: NoteEditHistory[];
 }
