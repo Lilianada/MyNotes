@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { useNotes } from "@/contexts/note-context"
 import { Notes } from "@/components/notes"
 import { Header } from "@/components/header"
+import { NoteErrorDetector } from "@/components/note-error-detector"
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -82,6 +83,8 @@ export default function Home() {
           />
           <div className="p-2 sm:p-4 w-full h-full overflow-hidden">
             <Notes />
+            {/* Add a simple NoteErrorDetector here */}
+            {/* <NoteErrorDetector /> */}
           </div>
         </main>
       </div>

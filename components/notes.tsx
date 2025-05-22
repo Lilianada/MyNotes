@@ -7,7 +7,7 @@ import ContextNoteEditor from "./context-note-editor"
 import type { Note } from "@/types"
 
 export function Notes() {
-  const { notes, addNote, selectedNoteId } = useNotes()
+  const { notes, addNote, selectedNoteId, isLoading } = useNotes()
   
   const [nextId, setNextId] = useState<number>(() => {
     if (notes.length > 0) {
@@ -136,10 +136,22 @@ export function Notes() {
           ) : (
             <div className="h-full flex items-center justify-center">
               <div className="text-gray-400 text-center">
-                <p className="text-lg mb-4">Start typing...</p>
-                <p className="text-sm">
-                  Click the + button to create a new note
-                </p>
+                {isLoading ? (
+                  <>
+                    <p className="text-lg mb-4">Loading notes...</p>
+                    <div className="animate-spin h-6 w-6 border-2 border-blue-500 rounded-full border-t-transparent mx-auto"></div>
+                  </>
+                ) : notes.length > 0 ? (
+                  <>
+                    <p className="text-lg mb-4">Select a note to begin</p>
+                    <p className="text-sm">Select a note from the sidebar or create a new one</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-lg mb-4">Start typing...</p>
+                    <p className="text-sm">Click the + button to create a new note</p>
+                  </>
+                )}
               </div>
             </div>
           )}

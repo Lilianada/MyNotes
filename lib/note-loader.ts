@@ -21,12 +21,16 @@ export async function loadNotesFromFiles(): Promise<Note[]> {
       // Use the titleFromFilename function to get a formatted title
       const formattedTitle = titleFromFilename(file);
       
+      // Create a slug from the filename (remove .md and convert to lowercase)
+      const slug = file.replace('.md', '').toLowerCase().replace(/\s+/g, '-');
+      
       return {
         id: id++,
         content,
         createdAt: new Date(),  // We'll use file stats in a more advanced version
         noteTitle: formattedTitle,
-        filePath
+        filePath,
+        slug
       };
     });
     
@@ -40,21 +44,20 @@ export async function loadNotesFromFiles(): Promise<Note[]> {
 // Load a single note from a file
 export async function loadNoteFromFile(filePath: string): Promise<Note | null> {
   try {
-    if (!existsSync(filePath)) {
-      return null;
-    }
-    
     const content = readFileSync(filePath, 'utf8');
     const fileName = filePath.split('/').pop() || "";
     const noteTitle = fileName.replace(/\.md$/, '');
+    const slug = noteTitle.toLowerCase().replace(/\s+/g, '-');
     
     return {
       id: Date.now(),  // Generate a temporary ID
       content,
       createdAt: new Date(),
       noteTitle,
-      filePath
+      filePath,
+      slug
     };
+      
   } catch (error) {
     console.error("Error loading note from file:", error);
     return null;
