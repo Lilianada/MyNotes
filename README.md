@@ -140,3 +140,19 @@ The MyNotes app supports powerful note linking and hierarchy features:
 2. Navigate to the "Links" tab
 3. Use "Set Parent" to establish a parent-child relationship
 4. Use "Manage Links" to create connections between notes
+
+
+
+## Known Issues
+
+The following issues are currently being tracked for future fixes:
+
+1. **Font Rendering**: Some fonts may render inconsistently across different browsers
+2. **Image Scaling**: Large images in notes may not scale properly on smaller screens
+3. **Export Format Compatibility**: Exported notes may lose some formatting when imported into certain applications
+4. **Mobile Safari**: Occasional scrolling issues in the editor on iOS devices
+5. **Long Code Blocks**: Very long code blocks without spaces may cause horizontal scrolling issues
+6. **Responsiveness Issues**: Might not be full responsive on all mobile screen sizes.
+7. ---
+
+If you encounter any of these issues or find new ones, please report them in the project's issue tracker.
