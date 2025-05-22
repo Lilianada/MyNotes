@@ -116,7 +116,7 @@ export function Notes() {
   const activeNote = selectedNoteId ? notes.find(note => note.id === selectedNoteId) : null
 
   return (
-    <div className="w-full mx-auto h-full flex flex-col">
+    <div className="w-full mx-auto max-h-[calc(100vh_-_70px)] h-screen flex flex-col">
 
       {/* Title Input Modal */}
       {showTitleInput && (
@@ -129,7 +129,7 @@ export function Notes() {
         />
       )}
 
-      <div className="border border-gray-200 rounded-lg px-4 pt-4 bg-white flex-1 flex flex-col overflow-hidden ">
+      <div className="border border-gray-200 rounded-lg px-4 pt-4 bg-white flex-1 flex flex-col overflow-auto">
         <div className="flex-1 overflow-hidden">
           {activeNote ? (
             <ContextNoteEditor ref={editorRef} />

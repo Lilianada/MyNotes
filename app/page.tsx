@@ -81,7 +81,7 @@ export default function Home() {
               selectNote(note.id)
             }}
           />
-          <div className="p-2 sm:p-4 w-full overflow-hidden">
+          <div className="p-2 w-full overflow-hidden">
             <Notes />
           </div>
         </main>

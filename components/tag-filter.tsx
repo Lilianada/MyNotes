@@ -54,7 +54,7 @@ export const TagFilter: React.FC<TagFilterProps> = ({ onSelectTag, selectedTag }
         )}
       </div>
       
-      <ScrollArea className="max-h-32">
+      <ScrollArea className="max-h-32 overflow-y-auto">
         <div className="flex flex-wrap gap-2">
           {allTags.map(({ tag, count }) => (
             <Badge

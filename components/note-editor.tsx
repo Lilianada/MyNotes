@@ -6,7 +6,6 @@ import { KeyboardEvent } from "react";
 import MarkdownRenderer from "./markdown-renderer";
 import NoteTitleEditor from "./note-title-editor";
 import WordCount from "./word-count";
-import EditorPreviewRenderer from "./editor-preview-renderer";
 import EditorShortcuts from "./editor-shortcuts";
 import MonacoMarkdownEditor from "./monaco-markdown-editor";
 

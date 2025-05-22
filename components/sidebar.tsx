@@ -125,9 +125,9 @@ export default function Sidebar({
     <>
       <aside 
         id="sidebar"
-        className={`fixed top-16 sm:top-0 left-0 z-30 w-64 sm:w-72 md:w-full bg-white dark:bg-gray-800 border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg h-full sm:max-h-[calc(100vh_-_80px)] overflow-hidden ${
+        className={`fixed top-16 sm:top-0 left-0 z-30 w-64 sm:w-72 md:w-full bg-white dark:bg-gray-800 border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg h-full max-h-[calc(100vh_-_50px)]  sm:max-h-[calc(100vh_-_70px)] overflow-hidden ${
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0 md:relative md:w-full md:m-3 md:border md:rounded-md md:shadow-sm md:transition-shadow`}
+        } md:translate-x-0 md:relative md:w-full md:m-2 md:border md:rounded-md md:shadow-sm md:transition-shadow`}
       >
         <div className="p-3 border-b border-gray-200 dark:border-gray-700">
           <header className="text-xs sm:text-sm">
@@ -150,7 +150,7 @@ export default function Sidebar({
         {/* Notes List */}
 
         {notes.length > 0 ? (
-          <ul className="max-h-[calc(100vh_-_125px)] md:max-h-[calc(100vh_-_200px)] overflow-y-auto p-2 scrollbar-hide">
+          <ul className=" md:max-h-[calc(100vh_-_230px)] overflow-y-auto p-2 scrollbar-hide">
             {filteredNotes.map((note) => {
               // Get relationship info for this note
               const relationInfo = getNoteRelationshipInfo(note);
