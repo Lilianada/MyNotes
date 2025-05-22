@@ -44,8 +44,8 @@ export function markdownToHtml(markdown: string): string {
     // Inline code
     .replace(/`(.+?)`/g, '<code class="bg-gray-100 dark:bg-gray-800 px-1 rounded font-mono text-sm">$1</code>')
     
-    // Horizontal rule
-    .replace(/^---$/gm, '<hr class="my-4 border-t border-gray-300 dark:border-gray-700">');
+    // Horizontal rule - make it more specific to avoid false matches
+    .replace(/^-{3,}$/gm, '<hr class="my-4 border-t border-gray-300 dark:border-gray-700">');
 
   // Fix nested list issues (simplistic approach)
   html = html

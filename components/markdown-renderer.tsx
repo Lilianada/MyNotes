@@ -220,11 +220,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     [content, onChange]
   );
 
-  // Handle auto-replacement of symbols before rendering
+  // Handle auto-replacement of symbols before rendering - without em dash replacement
   const processedContent = useMemo(() => {
+    // Only replace arrow notation, remove em dash replacement completely
     return content
-      .replace(/->/g, "→")       // Replace -> with arrow symbol
-      .replace(/--/g, "—");      // Replace -- with em dash
+      .replace(/->/g, "→");      // Replace -> with arrow symbol
+      // Em dash replacement removed to avoid interference with dividers
   }, [content]);
 
   // Replace arrow notation in paragraphs and fix inline code display issues
@@ -248,11 +249,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         needsUpdate = true;
       }
       
-      // Check for double dash (em dash)
-      if (p.innerHTML.includes("--")) {
-        p.innerHTML = p.innerHTML.replace(/--/g, "—");
-        needsUpdate = true;
-      }
+      // Em dash replacement completely removed to avoid interfering with dividers
     });
     
     // Apply inline-code class to all inline code elements

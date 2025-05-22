@@ -349,27 +349,6 @@ const MonacoMarkdownEditor: React.FC<MonacoEditorProps> = ({ note, onChange, onS
         }
       }
       
-      // Convert -- to — (em dash)
-      if (column >= 2 && 
-          lineContent.charAt(column - 1) === '-' && 
-          lineContent.charAt(column - 2) === '-' &&
-          (column === 2 || lineContent.charAt(column - 3) !== '-') && // not part of ---
-          (column === lineContent.length || lineContent.charAt(column) !== '-')) { // not part of ---
-        
-        // Make sure we're not inside a code block
-        if (!isInCodeBlock(model, position.lineNumber)) {
-          // Replace -- with —
-          editor.executeEdits('transform-emdash', [{
-            range: {
-              startLineNumber: position.lineNumber,
-              startColumn: column - 1,
-              endLineNumber: position.lineNumber,
-              endColumn: column + 1
-            },
-            text: '—'
-          }]);
-        }
-      }
       
       // Keep the original onChange handler for parent component
       const content = model.getValue();

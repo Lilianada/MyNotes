@@ -70,7 +70,6 @@ const EditorShortcuts: React.FC = () => {
               <div>
                 <h4 className="font-medium mb-2">Special Characters</h4>
                 <Shortcut keys={["-", ">"]} description="Converted to → arrow" />
-                <Shortcut keys={["-", "-"]} description="Converted to — em dash" />
               </div>
             </div>
             

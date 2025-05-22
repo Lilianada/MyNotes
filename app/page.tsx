@@ -57,14 +57,14 @@ export default function Home() {
   
   return (
     <FontSwitcher>
-      <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      <div className="max-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
         <Header 
           onNewNote={handleNewNote}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
           isCreatingNote={isCreatingNote}
         />
-        <main className="flex-1 grid gap-0 sm:gap-2 md:grid-cols-[300px_1fr] lg:grid-cols-[24%_75%] overflow-hidden relative">
+        <main className="flex-1 grid gap-0 sm:gap-3 md:grid-cols-[300px_1fr] lg:grid-cols-[24%_75%] overflow-hidden relative">
           {/* Mobile overlay to close sidebar when clicking outside */}
           {isSidebarOpen && (
             <div 
@@ -81,10 +81,8 @@ export default function Home() {
               selectNote(note.id)
             }}
           />
-          <div className="p-2 sm:p-4 w-full h-full overflow-hidden">
+          <div className="p-2 sm:p-4 w-full overflow-hidden">
             <Notes />
-            {/* Add a simple NoteErrorDetector here */}
-            {/* <NoteErrorDetector /> */}
           </div>
         </main>
       </div>
