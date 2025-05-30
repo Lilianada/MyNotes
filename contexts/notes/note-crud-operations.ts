@@ -1,16 +1,15 @@
 "use client";
 
-import { Note, NoteCategory, NoteEditHistory } from "@/types";
+import { Note } from "@/types";
 import { saveNoteToFile, createEmptyNoteFile } from "@/app/actions";
 import { firebaseNotesService } from "@/lib/firebase-notes";
 import { localStorageNotesService } from "@/lib/local-storage-notes";
 import { countWords } from "@/lib/word-count";
-import { sanitizeNoteData } from "@/lib/data-sanitizer";
 
 /**
- * Contains all note manipulation operations used by the context
+ * Basic CRUD operations for notes
  */
-export class NoteOperations {
+export class NoteCRUDOperations {
   
   /**
    * Creates a new note
@@ -121,51 +120,6 @@ export class NoteOperations {
   }
 
   /**
-   * Updates a note's category
-   */
-  static async updateNoteCategory(
-    id: number,
-    category: NoteCategory | null,
-    isAdmin: boolean,
-    user: { uid: string } | null | undefined
-  ): Promise<void> {
-    try {
-      if (isAdmin && user && firebaseNotesService) {
-        // Use Firebase for admins
-        await firebaseNotesService.updateNoteCategory(id, category);
-      } else {
-        // Use localStorage for non-admins
-        localStorageNotesService.updateNoteCategory(id, category);
-      }
-    } catch (error) {
-      console.error("Failed to update note category:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Gets a note's edit history
-   */
-  static async getNoteHistory(
-    id: number,
-    isAdmin: boolean,
-    user: { uid: string } | null | undefined
-  ): Promise<NoteEditHistory[]> {
-    try {
-      if (isAdmin && user && firebaseNotesService) {
-        // Use Firebase for admins
-        return await firebaseNotesService.getNoteHistory(id);
-      } else {
-        // Use localStorage for non-admins
-        return localStorageNotesService.getNoteHistory(id);
-      }
-    } catch (error) {
-      console.error("Failed to get note history:", error);
-      return [];
-    }
-  }
-
-  /**
    * Deletes a note
    */
   static async deleteNote(
@@ -245,114 +199,6 @@ export class NoteOperations {
       }
     } catch (error) {
       console.error("Failed to delete note:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Deletes a category from all notes
-   */
-  static async removeCategory(
-    categoryId: string,
-    isAdmin: boolean,
-    user: { uid: string } | null | undefined,
-    notes: Note[]
-  ): Promise<void> {
-    try {
-      // Find all notes that have this category
-      const notesWithCategory = notes.filter(
-        note => note.category && note.category.id === categoryId
-      );
-
-      // Update each note to remove the category
-      for (const note of notesWithCategory) {
-        if (isAdmin && user && firebaseNotesService) {
-          // Use Firebase for admins
-          await firebaseNotesService.updateNoteCategory(note.id, null);
-        } else {
-          // Use localStorage for non-admins
-          localStorageNotesService.updateNoteCategory(note.id, null);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to remove category from notes:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Updates a note with any changed data fields
-   */
-  static async updateNoteData(
-    id: number,
-    updatedNote: Partial<Note>,
-    isAdmin: boolean,
-    user: { uid: string } | null | undefined
-  ): Promise<void> {
-    try {
-      // Sanitize the note data before saving
-      const sanitizedNote = sanitizeNoteData(updatedNote as Note);
-      
-      // Special handling for tags to guarantee they're saved correctly
-      if (updatedNote.tags !== undefined) {
-        console.log(`[NOTE OPERATIONS] Processing tags update for note ${id}`);
-        console.log(`[NOTE OPERATIONS] Tags to save:`, JSON.stringify(updatedNote.tags));
-        
-        // Process tags - normalize, trim, and remove duplicates
-        let normalizedTags: string[] = [];
-        
-        if (Array.isArray(updatedNote.tags)) {
-          // Map tags to lowercase and trim
-          const processedTags = updatedNote.tags.map(tag => 
-            typeof tag === 'string' ? tag.trim().toLowerCase() : ''
-          ).filter(Boolean); // Remove empty strings
-          
-          // Remove duplicates using object keys
-          const uniqueTags: {[key: string]: boolean} = {};
-          processedTags.forEach(tag => uniqueTags[tag] = true);
-          normalizedTags = Object.keys(uniqueTags);
-        }
-          
-        sanitizedNote.tags = normalizedTags;
-        console.log(`[NOTE OPERATIONS] Normalized tags:`, JSON.stringify(normalizedTags));
-      }
-      
-      if (isAdmin && user && firebaseNotesService) {
-        // Use Firebase for admins
-        console.log(`[NOTE OPERATIONS] Saving note ${id} to Firebase`);
-        await firebaseNotesService.updateNoteData(id, sanitizedNote);
-      } else {
-        // Use localStorage for non-admins
-        console.log(`[NOTE OPERATIONS] Saving note ${id} to localStorage`);
-        localStorageNotesService.updateNoteData(id, sanitizedNote);
-      }
-      
-      console.log(`[NOTE OPERATIONS] Note ${id} updated successfully`);
-    } catch (error) {
-      console.error("[NOTE OPERATIONS] Failed to update note data:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Updates a note's tags
-   */
-  static async updateNoteTags(
-    id: number,
-    tags: string[],
-    isAdmin: boolean,
-    user: { uid: string } | null | undefined
-  ): Promise<string[]> {
-    try {
-      if (isAdmin && user && firebaseNotesService) {
-        // Use Firebase for admins
-        return await firebaseNotesService.updateNoteTags(id, tags);
-      } else {
-        // Use localStorage for non-admins
-        return localStorageNotesService.updateNoteTags(id, tags);
-      }
-    } catch (error) {
-      console.error(`Failed to update tags for note ${id}:`, error);
       throw error;
     }
   }

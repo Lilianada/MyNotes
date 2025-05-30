@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { Menu } from "./menu"
 import { Menu as MenuIcon, X, Plus, Search, UserCircle, CloudIcon, HardDriveIcon, HelpCircle } from "lucide-react"
-import { useNotes } from "@/contexts/note-context"
+import { useNotes } from "@/contexts/notes/note-context"
 import SearchNotes from "./search-notes"
 import { AuthDialog } from "./auth-dialog"
 import { useAuth } from "@/contexts/auth-context"

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { useNotes } from "@/contexts/note-context";
+import { useNotes } from "@/contexts/notes/note-context";
 import { useToast } from "@/hooks/use-toast";
 
 /**

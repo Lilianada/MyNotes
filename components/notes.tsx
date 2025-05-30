@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import TitleModal from "./title-modal"
-import { useNotes } from "@/contexts/note-context"
+import { useNotes } from "@/contexts/notes/note-context"
 import ContextNoteEditor from "./context-note-editor"
 import type { Note } from "@/types"
 

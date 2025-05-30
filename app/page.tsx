@@ -3,7 +3,7 @@
 import List from "@/components/sidebar"
 import FontSwitcher from "@/components/font-switcher"
 import { useState, useEffect } from "react"
-import { useNotes } from "@/contexts/note-context"
+import { useNotes } from "@/contexts/notes/note-context"
 import { Notes } from "@/components/notes"
 import { Header } from "@/components/header"
 import { NoteErrorDetector } from "@/components/note-error-detector"

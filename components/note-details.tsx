@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Note, NoteCategory, NoteEditHistory } from '@/types';
 import { CategoryManager } from './category-manager';
 import { MoreVertical, Tag, Calendar, Edit, History, Link, Hash } from 'lucide-react';
-import { useNotes } from '@/contexts/note-context';
+import { useNotes } from '@/contexts/notes/note-context';
 import { firebaseNotesService } from '@/lib/firebase-notes';
 import { useAuth } from '@/contexts/auth-context';
 import { localStorageNotesService } from '@/lib/local-storage-notes';

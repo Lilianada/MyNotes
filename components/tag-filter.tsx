@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useNotes } from '@/contexts/note-context';
+import { useNotes } from '@/contexts/notes/note-context';
 import { Hash, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';

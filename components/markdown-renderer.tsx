@@ -8,7 +8,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { merge } from "lodash";
 import "highlight.js/styles/github.css";
-import { useNotes } from "@/contexts/note-context";
+import { useNotes } from "@/contexts/notes/note-context";
 import { processInternalLinks, attachInternalLinkHandlers } from "@/lib/markdown-utils";
 
 // Import highlight.js with all common languages

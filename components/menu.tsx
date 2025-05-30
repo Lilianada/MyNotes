@@ -8,7 +8,7 @@ import HelpModal from "@/components/help-modal"
 import ExportDialog from "@/components/export-dialog"
 import { HelpCircle, Download } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { useNotes } from "@/contexts/note-context"
+import { useNotes } from "@/contexts/notes/note-context"
 
 interface MenuProps {
   isOpen: boolean

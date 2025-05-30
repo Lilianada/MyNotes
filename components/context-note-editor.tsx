@@ -2,7 +2,7 @@
 
 import { forwardRef } from "react"
 import NoteEditor from "./note-editor"
-import { useNotes } from "@/contexts/note-context"
+import { useNotes } from "@/contexts/notes/note-context"
 
 export const ContextNoteEditor = forwardRef<HTMLTextAreaElement>((props, ref) => {
   const { notes, selectedNoteId, updateNote, updateNoteTitle } = useNotes()

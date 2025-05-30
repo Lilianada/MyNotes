@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { RefreshCw } from "lucide-react";
-import { useNotes } from "@/contexts/note-context";
+import { useNotes } from "@/contexts/notes/note-context";
 
 export function NoteErrorDetector() {
   const [showBanner, setShowBanner] = useState(false);

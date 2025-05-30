@@ -7,7 +7,7 @@ import type { Note } from "@/types";
 import { useMonacoThemes } from '@/hooks/use-monaco-themes';
 import { useTheme } from 'next-themes';
 import { configureMarkdownLanguage, configureWikiLinkCompletion } from '@/lib/monaco-markdown';
-import { useNotes } from "@/contexts/note-context";
+import { useNotes } from "@/contexts/notes/note-context";
 import type { OnMount } from '@monaco-editor/react';
 
 // Dynamically import Monaco Editor with no SSR

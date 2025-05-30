@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { Note } from "@/types";
-import { useNotes } from "@/contexts/note-context";
+import { useNotes } from "@/contexts/notes/note-context";
 import { GripVertical, Trash2, Link, FolderTree } from "lucide-react";
 import DeleteConfirmation from "./delete-confirmation";
 import NoteDetails from "./note-details";

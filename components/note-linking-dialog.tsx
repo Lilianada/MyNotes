@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useNotes } from '@/contexts/note-context';
+import { useNotes } from '@/contexts/notes/note-context';
 import { Note } from '@/types';
 import { 
   HigherDialog as Dialog, 

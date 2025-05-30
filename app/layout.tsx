@@ -7,7 +7,7 @@ import "./markdown.css"
 import "./editor-preview.css"
 import "./monaco-editor.css"
 import { FontProvider } from "@/contexts/font-context"
-import { NoteProvider } from "@/contexts/note-context"
+import { NoteProvider } from "@/contexts/notes/note-context"
 import { AuthProvider } from "@/contexts/auth-context"
 import { Toaster } from "@/components/ui/toaster"
 
