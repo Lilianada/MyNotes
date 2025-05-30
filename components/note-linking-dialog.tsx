@@ -44,11 +44,27 @@ const NoteLinkingDialog: React.FC<NoteLinkingDialogProps> = ({
     }
   }, [isOpen, initialSelectedIds]);
 
-  // Filter available notes - exclude current note
-  const availableNotes = notes.filter(note => 
-    note.id !== currentNoteId && 
-    note.noteTitle.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Enhanced filter available notes - exclude current note and search in tags/categories
+  const availableNotes = notes.filter(note => {
+    if (note.id === currentNoteId) return false;
+    
+    const query = searchTerm.toLowerCase();
+    if (!query) return true;
+    
+    // Search in title
+    if (note.noteTitle.toLowerCase().includes(query)) return true;
+    
+    // Search in content
+    if (note.content.toLowerCase().includes(query)) return true;
+    
+    // Search in tags
+    if (note.tags && note.tags.some(tag => tag.toLowerCase().includes(query))) return true;
+    
+    // Search in category
+    if (note.category && note.category.name.toLowerCase().includes(query)) return true;
+    
+    return false;
+  });
 
   // For parent mode, only allow selecting a single note
   const handleNoteSelect = (noteId: number) => {
@@ -84,7 +100,7 @@ const NoteLinkingDialog: React.FC<NoteLinkingDialogProps> = ({
             <Search className="h-4 w-4 mr-2 text-gray-500" />
             <Input
               className="border-0 p-0 focus-visible:ring-0 flex-1"
-              placeholder="Search notes..."
+              placeholder="Search notes, tags, categories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
