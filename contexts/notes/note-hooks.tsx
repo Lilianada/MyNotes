@@ -6,7 +6,6 @@ import { useAuth } from "@/contexts/auth-context";
 import { NoteOperations } from "./note-operations";
 import { 
   getMostRecentNote, 
-  loadUserNotes, 
   syncLocalToFirebase 
 } from "./note-storage";
 import { localStorageNotesService } from "@/lib/local-storage-notes";

@@ -10,7 +10,7 @@ import {
 import { getDoc, doc } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-import { AuthLoadingState } from '@/components/loading-states';
+import { AuthLoadingState } from '@/components/ui/loading-states';
 
 interface AuthContextType {
   user: User | null;

@@ -1,12 +1,12 @@
 "use client"
 
-import List from "@/components/sidebar"
-import FontSwitcher from "@/components/font-switcher"
+import List from "@/components/sidebar/sidebar"
+import FontSwitcher from "@/components/theme/font-switcher"
 import { useState, useEffect } from "react"
 import { useNotes } from "@/contexts/notes/note-context"
-import { Notes } from "@/components/notes"
-import { Header } from "@/components/header"
-import { NoteErrorDetector } from "@/components/note-error-detector"
+import { Notes } from "@/components/notes/notes"
+import { Header } from "@/components/navigation/header"
+import { NoteErrorDetector } from "@/components/error-handling/note-error-detector"
 
 export default function Home() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)

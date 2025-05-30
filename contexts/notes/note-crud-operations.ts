@@ -91,11 +91,12 @@ export class NoteCRUDOperations {
     user: { uid: string } | null | undefined
   ): Promise<{ filePath?: string }> {
     try {
-      let filePath: string;
+      let filePath: string | undefined;
 
       if (isAdmin && user) {
         // Use Firebase for admins
-        filePath = await firebaseNotesService.updateNoteTitle(id, title);
+        await firebaseNotesService.updateNoteTitle(id, title);
+        // For Firebase users, we don't need to return a filePath
       } else {
         // Use localStorage for non-admins
         filePath = localStorageNotesService.updateNoteTitle(id, title);
@@ -297,7 +298,10 @@ export class NoteCRUDOperations {
       // Now bulk delete the notes themselves
       if (isAdmin && user) {
         // Use Firebase for admins
-        return await firebaseNotesService.bulkDeleteNotes(ids);
+        const success = await firebaseNotesService.bulkDeleteNotes(ids);
+        return success 
+          ? { successful: ids, failed: [] } 
+          : { successful: [], failed: ids.map(id => ({ id, error: 'Failed to delete note' })) };
       } else {
         // Use localStorage for non-admins
         return localStorageNotesService.bulkDeleteNotes(ids);
