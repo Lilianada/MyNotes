@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import { TagsDropdown } from './filters/tags-dropdown';
-import { CategoriesDropdown } from './filters/categories-dropdown';
-import { ArchivesDropdown } from './filters/archives-dropdown';
+import TagsDropdown from './filters/tags-dropdown';
+import CategoriesDropdown from './filters/categories-dropdown';
+import ArchivesDropdown from './filters/archives-dropdown';
 
 interface FilterBarProps {
   selectedTag: string | null;
