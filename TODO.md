@@ -13,11 +13,13 @@ Make sure to refactor the file into smaller files when it goes above 250 lines o
 
 - ✅ Let's improve on how delete note works. When a note is deleted, delete its fields first before deleting the document, this way firebase firestore will prorperly remove the document. Also we need to allow for bulk delete, but we need to todo this without changing how our ui looks already since we're trying to maintain a very minimal uncluttered UI. Make sure to refactor the file into smaller files when it goes above 250 lines of code without breaking any functionality. Make sure to delete any unused imports or files after the operation is done.
 
-- Components folder: create folders to organise the files in components folder for better manageability and structure. Make sure to refactor the file into smaller files when it goes above 250 lines of code without breaking any functionality. Make sure to delete any unused imports or files after the operation is done.
+- ✅ Components folder: create folders to organise the files in components folder for better manageability and structure. Make sure to refactor the file into smaller files when it goes above 250 lines of code without breaking any functionality. Make sure to delete any unused imports or files after the operation is done.
+
+- ✅ On the sidebar, add tags filter and categories filter into a single filter button to reduce clutter. onclick of the filter icon, show filter by tags and categories. Add a sort button to sort by alphabetical order / date added / date updated last. Add the delete button for bulk delete. Implement this into the app but remove the archive button and replace with a delete button for bulk delete.
+Remove that section that says 'Select Multiple' and let's use a delete button for it instead, when user clicks on it they'll be able to bulk delete.
+Remember to keep it minimal, simple, straightforward, do not tamoer with existing design.
 
 - Archive notes: add an option to details modal for user to archive notes. When note is archived, hide it from the list of notes on the sidebar. This means we will need to add archived? as a oolean prop to notes so that on our frontend we check if archived is true or false to know which notes to display on the sidebar and which one not to. Make sure to refactor the file into smaller files when it goes above 250 lines of code without breaking any functionality. Make sure to delete any unused imports or files after the operation is done.
-
-- On the sidebar, add tags filter and categories filter into a single filter button to reduce clutter. onclick of the filter icon, show filter by tags and categories. Add a sort button to sort by alphabetical order / date added / date updated last. Add the delete button for bulk delete.
 
 
 - Improve on notes syncing, at no point in time should local storage override database storage. 

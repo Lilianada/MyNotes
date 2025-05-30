@@ -3,6 +3,7 @@ import { Note } from "@/types";
 import { useNotes } from "@/contexts/notes/note-context";
 import { useToast } from "@/hooks/use-toast";
 import { useSortedAndFilteredNotes, type FilterOptions } from "./note-filtering";
+import type { SortOption } from "./filter-sort-toolbar";
 
 /**
  * Custom hook for managing sidebar state
@@ -31,6 +32,10 @@ export function useSidebarState() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedArchive, setSelectedArchive] = useState<boolean | null>(null);
   
+  // Sort state
+  const [sortBy, setSortBy] = useState<SortOption>('updated');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  
   // Bulk selection state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedNoteIds, setSelectedNoteIds] = useState<Set<number>>(new Set());
@@ -47,7 +52,13 @@ export function useSidebarState() {
   };
   
   // Use the custom hook for sorting and filtering
-  const { filteredNotes } = useSortedAndFilteredNotes(notes, filterOptions);
+  const { filteredNotes } = useSortedAndFilteredNotes(notes, filterOptions, sortBy, sortOrder);
+
+  // Sort change handler
+  const handleSortChange = (newSortBy: SortOption, newSortOrder: 'asc' | 'desc') => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+  };
 
   return {
     // Note context
@@ -80,6 +91,11 @@ export function useSidebarState() {
     setSelectedArchive,
     filterOptions,
     filteredNotes,
+    
+    // Sort state
+    sortBy,
+    sortOrder,
+    handleSortChange,
     
     // Bulk selection state
     isSelectionMode,

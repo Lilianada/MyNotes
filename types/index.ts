@@ -27,4 +27,5 @@ export interface Note {
   publish?: boolean;
   description?: string;
   editHistory?: NoteEditHistory[];
+  archived?: boolean;
 }

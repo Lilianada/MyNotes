@@ -1,10 +1,9 @@
 import React from "react";
 import type { Note } from "@/types";
-import FilterBar from "../filters/filter-bar";
+import { FilterSortToolbar } from "./filter-sort-toolbar";
 import { useSidebarState } from "./sidebar-hooks";
 import { useSidebarHandlers } from "./sidebar-handlers";
 import { SidebarHeader } from "./sidebar-header";
-import { BulkDeleteControls } from "./bulk-delete-controls";
 import { NotesList } from "./notes-list";
 import { SidebarDialogs } from "./sidebar-dialogs";
 
@@ -40,28 +39,25 @@ export default function Sidebar({
           filterOptions={state.filterOptions}
         />
 
-        {/* Filter Bar */}
-        <div className="py-4 border-b border-gray-200">
-          <FilterBar
-            selectedTag={state.selectedTag}
-            selectedCategory={state.selectedCategory}
-            selectedArchive={state.selectedArchive}
-            onSelectTag={state.setSelectedTag}
-            onSelectCategory={state.setSelectedCategory}
-            onSelectArchive={state.setSelectedArchive}
-          />
-          
-          {/* Bulk Delete Controls */}
-          <BulkDeleteControls
-            isSelectionMode={state.isSelectionMode}
-            selectedNoteIds={state.selectedNoteIds}
-            filteredNotesLength={state.filteredNotes.length}
-            isBulkDeleting={state.isBulkDeleting}
-            onToggleSelectionMode={handlers.handleToggleSelectionMode}
-            onSelectAll={handlers.handleSelectAll}
-            onBulkDelete={handlers.handleBulkDelete}
-          />
-        </div>
+        {/* Filter, Sort, and Bulk Delete Toolbar */}
+        <FilterSortToolbar
+          selectedTag={state.selectedTag}
+          selectedCategory={state.selectedCategory}
+          selectedArchive={state.selectedArchive}
+          onSelectTag={state.setSelectedTag}
+          onSelectCategory={state.setSelectedCategory}
+          onSelectArchive={state.setSelectedArchive}
+          sortBy={state.sortBy}
+          sortOrder={state.sortOrder}
+          onSortChange={state.handleSortChange}
+          isSelectionMode={state.isSelectionMode}
+          selectedNoteIds={state.selectedNoteIds}
+          filteredNotesLength={state.filteredNotes.length}
+          isBulkDeleting={state.isBulkDeleting}
+          onToggleSelectionMode={handlers.handleToggleSelectionMode}
+          onSelectAll={handlers.handleSelectAll}
+          onBulkDelete={handlers.handleBulkDelete}
+        />
 
         {/* Notes List */}
         <NotesList

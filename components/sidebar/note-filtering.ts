@@ -1,6 +1,7 @@
 "use client";
 
 import type { Note } from '@/types';
+import type { SortOption } from './filter-sort-toolbar';
 
 export interface FilterOptions {
   selectedTag: string | null;
@@ -8,22 +9,14 @@ export interface FilterOptions {
   selectedArchive: boolean | null;
 }
 
-export function useSortedAndFilteredNotes(notes: Note[], filterOptions: FilterOptions) {
-  // Sort notes by last updated date, then by creation date if updatedAt is the same
-  const sortedNotes = [...notes].sort((a, b) => {
-    // If both notes have updatedAt timestamps, sort by that first
-    if (a.updatedAt && b.updatedAt) {
-      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-    }
-    // If only one has updatedAt, prioritize that one
-    if (a.updatedAt) return -1;
-    if (b.updatedAt) return 1;
-    // Fall back to createdAt if neither has updatedAt
-    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-  });
-  
-  // Filter notes by selected tag, category, and archive status
-  const filteredNotes = sortedNotes.filter(note => {
+export function useSortedAndFilteredNotes(
+  notes: Note[], 
+  filterOptions: FilterOptions,
+  sortBy: SortOption = 'updated',
+  sortOrder: 'asc' | 'desc' = 'desc'
+) {
+  // Filter notes first
+  const filteredNotes = notes.filter(note => {
     // Filter by tag if selected
     if (filterOptions.selectedTag && (!note.tags || !note.tags.includes(filterOptions.selectedTag))) {
       return false;
@@ -34,17 +27,57 @@ export function useSortedAndFilteredNotes(notes: Note[], filterOptions: FilterOp
       return false;
     }
     
-    // TODO: Filter by archive status when archived property is added to Note type
-    // if (filterOptions.selectedArchive !== null && note.archived !== filterOptions.selectedArchive) {
-    //   return false;
-    // }
+    // Filter by archive status if selected
+    if (filterOptions.selectedArchive !== null && note.archived !== filterOptions.selectedArchive) {
+      return false;
+    }
     
     return true;
   });
 
+  // Sort the filtered notes
+  const sortedNotes = [...filteredNotes].sort((a, b) => {
+    let comparison = 0;
+    
+    switch (sortBy) {
+      case 'updated':
+        // Sort by last updated date, then by creation date if updatedAt is the same
+        if (a.updatedAt && b.updatedAt) {
+          comparison = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        } else if (a.updatedAt) {
+          comparison = -1;
+        } else if (b.updatedAt) {
+          comparison = 1;
+        } else {
+          comparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        }
+        break;
+        
+      case 'created':
+        comparison = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        break;
+        
+      case 'title':
+        comparison = a.noteTitle.localeCompare(b.noteTitle);
+        break;
+        
+      case 'wordCount':
+        const aWordCount = a.wordCount || 0;
+        const bWordCount = b.wordCount || 0;
+        comparison = bWordCount - aWordCount;
+        break;
+        
+      default:
+        comparison = 0;
+    }
+    
+    // Apply sort order
+    return sortOrder === 'asc' ? -comparison : comparison;
+  });
+
   return {
     sortedNotes,
-    filteredNotes
+    filteredNotes: sortedNotes
   };
 }
 
