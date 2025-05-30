@@ -27,6 +27,7 @@ interface NoteContextType {
   deleteCategory: (categoryId: string) => Promise<void>;
   getNoteHistory: (id: number) => Promise<NoteEditHistory[]>;
   deleteNote: (id: number) => void;
+  bulkDeleteNotes: (ids: number[]) => Promise<{ successful: number[], failed: { id: number, error: string }[] }>;
   selectNote: (id: number | null) => void;
   syncLocalNotesToFirebase: () => Promise<void>;
   // Tags and relationships

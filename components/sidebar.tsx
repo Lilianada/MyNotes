@@ -27,6 +27,7 @@ export default function Sidebar({
     selectNote, 
     selectedNoteId, 
     deleteNote,
+    bulkDeleteNotes,
     getChildNotes,
     getLinkedNotes
   } = useNotes();
@@ -38,6 +39,13 @@ export default function Sidebar({
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedArchive, setSelectedArchive] = useState<boolean | null>(null);
+  
+  // Bulk selection state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedNoteIds, setSelectedNoteIds] = useState<Set<number>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [isBulkDeleteDialogOpen, setIsBulkDeleteDialogOpen] = useState(false);
+  
   const { toast } = useToast();
   
   // Create filter options object
@@ -93,6 +101,76 @@ export default function Sidebar({
     setActiveNote(note);
     setIsDetailsOpen(true);
   };
+
+  // Bulk delete handlers
+  const handleToggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedNoteIds(new Set());
+  };
+
+  const handleSelectNote = (noteId: number, isSelected: boolean) => {
+    const newSelection = new Set(selectedNoteIds);
+    if (isSelected) {
+      newSelection.add(noteId);
+    } else {
+      newSelection.delete(noteId);
+    }
+    setSelectedNoteIds(newSelection);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedNoteIds.size === filteredNotes.length) {
+      setSelectedNoteIds(new Set());
+    } else {
+      setSelectedNoteIds(new Set(filteredNotes.map(note => note.id)));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    if (selectedNoteIds.size === 0) return;
+    setIsBulkDeleteDialogOpen(true);
+  };
+
+  const confirmBulkDelete = async () => {
+    if (selectedNoteIds.size === 0) return;
+    
+    setIsBulkDeleting(true);
+    
+    try {
+      const idsToDelete = Array.from(selectedNoteIds);
+      
+      const result = await bulkDeleteNotes(idsToDelete);
+      
+      // Show success/failure toast
+      if (result.failed.length === 0) {
+        toast({
+          title: "Notes deleted",
+          description: `Successfully deleted ${result.successful.length} note(s).`,
+          variant: "default",
+        });
+      } else {
+        toast({
+          title: "Partial deletion",
+          description: `Deleted ${result.successful.length} note(s). Failed to delete ${result.failed.length} note(s).`,
+          variant: "destructive",
+        });
+      }
+      
+      // Reset bulk selection state
+      setIsSelectionMode(false);
+      setSelectedNoteIds(new Set());
+    } catch (error) {
+      console.error("Error during bulk delete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete notes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBulkDeleting(false);
+      setIsBulkDeleteDialogOpen(false);
+    }
+  };
   
   return (
     <>
@@ -120,6 +198,47 @@ export default function Sidebar({
             onSelectCategory={(category: string | null) => setSelectedCategory(category)}
             onSelectArchive={(archive: boolean | null) => setSelectedArchive(archive)}
           />
+          
+          {/* Bulk Delete Controls */}
+          {!isSelectionMode ? (
+            <div className="px-3 mt-2">
+              <button
+                onClick={handleToggleSelectionMode}
+                className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                Select Multiple
+              </button>
+            </div>
+          ) : (
+            <div className="px-3 mt-2 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSelectAll}
+                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                >
+                  {selectedNoteIds.size === filteredNotes.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {selectedNoteIds.size} selected
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={selectedNoteIds.size === 0 || isBulkDeleting}
+                  className="text-xs text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+                >
+                  {isBulkDeleting ? 'Deleting...' : `Delete (${selectedNoteIds.size})`}
+                </button>
+                <button
+                  onClick={handleToggleSelectionMode}
+                  className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Notes List */}
@@ -137,6 +256,8 @@ export default function Sidebar({
                   selectedNoteId={selectedNoteId}
                   isDeleting={isDeleting}
                   relationshipInfo={relationInfo}
+                  isSelectionMode={isSelectionMode}
+                  isSelected={selectedNoteIds.has(note.id)}
                   onSelectNote={(note) => {
                     // Use context method if available, otherwise use prop method
                     if (selectNote) {
@@ -147,6 +268,7 @@ export default function Sidebar({
                   }}
                   onOpenDetails={handleOpenDetails}
                   onDeleteNote={handleDeleteNote}
+                  onToggleSelection={handleSelectNote}
                 />
               );
             })}
@@ -170,6 +292,17 @@ export default function Sidebar({
             description={`Are you sure you want to delete "${noteToDelete.noteTitle}"? This action cannot be undone.`}
           />
       )}
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <DeleteConfirmation
+        isOpen={isBulkDeleteDialogOpen}
+        onClose={() => {
+          setIsBulkDeleteDialogOpen(false);
+        }}
+        onConfirm={confirmBulkDelete}
+        title="Delete Multiple Notes"
+        description={`Are you sure you want to delete ${selectedNoteIds.size} note(s)? This action cannot be undone.`}
+      />
 
       {/* Note Details Dialog */}
       {activeNote && isDetailsOpen && (

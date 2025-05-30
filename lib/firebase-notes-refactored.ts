@@ -49,7 +49,7 @@ export const firebaseNotesService = {
   async updateNoteTags(id: number, tags: string[]): Promise<string[]> {
     return FirebaseDataOperations.updateNoteTags(id, tags);
   },
-  
+
   async updateNoteData(id: number, updatedNote: Partial<Note>): Promise<void> {
     return FirebaseDataOperations.updateNoteData(id, updatedNote);
   },

@@ -174,6 +174,41 @@ export function useNoteOperations(
     await NoteOperations.deleteNote(id, noteToDelete, Boolean(isAdmin), user);
   };
 
+  const bulkDeleteNotes = async (ids: number[]): Promise<{ successful: number[], failed: { id: number, error: string }[] }> => {
+    if (ids.length === 0) {
+      return { successful: [], failed: [] };
+    }
+
+    // Find the notes to delete
+    const notesToDelete = notes.filter(note => ids.includes(note.id));
+
+    // Remove from state first for immediate UI update
+    setNotes((prevNotes) => prevNotes.filter((note) => !ids.includes(note.id)));
+
+    // If the selected note is being deleted, select another one
+    if (selectedNoteId && ids.includes(selectedNoteId)) {
+      const remainingNotes = notes.filter((note) => !ids.includes(note.id));
+      if (remainingNotes.length > 0) {
+        const newestNote = getMostRecentNote(remainingNotes);
+        setSelectedNoteId(newestNote.id);
+      } else {
+        setSelectedNoteId(null);
+      }
+    }
+
+    // Delete the notes from storage
+    try {
+      return await NoteOperations.bulkDeleteNotes(ids, notesToDelete, Boolean(isAdmin), user);
+    } catch (error) {
+      console.error("Failed to bulk delete notes:", error);
+      // Return error result for all notes
+      return {
+        successful: [],
+        failed: ids.map(id => ({ id, error: error instanceof Error ? error.message : 'Unknown error' }))
+      };
+    }
+  };
+
   const selectNote = (id: number | null) => {
     setSelectedNoteId(id);
     // Don't save to localStorage anymore to prevent conflicts
@@ -215,6 +250,7 @@ export function useNoteOperations(
     updateNote,
     updateNoteTitle,
     deleteNote,
+    bulkDeleteNotes,
     selectNote,
     getNoteHistory,
     syncLocalNotesToFirebase

@@ -49,6 +49,15 @@ export class NoteOperations {
     return NoteCRUDOperations.deleteNote(id, noteToDelete, isAdmin, user);
   }
 
+  static async bulkDeleteNotes(
+    ids: number[],
+    notesToDelete: Note[],
+    isAdmin: boolean,
+    user: { uid: string } | null | undefined
+  ): Promise<{ successful: number[], failed: { id: number, error: string }[] }> {
+    return NoteCRUDOperations.bulkDeleteNotes(ids, notesToDelete, isAdmin, user);
+  }
+
   // Category Operations
   static async updateNoteCategory(
     id: number,

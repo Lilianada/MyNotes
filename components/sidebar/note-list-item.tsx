@@ -15,9 +15,12 @@ interface NoteListItemProps {
   selectedNoteId: number | null;
   isDeleting: number | null;
   relationshipInfo: NoteRelationshipInfo;
+  isSelectionMode?: boolean;
+  isSelected?: boolean;
   onSelectNote: (note: Note) => void;
   onOpenDetails: (note: Note, e: React.MouseEvent) => void;
   onDeleteNote: (note: Note, e: React.MouseEvent) => void;
+  onToggleSelection?: (noteId: number, isSelected: boolean) => void;
 }
 
 export default function NoteListItem({
@@ -25,19 +28,41 @@ export default function NoteListItem({
   selectedNoteId,
   isDeleting,
   relationshipInfo,
+  isSelectionMode = false,
+  isSelected = false,
   onSelectNote,
   onOpenDetails,
   onDeleteNote,
+  onToggleSelection,
 }: NoteListItemProps) {
   return (
     <li
       key={note.id}
       className={`p-2 text-sm hover:bg-gray-50 rounded cursor-pointer flex items-center justify-between ${
         selectedNoteId === note.id ? "bg-blue-50" : ""
-      }`}
+      } ${isSelected ? "bg-blue-100" : ""}`}
     >
+      {/* Checkbox for selection mode */}
+      {isSelectionMode && (
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(e) => {
+            e.stopPropagation();
+            onToggleSelection?.(note.id, e.target.checked);
+          }}
+          className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+        />
+      )}
+      
       <button
-        onClick={() => onSelectNote(note)}
+        onClick={() => {
+          if (isSelectionMode) {
+            onToggleSelection?.(note.id, !isSelected);
+          } else {
+            onSelectNote(note);
+          }
+        }}
         className="flex-1 text-left truncate flex items-center"
       >
         <div className="flex items-center mr-2">
@@ -98,27 +123,31 @@ export default function NoteListItem({
           {note.noteTitle || `Note #${note.id}`}
         </span>
       </button>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={(e) => onOpenDetails(note, e)}
-          className="p-1 text-gray-400 hover:text-blue-500"
-          aria-label={`View details of note ${note.noteTitle}`}
-        >
-          <GripVertical size={16} />
-        </button>
-        <button
-          onClick={(e) => onDeleteNote(note, e)}
-          disabled={isDeleting === note.id}
-          className={`p-1 ${
-            isDeleting === note.id 
-              ? "text-gray-300" 
-              : "text-gray-400 hover:text-red-500"
-          }`}
-          aria-label={`Delete note ${note.noteTitle}`}
-        >
-          <Trash2 size={16} />
-        </button>
-      </div>
+      
+      {/* Action buttons - hide in selection mode */}
+      {!isSelectionMode && (
+        <div className="flex items-center gap-1">
+          <button
+            onClick={(e) => onOpenDetails(note, e)}
+            className="p-1 text-gray-400 hover:text-blue-500"
+            aria-label={`View details of note ${note.noteTitle}`}
+          >
+            <GripVertical size={16} />
+          </button>
+          <button
+            onClick={(e) => onDeleteNote(note, e)}
+            disabled={isDeleting === note.id}
+            className={`p-1 ${
+              isDeleting === note.id 
+                ? "text-gray-300" 
+                : "text-gray-400 hover:text-red-500"
+            }`}
+            aria-label={`Delete note ${note.noteTitle}`}
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      )}
     </li>
   );
 }

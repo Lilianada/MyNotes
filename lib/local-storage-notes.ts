@@ -252,4 +252,44 @@ export const localStorageNotesService = {
     // Return the cleaned tags
     return cleanTags;
   },
+
+  // Bulk delete notes
+  bulkDeleteNotes(ids: number[]): { successful: number[], failed: { id: number, error: string }[] } {
+    const successful: number[] = [];
+    const failed: { id: number, error: string }[] = [];
+    
+    try {
+      const notes = this.getNotes();
+      const idsSet = new Set(ids);
+      const updatedNotes = notes.filter(note => {
+        if (idsSet.has(note.id)) {
+          successful.push(note.id);
+          // Remove history for this note
+          if (typeof window !== 'undefined') {
+            try {
+              window.localStorage.removeItem(`note_history_${note.id}`);
+            } catch (historyError) {
+              console.warn(`Failed to remove history for note ${note.id}:`, historyError);
+            }
+          }
+          return false; // Remove this note
+        }
+        return true; // Keep this note
+      });
+      
+      window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
+      
+      return { successful, failed };
+    } catch (error) {
+      // If the entire operation fails, mark all as failed
+      ids.forEach(id => {
+        failed.push({ 
+          id, 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      });
+      
+      return { successful, failed };
+    }
+  },
 };
