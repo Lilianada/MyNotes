@@ -11,11 +11,11 @@ export interface EditHistoryConfig {
 }
 
 export const DEFAULT_EDIT_HISTORY_CONFIG: EditHistoryConfig = {
-  autosaveInterval: 300000, // 5 minutes (300 seconds)
-  minChangeThreshold: 50, // at least 50 characters changed
-  minChangePercentage: 15, // at least 15% change
-  maxVersions: 10, // keep last 10 versions (reduced from 20)
-  significantChangeThreshold: 100 // 100+ characters is significant
+  autosaveInterval: 45000, // 45 seconds (30-60 seconds range)
+  minChangeThreshold: 100, // at least 100 characters changed (more significant)
+  minChangePercentage: 20, // at least 20% change (more significant)
+  maxVersions: 15, // keep last 15 versions as requested
+  significantChangeThreshold: 150 // 150+ characters is significant
 };
 
 /**

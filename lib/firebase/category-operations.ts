@@ -11,12 +11,29 @@ import {
 } from 'firebase/firestore';
 
 /**
+ * Get the appropriate collection reference based on user type
+ * For admins: use top-level 'notes' collection
+ * For regular users: use subcollection 'users/{userId}/notes'
+ */
+function getNotesCollectionRef(userId: string, isAdmin: boolean) {
+  if (isAdmin) {
+    return collection(db, 'notes');
+  } else {
+    return collection(db, 'users', userId, 'notes');
+  }
+}
+
+/**
  * Update a category across all notes
  */
-export const updateCategory = async (category: NoteCategory): Promise<boolean> => {
+export const updateCategory = async (category: NoteCategory, userId: string, isAdmin: boolean = false): Promise<boolean> => {
   try {
+    if (!isAdmin && !userId) {
+      throw new Error('User ID is required for non-admin operations');
+    }
+
     // Find all notes with this category ID
-    const notesRef = collection(db, 'notes');
+    const notesRef = getNotesCollectionRef(userId, isAdmin);
     const q = query(notesRef, where("category.id", "==", category.id));
     const snapshot = await getDocs(q);
     
@@ -28,7 +45,8 @@ export const updateCategory = async (category: NoteCategory): Promise<boolean> =
     const batch = writeBatch(db);
     
     snapshot.docs.forEach(docSnapshot => {
-      const docRef = doc(db, 'notes', docSnapshot.id);
+      const collectionPath = isAdmin ? 'notes' : `users/${userId}/notes`;
+      const docRef = doc(db, collectionPath, docSnapshot.id);
       // Update the category object with the new properties
       batch.update(docRef, { category });
     });
@@ -46,10 +64,14 @@ export const updateCategory = async (category: NoteCategory): Promise<boolean> =
 /**
  * Update a tag across all notes
  */
-export const updateTagAcrossNotes = async (oldTag: string, newTag: string): Promise<boolean> => {
+export const updateTagAcrossNotes = async (oldTag: string, newTag: string, userId: string, isAdmin: boolean = false): Promise<boolean> => {
   try {
+    if (!isAdmin && !userId) {
+      throw new Error('User ID is required for non-admin operations');
+    }
+
     // Find all notes with this tag
-    const notesRef = collection(db, 'notes');
+    const notesRef = getNotesCollectionRef(userId, isAdmin);
     const q = query(notesRef, where("tags", "array-contains", oldTag));
     const snapshot = await getDocs(q);
     
@@ -61,7 +83,8 @@ export const updateTagAcrossNotes = async (oldTag: string, newTag: string): Prom
     const batch = writeBatch(db);
     
     snapshot.docs.forEach(docSnapshot => {
-      const docRef = doc(db, 'notes', docSnapshot.id);
+      const collectionPath = isAdmin ? 'notes' : `users/${userId}/notes`;
+      const docRef = doc(db, collectionPath, docSnapshot.id);
       const data = docSnapshot.data();
       
       // Replace the tag in the array

@@ -17,9 +17,14 @@ import { calculateNoteSize } from '../storage/storage-utils';
  */
 export const deleteNote = async (noteId: number, userId?: string, isAdmin: boolean = false): Promise<{ success: boolean, error?: string }> => {
   try {
-    // Determine which collection to use
-    const collectionName = isAdmin ? 'notes' : 'userNotes';
-    const notesRef = collection(db, collectionName);
+    // For non-admin users, userId is required for subcollection access
+    if (!isAdmin && !userId) {
+      return { success: false, error: 'User ID is required for non-admin users' };
+    }
+    
+    // Get the appropriate collection reference
+    const notesRef = getNotesCollectionRef(userId, isAdmin);
+    
     const q = query(notesRef, where("id", "==", noteId));
     const snapshot = await getDocs(q);
     
@@ -32,7 +37,7 @@ export const deleteNote = async (noteId: number, userId?: string, isAdmin: boole
     const noteFileSize = noteData.fileSize || 0;
     
     // Get document reference
-    const docRef = doc(db, collectionName, snapshot.docs[0].id);
+    const docRef = doc(notesRef, snapshot.docs[0].id);
     
     // Delete the document
     await deleteDoc(docRef);
@@ -65,9 +70,19 @@ export const deleteMultipleNotes = async (noteIds: number[], userId?: string, is
   const failed: { id: number, error: string }[] = [];
   
   try {
+    // For non-admin users, userId is required for subcollection access
+    if (!isAdmin && !userId) {
+      return { 
+        successful: [], 
+        failed: noteIds.map(id => ({ id, error: 'User ID is required for non-admin users' }))
+      };
+    }
+    
     const batch = writeBatch(db);
-    const collectionName = isAdmin ? 'notes' : 'userNotes';
-    const notesRef = collection(db, collectionName);
+    
+    // Get the appropriate collection reference
+    const notesRef = getNotesCollectionRef(userId, isAdmin);
+    
     let totalStorageDecrement = 0;
     let notesFound: number[] = [];
     
@@ -82,7 +97,7 @@ export const deleteMultipleNotes = async (noteIds: number[], userId?: string, is
           const noteFileSize = noteData.fileSize || 0;
           totalStorageDecrement += noteFileSize;
           
-          const docRef = doc(db, collectionName, snapshot.docs[0].id);
+          const docRef = doc(notesRef, snapshot.docs[0].id);
           batch.delete(docRef);
           notesFound.push(noteId);
         } else {
@@ -134,12 +149,34 @@ export const deleteMultipleNotes = async (noteIds: number[], userId?: string, is
 export const bulkDeleteNotes = deleteMultipleNotes;
 
 /**
+ * Get the appropriate notes collection reference based on user type
+ */
+const getNotesCollectionRef = (userId?: string, isAdmin: boolean = false) => {
+  if (isAdmin) {
+    return collection(db, 'notes');
+  } else {
+    if (!userId) {
+      throw new Error('User ID is required for non-admin users');
+    }
+    return collection(db, 'users', userId, 'notes');
+  }
+};
+
+/**
  * Delete a category by ID (removes from all notes)
  */
-export const deleteCategory = async (categoryId: string): Promise<boolean> => {
+export const deleteCategory = async (categoryId: string, userId?: string, isAdmin: boolean = false): Promise<boolean> => {
   try {
+    // For non-admin users, userId is required for subcollection access
+    if (!isAdmin && !userId) {
+      console.error('User ID is required for non-admin users');
+      return false;
+    }
+    
+    // Get the appropriate collection reference
+    const notesRef = getNotesCollectionRef(userId, isAdmin);
+    
     // Find all notes with this category
-    const notesRef = collection(db, 'notes');
     const q = query(notesRef, where("category.id", "==", categoryId));
     const snapshot = await getDocs(q);
     
@@ -151,7 +188,7 @@ export const deleteCategory = async (categoryId: string): Promise<boolean> => {
     const batch = writeBatch(db);
     
     snapshot.docs.forEach(docSnapshot => {
-      const docRef = doc(db, 'notes', docSnapshot.id);
+      const docRef = doc(notesRef, docSnapshot.id);
       // Set category to null for all affected notes
       batch.update(docRef, { category: null });
     });
@@ -169,10 +206,18 @@ export const deleteCategory = async (categoryId: string): Promise<boolean> => {
 /**
  * Remove tag from all notes
  */
-export const deleteTagFromAllNotes = async (tag: string): Promise<boolean> => {
+export const deleteTagFromAllNotes = async (tag: string, userId?: string, isAdmin: boolean = false): Promise<boolean> => {
   try {
+    // For non-admin users, userId is required for subcollection access
+    if (!isAdmin && !userId) {
+      console.error('User ID is required for non-admin users');
+      return false;
+    }
+    
+    // Get the appropriate collection reference
+    const notesRef = getNotesCollectionRef(userId, isAdmin);
+    
     // Find all notes with this tag
-    const notesRef = collection(db, 'notes');
     const q = query(notesRef, where("tags", "array-contains", tag));
     const snapshot = await getDocs(q);
     
@@ -184,7 +229,7 @@ export const deleteTagFromAllNotes = async (tag: string): Promise<boolean> => {
     const batch = writeBatch(db);
     
     snapshot.docs.forEach(docSnapshot => {
-      const docRef = doc(db, 'notes', docSnapshot.id);
+      const docRef = doc(notesRef, docSnapshot.id);
       const data = docSnapshot.data();
       
       // Remove the tag from the array

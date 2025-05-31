@@ -62,8 +62,7 @@ export async function syncLocalNotesToFirebase(userId: string, isAdmin: boolean 
           continue;
         }
 
-        // Create the note in Firebase
-        const collection = isAdmin ? 'notes' : 'userNotes';
+        // Create the note in Firebase using the proper collection structure
         await firebaseNotesService.addNote(userId, localNote.noteTitle, isAdmin);
 
         // Update storage tracking

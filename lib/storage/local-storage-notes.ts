@@ -87,8 +87,8 @@ export const localStorageNotesService = {
       
       const updatedHistory = [newEntry, ...history];
       
-      // Prune history to keep only the most recent 20 entries
-      const prunedHistory = updatedHistory.slice(0, 20);
+      // Prune history to keep only the most recent 15 entries
+      const prunedHistory = updatedHistory.slice(0, 15);
       
       window.localStorage.setItem(`note_history_${id}`, JSON.stringify(prunedHistory));
     } catch (error) {
@@ -103,8 +103,8 @@ export const localStorageNotesService = {
     }
     
     try {
-      // Prune history to keep only the most recent 20 entries
-      const prunedHistory = history.slice(0, 20);
+      // Prune history to keep only the most recent 15 entries
+      const prunedHistory = history.slice(0, 15);
       window.localStorage.setItem(`note_history_${id}`, JSON.stringify(prunedHistory));
     } catch (error) {
       console.error('Failed to update edit history:', error);
@@ -136,8 +136,7 @@ export const localStorageNotesService = {
     const updatedNotes = [newNote, ...notes];
     window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
     
-    // Add history entry
-    this.addHistoryEntry(numericId, 'create');
+    // Note: Creation history is managed by EditHistoryService, not added here
     
     return newNote;
   },
@@ -157,8 +156,7 @@ export const localStorageNotesService = {
     });
     window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
     
-    // Add history entry
-    this.addHistoryEntry(id, 'update');
+    // Note: History is managed by EditHistoryService, not added here
   },
 
   // Update a note with content and optional metadata
@@ -182,8 +180,7 @@ export const localStorageNotesService = {
     });
     window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
     
-    // Add history entry
-    this.addHistoryEntry(id, 'update');
+    // Note: History is managed by EditHistoryService, not added here
   },
   
   // Update a note's title
@@ -202,8 +199,7 @@ export const localStorageNotesService = {
     );
     window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
     
-    // Add history entry
-    this.addHistoryEntry(id, 'title');
+    // Note: History is managed by EditHistoryService, not added here
     
     return filePath; // Return virtual path for API compatibility
   },
@@ -269,12 +265,14 @@ export const localStorageNotesService = {
     // Save to local storage
     window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
     
-    // Add history entry if this was a significant update
-    if (updatedNote.content !== undefined || 
-        updatedNote.noteTitle !== undefined ||
-        updatedNote.tags !== undefined) {
-      const historyType = updatedNote.noteTitle !== undefined ? 'title' : 'update';
-      this.addHistoryEntry(id, historyType);
+    // Note: History is managed by EditHistoryService for content changes
+    // Only add history for non-content updates (title, tags, category)
+    if (updatedNote.noteTitle !== undefined && updatedNote.content === undefined) {
+      this.addHistoryEntry(id, 'title');
+    } else if (updatedNote.tags !== undefined && updatedNote.content === undefined) {
+      this.addHistoryEntry(id, 'tags');
+    } else if (updatedNote.category !== undefined && updatedNote.content === undefined) {
+      this.addHistoryEntry(id, 'category');
     }
   },
   
@@ -307,8 +305,7 @@ export const localStorageNotesService = {
     // Save to localStorage
     window.localStorage.setItem('notes', JSON.stringify(notes));
     
-    // Add history entry
-    this.addHistoryEntry(id, 'tags');
+    // Note: History is managed by EditHistoryService, not added here
     
     // Return the cleaned tags
     return cleanTags;

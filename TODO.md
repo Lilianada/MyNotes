@@ -81,3 +81,49 @@ When user checks details for each note, display the file size for them as well o
 - Always use a unique 6-8 character ID for each note, added at creation time.
 - When syncing, only upload local notes to Firebase if Firebase doesn’t already have a note with that ID.
 - Never overwrite or merge notes with the same ID—Firebase is the source of truth for logged-in users.
+
+
+- **✅ Fix Edit History Implementation**: Fixed! Edit History now uses Google Docs-style autosave with:
+  - 45-second autosave interval (within 30-60 second range)
+  - Intelligent change detection (100+ character changes OR 20%+ content change)
+  - Maximum 15 history entries per note
+  - Removed all keystroke-level tracking from localStorage and Firebase operations
+  - Created cleanup script (`scripts/cleanup-edit-history.js`) for existing notes
+
+- **Admin Storage Tracking**: As an admin, I also want to keep track of my storage usage without putting a cap on it.
+✏️
+Content updated
+17 minutes ago
+Time:
+May 31, 21:48:12
+✏️
+Content updated
+17 minutes ago
+Time:
+May 31, 21:48:14
+✏️
+Content updated
+17 minutes ago
+Time:
+May 31, 21:48:16
+✏️
+Content updated
+17 minutes ago
+Time:
+May 31, 21:48:17
+✏️
+Content updated
+17 minutes ago
+Time:
+May 31, 21:48:18
+✏️
+Content updated
+17 minutes ago
+Time:
+May 31, 21:48:18
+✏️
+Content updated
+17 minutes ago
+Time:
+
+- As an admin, I also want to keep track of my storage usage without putting a cap on it since firebase has a free storage limit.

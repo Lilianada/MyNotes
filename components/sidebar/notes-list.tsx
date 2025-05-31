@@ -42,7 +42,7 @@ export function NotesList({
   }
 
   return (
-    <ul className="md:max-h-[calc(100vh_-_230px)] overflow-y-auto p-2 scrollbar-hide">
+    <ul className="md:max-h-[calc(100vh_-_155px)] overflow-y-auto p-2 scrollbar-hide">
       {filteredNotes.map((note) => {
         const relationInfo = getNoteRelationshipInfo(note, getChildNotes, getLinkedNotes);
         

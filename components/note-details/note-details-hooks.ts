@@ -59,8 +59,8 @@ export function useNoteDetailsState(note: Note | null, isOpen: boolean) {
       try {
         let fallbackHistory: NoteEditHistory[] = [];
         
-        if (isAdmin && user && firebaseNotesService) {
-          fallbackHistory = await firebaseNotesService.getNoteHistory(note.id);
+        if (user && firebaseNotesService) {
+          fallbackHistory = await firebaseNotesService.getNoteHistory(note.id, user.uid, isAdmin || false);
         } else {
           fallbackHistory = localStorageNotesService.getNoteHistory(note.id);
         }

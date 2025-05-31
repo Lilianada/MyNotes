@@ -1,4 +1,3 @@
-
 /* Fix for inline code - ensure it displays properly inline */
 code.inline-code {
   display: inline;
@@ -59,21 +58,65 @@ ul.task-list li::before {
 }
 
 /* Headings styles from the original renderer */
-.markdown-body h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0; color: #4338ca; }
-.markdown-body h2 { font-size: 1.25rem; font-weight: 700; margin: 0.75rem 0; color: #1d4ed8; }
-.markdown-body h3 { font-size: 1.125rem; font-weight: 700; margin: 0.5rem 0; color: #0891b2; }
-.markdown-body h4 { font-size: 1rem; font-weight: 700; margin: 0.5rem 0; color: #0d9488; }
-.markdown-body h5 { font-size: 0.875rem; font-weight: 700; margin: 0.25rem 0; color: #16a34a; }
-.markdown-body h6 { font-size: 0.75rem; font-weight: 700; margin: 0.25rem 0; color: #059669; }
+.markdown-body h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 1rem 0;
+  color: #4338ca;
+}
+.markdown-body h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin: 0.75rem 0;
+  color: #1d4ed8;
+}
+.markdown-body h3 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  color: #0891b2;
+}
+.markdown-body h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  color: #0d9488;
+}
+.markdown-body h5 {
+  font-size: 0.875rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+  color: #16a34a;
+}
+.markdown-body h6 {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin: 0.25rem 0;
+  color: #059669;
+}
 
 /* Text formatting styles from the original renderer */
-.markdown-body strong { color: #d97706; font-weight: bold; }
-.markdown-body em { color: #b45309; font-style: italic; }
-.markdown-body del { text-decoration: line-through; color: #6b7280; }
+.markdown-body strong {
+  color: #d97706;
+  font-weight: bold;
+  font-size: 14px;
+  margin-bottom: 1rem;
+  margin-top: 0.5rem;
+  line-height: 1.6;
+}
 
+.markdown-body em {
+  color: #b45309;
+  font-style: italic;
+}
+
+.markdown-body del {
+  text-decoration: line-through;
+  color: #6b7280;
+}
 
 /* Ensure arrow character is visible and properly styled */
-p:contains('→') {
+p:contains("→") {
   white-space: pre-wrap;
 }
 
@@ -116,17 +159,17 @@ p:contains('→') {
   font-size: 14px;
 }
 
-.markdown-body h1, 
-.markdown-body h2, 
-.markdown-body h3, 
-.markdown-body h4, 
-.markdown-body h5, 
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
 .markdown-body h6 {
   line-height: 1.4;
 }
 
 /* Better spacing for lists */
-.markdown-body ul, 
+.markdown-body ul,
 .markdown-body ol {
   margin: 1rem 0;
   padding-left: 1.25rem;

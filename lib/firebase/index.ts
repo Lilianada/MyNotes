@@ -15,27 +15,27 @@ export const firebaseNotesService = {
   // Note operations
   getNotes: (userId: string, isAdmin?: boolean) => getNotes(userId, isAdmin),
   addNote: (userId: string, noteTitle: string, isAdmin?: boolean) => addNote(userId, noteTitle, isAdmin),
-  getNote,
-  getChildNotes,
+  getNote: (noteId: number, userId?: string, isAdmin?: boolean) => getNote(noteId, userId, isAdmin),
+  getChildNotes: (parentId: number, userId: string, isAdmin?: boolean) => getChildNotes(parentId, userId, isAdmin),
   
   // Update operations
   updateNoteContent: (noteId: number, content: string, userId?: string, isAdmin?: boolean) => updateNoteContent(noteId, content, userId, isAdmin),
-  updateNoteTitle,
-  updateNoteCategory,
-  updateNoteTags,
-  updateNoteData,
+  updateNoteTitle: (noteId: number, newTitle: string, userId?: string, isAdmin?: boolean) => updateNoteTitle(noteId, newTitle, userId, isAdmin),
+  updateNoteCategory: (noteId: number, category: NoteCategory | null, userId?: string, isAdmin?: boolean) => updateNoteCategory(noteId, category, userId, isAdmin),
+  updateNoteTags: (noteId: number, tags: string[], userId?: string, isAdmin?: boolean) => updateNoteTags(noteId, tags, userId, isAdmin),
+  updateNoteData: (noteId: number, updates: Partial<Note>, userId?: string, isAdmin?: boolean) => updateNoteData(noteId, updates, userId, isAdmin),
   
   // Delete operations
   deleteNote: (noteId: number, userId?: string, isAdmin?: boolean) => deleteNote(noteId, userId, isAdmin),
   deleteMultipleNotes: (noteIds: number[], userId?: string, isAdmin?: boolean) => deleteMultipleNotes(noteIds, userId, isAdmin),
   bulkDeleteNotes: (noteIds: number[], userId?: string, isAdmin?: boolean) => deleteMultipleNotes(noteIds, userId, isAdmin),
-  deleteCategory,
-  deleteTagFromAllNotes,
+  deleteCategory: (categoryId: string, userId: string, isAdmin?: boolean) => deleteCategory(categoryId, userId, isAdmin),
+  deleteTagFromAllNotes: (tag: string, userId: string, isAdmin?: boolean) => deleteTagFromAllNotes(tag, userId, isAdmin),
   
   // Category operations
-  updateCategory,
-  updateTagAcrossNotes,
+  updateCategory: (category: NoteCategory, userId: string, isAdmin?: boolean) => updateCategory(category, userId, isAdmin),
+  updateTagAcrossNotes: (oldTag: string, newTag: string, userId: string, isAdmin?: boolean) => updateTagAcrossNotes(oldTag, newTag, userId, isAdmin),
   
   // History operations
-  getNoteHistory
+  getNoteHistory: (noteId: number, userId: string, isAdmin?: boolean) => getNoteHistory(noteId, userId, isAdmin)
 };

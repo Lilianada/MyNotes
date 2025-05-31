@@ -19,9 +19,19 @@ import { incrementStorage, decrementStorage } from './firebase-storage';
  */
 export const updateNoteContent = async (noteId: number, content: string, userId?: string, isAdmin: boolean = false): Promise<void> => {
   try {
-    // Determine which collection to use
-    const collectionName = isAdmin ? 'notes' : 'userNotes';
-    const notesRef = collection(db, collectionName);
+    // For non-admin users, userId is required for subcollection access
+    if (!isAdmin && !userId) {
+      throw new Error('User ID is required for non-admin users');
+    }
+    
+    // Get the appropriate collection reference
+    let notesRef;
+    if (isAdmin) {
+      notesRef = collection(db, 'notes');
+    } else {
+      notesRef = collection(db, 'users', userId!, 'notes');
+    }
+    
     const q = query(notesRef, where("id", "==", noteId));
     const snapshot = await getDocs(q);
     
@@ -29,7 +39,7 @@ export const updateNoteContent = async (noteId: number, content: string, userId?
       throw new Error(`Note with ID ${noteId} not found`);
     }
     
-    const docRef = doc(db, collectionName, snapshot.docs[0].id);
+    const docRef = doc(notesRef, snapshot.docs[0].id);
     const currentData = snapshot.docs[0].data();
     
     // Calculate word count and new file size
@@ -86,10 +96,21 @@ export const updateNoteContent = async (noteId: number, content: string, userId?
 /**
  * Update a note's title
  */
-export const updateNoteTitle = async (noteId: number, newTitle: string): Promise<void> => {
+export const updateNoteTitle = async (noteId: number, newTitle: string, userId?: string, isAdmin: boolean = false): Promise<void> => {
   try {
-    // Find the document by note ID
-    const notesRef = collection(db, 'notes');
+    // For non-admin users, userId is required for subcollection access
+    if (!isAdmin && !userId) {
+      throw new Error('User ID is required for non-admin users');
+    }
+    
+    // Get the appropriate collection reference
+    let notesRef;
+    if (isAdmin) {
+      notesRef = collection(db, 'notes');
+    } else {
+      notesRef = collection(db, 'users', userId!, 'notes');
+    }
+    
     const q = query(notesRef, where("id", "==", noteId));
     const snapshot = await getDocs(q);
     
@@ -97,20 +118,13 @@ export const updateNoteTitle = async (noteId: number, newTitle: string): Promise
       throw new Error(`Note with ID ${noteId} not found`);
     }
     
-    const docRef = doc(db, 'notes', snapshot.docs[0].id);
+    const docRef = doc(notesRef, snapshot.docs[0].id);
     
-    // Add to edit history
-    const historyEntry = {
-      timestamp: new Date(),
-      editType: 'title'
-    };
+    // Note: History is managed by EditHistoryService, not added here
     
     await updateDoc(docRef, {
       noteTitle: newTitle,
-      updatedAt: serverTimestamp(),
-      "editHistory": snapshot.docs[0].data().editHistory
-        ? [...snapshot.docs[0].data().editHistory, historyEntry]
-        : [historyEntry]
+      updatedAt: serverTimestamp()
     });
   } catch (error) {
     console.error(`Error updating note title ${noteId}:`, error);
@@ -121,10 +135,21 @@ export const updateNoteTitle = async (noteId: number, newTitle: string): Promise
 /**
  * Update a note's category
  */
-export const updateNoteCategory = async (noteId: number, category: NoteCategory | null): Promise<void> => {
+export const updateNoteCategory = async (noteId: number, category: NoteCategory | null, userId?: string, isAdmin: boolean = false): Promise<void> => {
   try {
-    // Find the document by note ID
-    const notesRef = collection(db, 'notes');
+    // For non-admin users, userId is required for subcollection access
+    if (!isAdmin && !userId) {
+      throw new Error('User ID is required for non-admin users');
+    }
+    
+    // Get the appropriate collection reference
+    let notesRef;
+    if (isAdmin) {
+      notesRef = collection(db, 'notes');
+    } else {
+      notesRef = collection(db, 'users', userId!, 'notes');
+    }
+    
     const q = query(notesRef, where("id", "==", noteId));
     const snapshot = await getDocs(q);
     
@@ -132,19 +157,12 @@ export const updateNoteCategory = async (noteId: number, category: NoteCategory 
       throw new Error(`Note with ID ${noteId} not found`);
     }
     
-    const docRef = doc(db, 'notes', snapshot.docs[0].id);
+    const docRef = doc(notesRef, snapshot.docs[0].id);
     
-    // Add to edit history
-    const historyEntry = {
-      timestamp: new Date(),
-      editType: 'category'
-    };
+    // Note: History is managed by EditHistoryService, not added here
     
     const updateData: any = {
-      updatedAt: serverTimestamp(),
-      "editHistory": snapshot.docs[0].data().editHistory
-        ? [...snapshot.docs[0].data().editHistory, historyEntry]
-        : [historyEntry]
+      updatedAt: serverTimestamp()
     };
     
     // If category is null, remove the category field
@@ -164,10 +182,21 @@ export const updateNoteCategory = async (noteId: number, category: NoteCategory 
 /**
  * Update a note's tags
  */
-export const updateNoteTags = async (noteId: number, tags: string[]): Promise<string[]> => {
+export const updateNoteTags = async (noteId: number, tags: string[], userId?: string, isAdmin: boolean = false): Promise<string[]> => {
   try {
-    // Find the document by note ID
-    const notesRef = collection(db, 'notes');
+    // For non-admin users, userId is required for subcollection access
+    if (!isAdmin && !userId) {
+      throw new Error('User ID is required for non-admin users');
+    }
+    
+    // Get the appropriate collection reference
+    let notesRef;
+    if (isAdmin) {
+      notesRef = collection(db, 'notes');
+    } else {
+      notesRef = collection(db, 'users', userId!, 'notes');
+    }
+    
     const q = query(notesRef, where("id", "==", noteId));
     const snapshot = await getDocs(q);
     
@@ -175,20 +204,13 @@ export const updateNoteTags = async (noteId: number, tags: string[]): Promise<st
       throw new Error(`Note with ID ${noteId} not found`);
     }
     
-    const docRef = doc(db, 'notes', snapshot.docs[0].id);
+    const docRef = doc(notesRef, snapshot.docs[0].id);
     
-    // Add to edit history
-    const historyEntry = {
-      timestamp: new Date(),
-      editType: 'tags'
-    };
+    // Note: History is managed by EditHistoryService, not added here
     
     await updateDoc(docRef, {
       tags,
-      updatedAt: serverTimestamp(),
-      "editHistory": snapshot.docs[0].data().editHistory
-        ? [...snapshot.docs[0].data().editHistory, historyEntry]
-        : [historyEntry]
+      updatedAt: serverTimestamp()
     });
     
     return tags;
@@ -201,10 +223,21 @@ export const updateNoteTags = async (noteId: number, tags: string[]): Promise<st
 /**
  * Update note data with arbitrary fields
  */
-export const updateNoteData = async (noteId: number, updates: Partial<Note>): Promise<void> => {
+export const updateNoteData = async (noteId: number, updates: Partial<Note>, userId?: string, isAdmin: boolean = false): Promise<void> => {
   try {
-    // Find the document by note ID
-    const notesRef = collection(db, 'notes');
+    // For non-admin users, userId is required for subcollection access
+    if (!isAdmin && !userId) {
+      throw new Error('User ID is required for non-admin users');
+    }
+    
+    // Get the appropriate collection reference
+    let notesRef;
+    if (isAdmin) {
+      notesRef = collection(db, 'notes');
+    } else {
+      notesRef = collection(db, 'users', userId!, 'notes');
+    }
+    
     const q = query(notesRef, where("id", "==", noteId));
     const snapshot = await getDocs(q);
     
@@ -212,7 +245,7 @@ export const updateNoteData = async (noteId: number, updates: Partial<Note>): Pr
       throw new Error(`Note with ID ${noteId} not found`);
     }
 
-    const docRef = doc(db, 'notes', snapshot.docs[0].id);
+    const docRef = doc(notesRef, snapshot.docs[0].id);
     const currentData = snapshot.docs[0].data();
     
     // Prepare update object with timestamp
@@ -230,17 +263,6 @@ export const updateNoteData = async (noteId: number, updates: Partial<Note>): Pr
     if (updates.editHistory !== undefined) {
       // Use the provided history (already pruned by the service)
       updateData.editHistory = updates.editHistory;
-    } else if (updates.content !== undefined) {
-      // Auto-create history entry for content updates if not provided
-      const historyEntry = {
-        timestamp: new Date(),
-        editType: 'update',
-        contentLength: updates.content.length,
-        contentSnapshot: updates.content.length > 100 ? updates.content : undefined
-      };
-      
-      const existingHistory = currentData?.editHistory || [];
-      updateData.editHistory = [historyEntry, ...existingHistory].slice(0, 20); // Keep last 20
     }
     
     await updateDoc(docRef, updateData);

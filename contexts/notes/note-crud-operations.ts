@@ -82,7 +82,7 @@ export class NoteCRUDOperations {
 
       if (user) {
         // Use Firebase for all authenticated users (both admin and regular)
-        await firebaseNotesService.updateNoteTitle(id, title);
+        await firebaseNotesService.updateNoteTitle(id, title, user.uid, isAdmin);
         // For Firebase users, we don't need to return a filePath
       } else {
         // Use localStorage for anonymous users
@@ -111,7 +111,7 @@ export class NoteCRUDOperations {
           if (user) {
             // Handle in Firebase for all authenticated users
             for (const linkedId of noteToDelete.linkedNoteIds) {
-              const linkedNote = await firebaseNotesService.getNote(linkedId);
+              const linkedNote = await firebaseNotesService.getNote(linkedId, user.uid, isAdmin);
               if (linkedNote && linkedNote.linkedNoteIds) {
                 // Filter out the note being deleted
                 const updatedLinks = linkedNote.linkedNoteIds.filter(linkId => linkId !== id);
@@ -119,7 +119,7 @@ export class NoteCRUDOperations {
                   ...linkedNote,
                   linkedNoteIds: updatedLinks,
                   updatedAt: new Date()
-                });
+                }, user.uid, isAdmin);
               }
             }
           } else {
@@ -143,13 +143,13 @@ export class NoteCRUDOperations {
       // Handle children notes - remove parent reference
       if (user) {
         // Handle in Firebase for all authenticated users
-        const childNotes = await firebaseNotesService.getChildNotes(user.uid, id);
+        const childNotes = await firebaseNotesService.getChildNotes(id, user.uid, isAdmin);
         for (const childNote of childNotes) {
           await firebaseNotesService.updateNoteData(childNote.id, {
             ...childNote,
             parentId: null,
             updatedAt: new Date()
-          });
+          }, user.uid, isAdmin);
         }
       } else {
         // Handle in localStorage for anonymous users
@@ -203,7 +203,7 @@ export class NoteCRUDOperations {
             // Handle in Firebase for all authenticated users
             for (const linkedId of noteToDelete.linkedNoteIds) {
               try {
-                const linkedNote = await firebaseNotesService.getNote(linkedId);
+                const linkedNote = await firebaseNotesService.getNote(linkedId, user.uid, isAdmin);
                 if (linkedNote && linkedNote.linkedNoteIds) {
                   // Filter out the note being deleted
                   const updatedLinks = linkedNote.linkedNoteIds.filter(linkId => linkId !== id);
@@ -211,7 +211,7 @@ export class NoteCRUDOperations {
                     ...linkedNote,
                     linkedNoteIds: updatedLinks,
                     updatedAt: new Date()
-                  });
+                  }, user.uid, isAdmin);
                 }
               } catch (linkError) {
                 console.warn(`Failed to update linked note ${linkedId}:`, linkError);
@@ -243,13 +243,13 @@ export class NoteCRUDOperations {
         if (user) {
           // Handle in Firebase for all authenticated users
           try {
-            const childNotes = await firebaseNotesService.getChildNotes(user.uid, id);
+            const childNotes = await firebaseNotesService.getChildNotes(id, user.uid, isAdmin);
             for (const childNote of childNotes) {
               await firebaseNotesService.updateNoteData(childNote.id, {
                 ...childNote,
                 parentId: null,
                 updatedAt: new Date()
-              });
+              }, user.uid, isAdmin);
             }
           } catch (childError) {
             console.warn(`Failed to update child notes for note ${id}:`, childError);

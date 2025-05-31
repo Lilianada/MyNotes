@@ -23,8 +23,7 @@ export const createSlugFromTitle = (title: string): string => {
 /**
  * Ensures the slug is unique by appending numbers if needed
  */
-export const getUniqueSlug = async (baseSlug: string, collectionName: string = 'notes'): Promise<string> => {
-  const notesRef = collection(db, collectionName);
+export const getUniqueSlug = async (baseSlug: string, notesRef: any): Promise<string> => {
   const q = query(notesRef, where("slug", "==", baseSlug));
   const snapshot = await getDocs(q);
   

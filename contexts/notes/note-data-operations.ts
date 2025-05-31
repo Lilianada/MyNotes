@@ -19,11 +19,11 @@ export class NoteDataOperations {
     user: { uid: string } | null | undefined
   ): Promise<NoteEditHistory[]> {
     try {
-      if (isAdmin && user && firebaseNotesService) {
-        // Use Firebase for admins
-        return await firebaseNotesService.getNoteHistory(id);
+      if (user && firebaseNotesService) {
+        // Use Firebase for authenticated users (both admin and regular)
+        return await firebaseNotesService.getNoteHistory(id, user.uid, isAdmin);
       } else {
-        // Use localStorage for non-admins
+        // Use localStorage for anonymous users
         return localStorageNotesService.getNoteHistory(id);
       }
     } catch (error) {
@@ -69,12 +69,12 @@ export class NoteDataOperations {
         console.log(`[NOTE OPERATIONS] Normalized tags:`, JSON.stringify(normalizedTags));
       }
       
-      if (isAdmin && user && firebaseNotesService) {
-        // Use Firebase for admins
+      if (user && firebaseNotesService) {
+        // Use Firebase for authenticated users (both admin and regular)
         console.log(`[NOTE OPERATIONS] Saving note ${id} to Firebase`);
-        await firebaseNotesService.updateNoteData(id, sanitizedNote);
+        await firebaseNotesService.updateNoteData(id, sanitizedNote, user.uid, isAdmin);
       } else {
-        // Use localStorage for non-admins
+        // Use localStorage for anonymous users
         console.log(`[NOTE OPERATIONS] Saving note ${id} to localStorage`);
         localStorageNotesService.updateNoteData(id, sanitizedNote);
       }

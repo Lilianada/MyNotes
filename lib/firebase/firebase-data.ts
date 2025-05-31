@@ -20,9 +20,21 @@ export class FirebaseDataOperations {
   /**
    * Update note category
    */
-  static async updateNoteCategory(id: number, category: NoteCategory | null): Promise<void> {
+  static async updateNoteCategory(id: number, category: NoteCategory | null, userId?: string, isAdmin: boolean = false): Promise<void> {
     try {
-      const notesRef = collection(db, 'notes');
+      // For non-admin users, userId is required for subcollection access
+      if (!isAdmin && !userId) {
+        throw new Error('User ID is required for non-admin users');
+      }
+      
+      // Get the appropriate collection reference
+      let notesRef;
+      if (isAdmin) {
+        notesRef = collection(db, 'notes');
+      } else {
+        notesRef = collection(db, 'users', userId!, 'notes');
+      }
+      
       const q = query(notesRef, where("id", "==", id));
       const snapshot = await getDocs(q);
       
@@ -30,36 +42,24 @@ export class FirebaseDataOperations {
         throw new Error(`Note with ID ${id} not found`);
       }
       
-      const docRef = doc(db, 'notes', snapshot.docs[0].id);
+      const docRef = doc(notesRef, snapshot.docs[0].id);
       
       // Get the current document to access its edit history
       const noteDoc = await getDoc(docRef);
       const noteData = noteDoc.data();
       
-      // Create new history entry with regular Date object
-      const newHistoryEntry = {
-        timestamp: new Date(),
-        editType: 'category'
-      };
-      
-      // Get existing history or create empty array if none exists
-      const existingHistory = noteData?.editHistory || [];
-      
-      // Add new history entry (keeping history limited to most recent 20 entries)
-      const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
+      // Note: History is managed by EditHistoryService, not added here
       
       if (category) {
         await updateDoc(docRef, { 
           category, 
-          updatedAt: serverTimestamp(),
-          editHistory: updatedHistory
+          updatedAt: serverTimestamp()
         });
       } else {
         // Remove category if null
         await updateDoc(docRef, { 
           category: null,
-          updatedAt: serverTimestamp(),
-          editHistory: updatedHistory
+          updatedAt: serverTimestamp()
         });
       }
     } catch (error) {
@@ -71,9 +71,21 @@ export class FirebaseDataOperations {
   /**
    * Get note edit history
    */
-  static async getNoteHistory(id: number): Promise<NoteEditHistory[]> {
+  static async getNoteHistory(id: number, userId?: string, isAdmin: boolean = false): Promise<NoteEditHistory[]> {
     try {
-      const notesRef = collection(db, 'notes');
+      // For non-admin users, userId is required for subcollection access
+      if (!isAdmin && !userId) {
+        throw new Error('User ID is required for non-admin users');
+      }
+      
+      // Get the appropriate collection reference
+      let notesRef;
+      if (isAdmin) {
+        notesRef = collection(db, 'notes');
+      } else {
+        notesRef = collection(db, 'users', userId!, 'notes');
+      }
+      
       const q = query(notesRef, where("id", "==", id));
       const snapshot = await getDocs(q);
       
@@ -82,7 +94,7 @@ export class FirebaseDataOperations {
       }
       
       // Get the note document
-      const noteDoc = await getDoc(doc(db, 'notes', snapshot.docs[0].id));
+      const noteDoc = await getDoc(doc(notesRef, snapshot.docs[0].id));
       const noteData = noteDoc.data();
       
       // If the note has no edit history, return an empty array
@@ -101,9 +113,21 @@ export class FirebaseDataOperations {
   /**
    * Update note tags
    */
-  static async updateNoteTags(id: number, tags: string[]): Promise<string[]> {
+  static async updateNoteTags(id: number, tags: string[], userId?: string, isAdmin: boolean = false): Promise<string[]> {
     try {
-      const notesRef = collection(db, 'notes');
+      // For non-admin users, userId is required for subcollection access
+      if (!isAdmin && !userId) {
+        throw new Error('User ID is required for non-admin users');
+      }
+      
+      // Get the appropriate collection reference
+      let notesRef;
+      if (isAdmin) {
+        notesRef = collection(db, 'notes');
+      } else {
+        notesRef = collection(db, 'users', userId!, 'notes');
+      }
+      
       const q = query(notesRef, where("id", "==", id));
       const snapshot = await getDocs(q);
       
@@ -111,23 +135,13 @@ export class FirebaseDataOperations {
         throw new Error(`Note with ID ${id} not found`);
       }
       
-      const docRef = doc(db, 'notes', snapshot.docs[0].id);
+      const docRef = doc(notesRef, snapshot.docs[0].id);
       
       // Get the current document to access its edit history
       const noteDoc = await getDoc(docRef);
       const noteData = noteDoc.data();
       
-      // Create new history entry
-      const newHistoryEntry = {
-        timestamp: new Date(),
-        editType: 'tags'
-      };
-      
-      // Get existing history or create empty array if none exists
-      const existingHistory = noteData?.editHistory || [];
-      
-      // Add new history entry (keeping history limited to most recent 20 entries)
-      const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
+      // Note: History is managed by EditHistoryService, not added here
       
       // Ensure tags are properly cleaned
       const cleanTags = Array.isArray(tags) ? 
@@ -135,8 +149,7 @@ export class FirebaseDataOperations {
       
       await updateDoc(docRef, { 
         tags: cleanTags,
-        updatedAt: serverTimestamp(),
-        editHistory: updatedHistory
+        updatedAt: serverTimestamp()
       });
       
       // Return the clean tags array so callers have access to the normalized values
@@ -150,9 +163,21 @@ export class FirebaseDataOperations {
   /**
    * Update note data with any field changes
    */
-  static async updateNoteData(id: number, updatedNote: Partial<Note>): Promise<void> {
+  static async updateNoteData(id: number, updatedNote: Partial<Note>, userId?: string, isAdmin: boolean = false): Promise<void> {
     try {
-      const notesRef = collection(db, 'notes');
+      // For non-admin users, userId is required for subcollection access
+      if (!isAdmin && !userId) {
+        throw new Error('User ID is required for non-admin users');
+      }
+      
+      // Get the appropriate collection reference
+      let notesRef;
+      if (isAdmin) {
+        notesRef = collection(db, 'notes');
+      } else {
+        notesRef = collection(db, 'users', userId!, 'notes');
+      }
+      
       const q = query(notesRef, where("id", "==", id));
       const snapshot = await getDocs(q);
       
@@ -160,27 +185,11 @@ export class FirebaseDataOperations {
         throw new Error(`Note with ID ${id} not found`);
       }
       
-      const docRef = doc(db, 'notes', snapshot.docs[0].id);
+      const docRef = doc(notesRef, snapshot.docs[0].id);
       const currentDoc = await getDoc(docRef);
       const currentData = currentDoc.data();
       
-      // Determine edit type based on what fields are being updated
-      let editType: NoteEditHistory['editType'] = 'update';
-      if (updatedNote.noteTitle !== undefined) editType = 'title';
-      else if (updatedNote.tags !== undefined) editType = 'tags';
-      else if (updatedNote.category !== undefined) editType = 'category';
-      
-      // Create new history entry
-      const newHistoryEntry = {
-        timestamp: new Date(),
-        editType
-      };
-      
-      // Get existing history or create empty array if none exists
-      const existingHistory = currentData?.editHistory || [];
-      
-      // Add new history entry (keeping history limited to most recent 20 entries)
-      const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
+      // Note: History is managed by EditHistoryService, not created here
       
       // Special handling for tags - ensure it's always an array
       const cleanData: Record<string, any> = {};
@@ -203,12 +212,19 @@ export class FirebaseDataOperations {
           [...updatedNote.linkedNoteIds] : [];
       }
       
-      // Update the document with new data and history
-      await updateDoc(docRef, {
+      // Update the document with new data
+      // Note: History is managed by EditHistoryService when provided in updatedNote
+      const updatePayload: any = {
         ...cleanData,
-        updatedAt: serverTimestamp(),
-        editHistory: updatedHistory
-      });
+        updatedAt: serverTimestamp()
+      };
+      
+      // Only add editHistory if it's explicitly provided in the update
+      if (updatedNote.editHistory !== undefined) {
+        updatePayload.editHistory = updatedNote.editHistory;
+      }
+      
+      await updateDoc(docRef, updatePayload);
       
       console.log(`[FIREBASE] Note ${id} updated successfully in Firestore`);
     } catch (error) {

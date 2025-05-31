@@ -192,8 +192,8 @@ export class EditHistoryService {
     user: { uid: string } | null | undefined
   ): Promise<NoteEditHistory[]> {
     try {
-      if (isAdmin && user && firebaseNotesService) {
-        return await firebaseNotesService.getNoteHistory(noteId);
+      if (user && firebaseNotesService) {
+        return await firebaseNotesService.getNoteHistory(noteId, user.uid, isAdmin);
       } else {
         return localStorageNotesService.getNoteHistory(noteId);
       }

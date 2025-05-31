@@ -25,10 +25,16 @@ import {
 } from './helpers';
 
 /**
- * Get the appropriate collection name based on user type
+ * Get the appropriate collection reference based on user type
+ * For admins: use top-level 'notes' collection
+ * For regular users: use subcollection 'users/{userId}/notes'
  */
-function getNotesCollection(isAdmin: boolean): string {
-  return isAdmin ? 'notes' : 'userNotes';
+function getNotesCollectionRef(userId: string, isAdmin: boolean) {
+  if (isAdmin) {
+    return collection(db, 'notes');
+  } else {
+    return collection(db, 'users', userId, 'notes');
+  }
 }
 
 /**
@@ -36,8 +42,7 @@ function getNotesCollection(isAdmin: boolean): string {
  */
 export const getNotes = async (userId: string, isAdmin: boolean = false): Promise<Note[]> => {
   try {
-    const collectionName = getNotesCollection(isAdmin);
-    const notesRef = collection(db, collectionName);
+    const notesRef = getNotesCollectionRef(userId, isAdmin);
     const q = query(notesRef, where("userId", "==", userId));
     const snapshot = await getDocs(q);
     
@@ -86,8 +91,8 @@ export const addNote = async (userId: string, noteTitle: string, isAdmin: boolea
     
     // Create a slug from the note title for the document ID
     const baseSlug = createSlugFromTitle(noteTitle);
-    const collectionName = getNotesCollection(isAdmin);
-    const slug = await getUniqueSlug(baseSlug, collectionName);
+    const notesRef = getNotesCollectionRef(userId, isAdmin);
+    const slug = await getUniqueSlug(baseSlug, notesRef);
     
     // Create initial history entry
     const initialHistory = [{
@@ -128,7 +133,7 @@ export const addNote = async (userId: string, noteTitle: string, isAdmin: boolea
     noteData.fileSize = fileSize;
     
     // Create document with slug as the document ID
-    const docRef = doc(db, collectionName, slug);
+    const docRef = doc(notesRef, slug);
     await setDoc(docRef, noteData);
     
     // Update storage tracking for non-admin users
@@ -154,36 +159,65 @@ export const addNote = async (userId: string, noteTitle: string, isAdmin: boolea
 
 /**
  * Get a single note by ID
+ * This function searches in both admin notes and user subcollections for backwards compatibility
  */
-export const getNote = async (noteId: number): Promise<Note | null> => {
+export const getNote = async (noteId: number, userId?: string, isAdmin?: boolean): Promise<Note | null> => {
   try {
-    const notesRef = collection(db, 'notes');
-    const q = query(notesRef, where("id", "==", noteId));
-    const snapshot = await getDocs(q);
-    
-    if (snapshot.empty) {
-      return null;
+    // If we have user context, search in the appropriate collection first
+    if (userId !== undefined && isAdmin !== undefined) {
+      const notesRef = getNotesCollectionRef(userId, isAdmin);
+      const q = query(notesRef, where("id", "==", noteId));
+      const snapshot = await getDocs(q);
+      
+      if (!snapshot.empty) {
+        const data = snapshot.docs[0].data();
+        return {
+          id: data.id,
+          content: data.content || "",
+          noteTitle: data.noteTitle || "Untitled",
+          createdAt: convertTimestamp(data.createdAt),
+          updatedAt: data.updatedAt ? convertTimestamp(data.updatedAt) : undefined,
+          filePath: data.filePath || undefined,
+          slug: data.slug || "",
+          category: data.category || undefined,
+          tags: data.tags || [],
+          parentId: data.parentId !== undefined ? data.parentId : null,
+          linkedNoteIds: data.linkedNoteIds || [],
+          wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
+          publish: data.publish || false,
+          description: data.description || "",
+          editHistory: data.editHistory ? convertEditHistory(data.editHistory) : []
+        };
+      }
     }
     
-    const data = snapshot.docs[0].data();
+    // Fallback: search in the admin notes collection for backwards compatibility
+    const adminNotesRef = collection(db, 'notes');
+    const adminQuery = query(adminNotesRef, where("id", "==", noteId));
+    const adminSnapshot = await getDocs(adminQuery);
     
-    return {
-      id: data.id,
-      content: data.content || "",
-      noteTitle: data.noteTitle || "Untitled",
-      createdAt: convertTimestamp(data.createdAt),
-      updatedAt: data.updatedAt ? convertTimestamp(data.updatedAt) : undefined,
-      filePath: data.filePath || undefined,
-      slug: data.slug || "",
-      category: data.category || undefined,
-      tags: data.tags || [],
-      parentId: data.parentId !== undefined ? data.parentId : null,
-      linkedNoteIds: data.linkedNoteIds || [],
-      wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
-      publish: data.publish || false,
-      description: data.description || "",
-      editHistory: data.editHistory ? convertEditHistory(data.editHistory) : []
-    };
+    if (!adminSnapshot.empty) {
+      const data = adminSnapshot.docs[0].data();
+      return {
+        id: data.id,
+        content: data.content || "",
+        noteTitle: data.noteTitle || "Untitled",
+        createdAt: convertTimestamp(data.createdAt),
+        updatedAt: data.updatedAt ? convertTimestamp(data.updatedAt) : undefined,
+        filePath: data.filePath || undefined,
+        slug: data.slug || "",
+        category: data.category || undefined,
+        tags: data.tags || [],
+        parentId: data.parentId !== undefined ? data.parentId : null,
+        linkedNoteIds: data.linkedNoteIds || [],
+        wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
+        publish: data.publish || false,
+        description: data.description || "",
+        editHistory: data.editHistory ? convertEditHistory(data.editHistory) : []
+      };
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error getting note by ID:', error);
     return null;
@@ -193,9 +227,13 @@ export const getNote = async (noteId: number): Promise<Note | null> => {
 /**
  * Get child notes for a given parent note
  */
-export const getChildNotes = async (userId: string, parentId: number): Promise<Note[]> => {
+export const getChildNotes = async (parentId: number, userId: string, isAdmin: boolean = false): Promise<Note[]> => {
   try {
-    const notesRef = collection(db, 'notes');
+    if (!isAdmin && !userId) {
+      throw new Error('User ID is required for non-admin operations');
+    }
+
+    const notesRef = getNotesCollectionRef(userId, isAdmin);
     const q = query(
       notesRef, 
       where("userId", "==", userId),
