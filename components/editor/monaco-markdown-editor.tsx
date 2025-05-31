@@ -81,7 +81,7 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
             setPreviousContent(value);
           }
         }}
-        theme={isDarkTheme ? 'vs-dark-custom' : 'vs-light-custom'}
+        theme={isDarkTheme ? 'markdown-theme-dark' : 'markdown-theme'}
         options={{
           wordWrap: 'on',
           minimap: { enabled: false },

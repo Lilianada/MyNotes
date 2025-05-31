@@ -6,6 +6,7 @@ import {
   loadUserNotes 
 } from "./note-storage";
 import { localStorageNotesService } from "@/lib/local-storage-notes";
+import { addUniqueIdsToLocalNotes } from "@/lib/sync-service";
 
 export async function initializeNotes(
   isAdmin: boolean,
@@ -168,6 +169,24 @@ export async function initializeNotes(
 
     // Handle the loaded notes
     if (loadedNotes.length > 0) {
+      // Ensure all notes have unique IDs (important for sync functionality)
+      try {
+        console.log(`[${currentContext}] Ensuring all notes have unique IDs`);
+        await addUniqueIdsToLocalNotes();
+        
+        // Get the updated notes from local storage if they were modified
+        if (typeof window !== "undefined") {
+          const updatedLocalNotes = localStorageNotesService.getNotes();
+          if (updatedLocalNotes.length > 0) {
+            loadedNotes = updatedLocalNotes;
+            console.log(`[${currentContext}] Updated notes with unique IDs: ${loadedNotes.length} notes`);
+          }
+        }
+      } catch (uniqueIdError) {
+        console.error(`[${currentContext}] Error adding unique IDs to notes:`, uniqueIdError);
+        // Continue with original notes if unique ID assignment fails
+      }
+      
       // Mark initialization as successful
       hasInitializedRef.current = true;
       initContextRef.current = isAdmin ? 'admin' : 'regular';
@@ -243,10 +262,29 @@ export async function initializeNotes(
             .catch(() => [] as Note[]);
             
           if (Array.isArray(finalCheckNotes) && finalCheckNotes.length > 0) {
-            setNotes(finalCheckNotes);
+            // Ensure all notes have unique IDs before setting them
+            let notesToSet = finalCheckNotes;
+            try {
+              console.log(`[${currentContext}] Ensuring backup notes have unique IDs`);
+              await addUniqueIdsToLocalNotes();
+              
+              // Get the updated notes from local storage
+              if (typeof window !== "undefined") {
+                const updatedBackupNotes = localStorageNotesService.getNotes();
+                if (updatedBackupNotes.length > 0) {
+                  notesToSet = updatedBackupNotes;
+                  console.log(`[${currentContext}] Updated backup notes with unique IDs: ${notesToSet.length} notes`);
+                }
+              }
+            } catch (uniqueIdError) {
+              console.error(`[${currentContext}] Error adding unique IDs to backup notes:`, uniqueIdError);
+              // Continue with original notes if unique ID assignment fails
+            }
+            
+            setNotes(notesToSet);
             
             // Select the most recent note
-            const mostRecentNote = getMostRecentNote(finalCheckNotes);
+            const mostRecentNote = getMostRecentNote(notesToSet);
             setSelectedNoteId(mostRecentNote.id);
             
             // Show success toast
@@ -254,7 +292,7 @@ export async function initializeNotes(
               const { toast } = await import("@/components/ui/use-toast");
               toast({
                 title: "Notes recovered successfully",
-                description: `Found ${finalCheckNotes.length} notes in backup storage.`,
+                description: `Found ${notesToSet.length} notes in backup storage.`,
               });
             }
             

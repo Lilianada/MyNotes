@@ -2,6 +2,7 @@
 
 import { Note, NoteCategory, NoteEditHistory } from '@/types';
 import { countWords } from './word-count';
+import { generateUniqueId, calculateNoteSize } from './storage-utils';
 
 // Helper function to create a slug from a title
 function createSlugFromTitle(title: string): string {
@@ -31,9 +32,11 @@ export const localStorageNotesService = {
       return notes.map((note: any) => ({
         ...note,
         id: Number(note.id), // Ensure ID is a number
+        uniqueId: note.uniqueId || generateUniqueId(), // Ensure all notes have unique IDs
         createdAt: new Date(note.createdAt),
         slug: note.slug || createSlugFromTitle(note.noteTitle),
-        wordCount: note.wordCount || (note.content ? countWords(note.content) : 0)
+        wordCount: note.wordCount || (note.content ? countWords(note.content) : 0),
+        fileSize: note.fileSize || calculateNoteSize(note as Note)
       }));
     } catch (error) {
       console.error('Failed to parse notes from localStorage:', error);
@@ -112,19 +115,22 @@ export const localStorageNotesService = {
   addNote(noteTitle: string): Note {
     const notes = this.getNotes();
     
-    // Generate a numeric ID
+    // Generate a numeric ID and unique ID
     const numericId = Date.now();
+    const uniqueId = generateUniqueId();
     
     // Create a slug from the note title
     const slug = createSlugFromTitle(noteTitle);
     
     const newNote: Note = {
       id: numericId,
+      uniqueId,
       content: "",
       noteTitle,
       createdAt: new Date(),
       slug,
-      wordCount: 0
+      wordCount: 0,
+      fileSize: calculateNoteSize({ content: "", noteTitle } as Note)
     };
     
     const updatedNotes = [newNote, ...notes];
@@ -134,8 +140,6 @@ export const localStorageNotesService = {
     this.addHistoryEntry(numericId, 'create');
     
     return newNote;
-    
-    return newNote;
   },
   
   // Update a note's content
@@ -143,9 +147,39 @@ export const localStorageNotesService = {
     const notes = this.getNotes();
     const wordCount = countWords(content);
     
-    const updatedNotes = notes.map(note => 
-      note.id === id ? { ...note, content, wordCount } : note
-    );
+    const updatedNotes = notes.map(note => {
+      if (note.id === id) {
+        const updatedNote = { ...note, content, wordCount };
+        updatedNote.fileSize = calculateNoteSize(updatedNote);
+        return updatedNote;
+      }
+      return note;
+    });
+    window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
+    
+    // Add history entry
+    this.addHistoryEntry(id, 'update');
+  },
+
+  // Update a note with content and optional metadata
+  updateNote(id: number, content: string, metadata?: Partial<Note>): void {
+    const notes = this.getNotes();
+    const wordCount = countWords(content);
+    
+    const updatedNotes = notes.map(note => {
+      if (note.id === id) {
+        const updatedNote = { 
+          ...note, 
+          content, 
+          wordCount,
+          ...metadata,
+          updatedAt: new Date()
+        };
+        updatedNote.fileSize = calculateNoteSize(updatedNote);
+        return updatedNote;
+      }
+      return note;
+    });
     window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
     
     // Add history entry
@@ -223,6 +257,11 @@ export const localStorageNotesService = {
       
       // Set the update timestamp
       newNote.updatedAt = new Date();
+      
+      // Recalculate file size if content changed
+      if (updatedNote.content !== undefined || updatedNote.noteTitle !== undefined) {
+        newNote.fileSize = calculateNoteSize(newNote);
+      }
       
       return newNote;
     });

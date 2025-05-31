@@ -21,20 +21,6 @@ interface NoteEditorProps {
   onUpdateTitle: (newTitle: string) => void;
 }
 
-const editorStyles = `
-  .note-editor-textarea {
-    letter-spacing: 0.025em !important;
-    line-height: 2 !important;
-    padding: 1rem;
-    width: 100%;
-    height: 100%;
-    resize: none;
-    outline: none;
-    border: none;
-    overflow-y: auto;
-  }
-`;
-
 export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
   function NoteEditor({ note, onChange, onSave, onUpdateTitle }, ref) {
     const [renderHTML, setRenderHTML] = useState(false);
@@ -291,7 +277,6 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
 
         {renderHTML ? (
           <div className="flex-1 h-full overflow-hidden">
-            <style jsx global>{editorStyles}</style>
             <MarkdownRenderer
               content={note.content}
               onChange={onChange}

@@ -29,7 +29,11 @@ Remember to keep it minimal, simple, straightforward, do not tamoer with existin
 
 - Allow login and saving of notes for new users not just admin. Use 'users' collection for the new users while also maintaining the 'admin' and 'notes' collections for just admin. Improve on notes syncing, at no point in time should local storage override database storage. 
 
-- All users asides admin user should be given storage limit for their notes. each user gets a certain amount, and the file size per note should be calculated in order to track and manage users storage. 
+- All users asides admin user should be given storage limit for their notes. each user gets a 10MB storage, and the file size per note should be calculated in order to track and manage users storage. 
+Display an alert when user gets to 7mb+
+Add a progress ba for them to be able to track their storage usage
+Add this Storage to the ellipsis dropdown on the header so that when user clicks on it, a modal with info on storage will open for them to see details.
+When user checks details for each note, display the file size for them as well on the first tab.
 
 - ✅ Fix my editors both monaco and note-editor to use the global font selected. I have two fonts and i change between both from time to time so the editors should also use the selected note than a hard coded one.
 

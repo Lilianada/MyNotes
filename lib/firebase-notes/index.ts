@@ -13,8 +13,8 @@ export * from './helpers';
 // Create and export the firebaseNotesService object
 export const firebaseNotesService = {
   // Note operations
-  getNotes,
-  addNote,
+  getNotes: (userId: string, isAdmin?: boolean) => getNotes(userId, isAdmin),
+  addNote: (userId: string, noteTitle: string, isAdmin?: boolean) => addNote(userId, noteTitle, isAdmin),
   getNote,
   getChildNotes,
   

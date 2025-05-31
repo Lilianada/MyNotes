@@ -8,6 +8,101 @@ export function configureMarkdownCompletions(monaco: any) {
   // Skip if running on server
   if (typeof window === 'undefined') return;
 
+  // Add completion provider for asterisk auto-completion to double asterisk
+  monaco.languages.registerCompletionItemProvider('markdown', {
+    triggerCharacters: ['*'],
+    provideCompletionItems: (model: { getValueInRange: (arg0: any) => any; getLineContent: (arg0: any) => any; }, position: { lineNumber: any; column: number; }) => {
+      const lineContent = model.getLineContent(position.lineNumber);
+      const currentChar = lineContent.charAt(position.column - 2); // Character just typed
+      
+      // Check for single asterisk for italic
+      if (currentChar === '*') {
+        const beforeAsterisk = lineContent.substring(0, position.column - 2);
+        
+        // Check if we're not already in a bold section (avoid ****)
+        if (!beforeAsterisk.endsWith('*')) {
+          return {
+            suggestions: [{
+              label: 'Italic text',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '*${1:text}*',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: 'Complete to italic text (*text*)',
+              range: {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: position.column - 1,
+                endColumn: position.column
+              }
+            }]
+          };
+        }
+      }
+      
+      return { suggestions: [] };
+    }
+  });
+
+  // Add completion provider for double asterisk for bold text
+  monaco.languages.registerCompletionItemProvider('markdown', {
+    triggerCharacters: ['*'],
+    provideCompletionItems: (model: { getLineContent: (arg0: any) => any; }, position: { lineNumber: any; column: number; }) => {
+      const lineContent = model.getLineContent(position.lineNumber);
+      const beforeCursor = lineContent.substring(0, position.column - 1);
+      
+      // Check if we just typed a second asterisk (for bold)
+      if (beforeCursor.endsWith('**')) {
+        return {
+          suggestions: [{
+            label: 'Bold text',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: '${1:text}**',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            detail: 'Complete to bold text (**text**)',
+            range: {
+              startLineNumber: position.lineNumber,
+              endLineNumber: position.lineNumber,
+              startColumn: position.column,
+              endColumn: position.column
+            }
+          }]
+        };
+      }
+      
+      return { suggestions: [] };
+    }
+  });
+
+  // Add completion provider for backlinks
+  monaco.languages.registerCompletionItemProvider('markdown', {
+    triggerCharacters: ['['],
+    provideCompletionItems: (model: { getLineContent: (arg0: any) => any; }, position: { lineNumber: any; column: number; }) => {
+      const lineContent = model.getLineContent(position.lineNumber);
+      const beforeCursor = lineContent.substring(0, position.column - 1);
+      
+      // Check if we just typed the second bracket for backlink
+      if (beforeCursor.endsWith('[[')) {
+        return {
+          suggestions: [{
+            label: 'Backlink',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: '${1:link text}]]',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            detail: 'Complete to backlink ([[link]])',
+            range: {
+              startLineNumber: position.lineNumber,
+              endLineNumber: position.lineNumber,
+              startColumn: position.column,
+              endColumn: position.column
+            }
+          }]
+        };
+      }
+      
+      return { suggestions: [] };
+    }
+  });
+
   // Add Markdown-specific completions for snippets
   monaco.languages.registerCompletionItemProvider('markdown', {
     triggerCharacters: ['#', '-', '*', '>', '`', '[', '!'],

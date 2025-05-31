@@ -16,6 +16,7 @@ export interface NoteEditHistory {
 
 export interface Note {
   id: number;
+  uniqueId?: string; // 6-8 character unique identifier for sync
   content: string;
   createdAt: Date;
   noteTitle: string;
@@ -31,4 +32,22 @@ export interface Note {
   description?: string;
   editHistory?: NoteEditHistory[];
   archived?: boolean;
+  fileSize?: number; // File size in bytes
+}
+
+// User storage tracking interface
+export interface UserStorage {
+  userId: string;
+  totalStorage: number; // Total storage used in bytes
+  maxStorage: number; // Storage limit in bytes (10MB for regular users)
+  noteCount: number;
+  lastUpdated: Date;
+  isAdmin: boolean;
+}
+
+// Storage alert interface
+export interface StorageAlert {
+  type: 'warning' | 'error';
+  message: string;
+  percentage: number;
 }

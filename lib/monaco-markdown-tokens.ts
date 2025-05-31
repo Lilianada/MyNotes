@@ -20,6 +20,7 @@ export const markdownTokenTypes = {
   comment: 'comment',
   codeBlock: 'variable.source.md',
   codeLang: 'keyword.md',
+  backlink: 'string.backlink.md',
 };
 
 /**
@@ -33,8 +34,8 @@ export function configureMarkdownTokens(monaco: any) {
   monaco.languages.setMonarchTokensProvider('markdown', {
     tokenizer: {
       root: [
-        // Headers (# title)
-        [/^(\s{0,3})(#+)((?=\s)[\s]*[^#].*)/, ['', markdownTokenTypes.header, markdownTokenTypes.header]],
+        // Headers (# title) - fixed regex to properly capture all header levels
+        [/^(\s{0,3})(#{1,6})(\s+.*?$)/, ['', markdownTokenTypes.header, markdownTokenTypes.header]],
         
         // Code blocks with language ```js code ```
         [/^(\s*)(```)([\w-]*$)/, ['', markdownTokenTypes.codeLang, markdownTokenTypes.codeLang]],
@@ -55,6 +56,11 @@ export function configureMarkdownTokens(monaco: any) {
         
         // Inline code ` `
         [/`([^`]+)`/, markdownTokenTypes.code],
+        
+        // Backlinks [[text]]
+        [/(\[\[)([^\]]+)(\]\])/, 
+          [markdownTokenTypes.backlink, markdownTokenTypes.linkText, markdownTokenTypes.backlink]
+        ],
         
         // Links [text](url)
         [/(\[)([^\]]+)(\])(\()([^\)]+)(\))/, 

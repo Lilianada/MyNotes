@@ -7,10 +7,11 @@ import {
   signInWithPopup, 
   signOut as firebaseSignOut,
 } from 'firebase/auth';
-import { getDoc, doc } from 'firebase/firestore';
+import { getDoc, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, googleProvider, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { AuthLoadingState } from '@/components/ui/loading-states';
+import { getUserStorage } from '@/lib/firebase-storage';
 
 interface AuthContextType {
   user: User | null;
@@ -40,6 +41,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Create or update user document in Firestore
+  const createUserDocument = async (user: User, isAdmin: boolean) => {
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        // Create new user document
+        await setDoc(userRef, {
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          isAdmin,
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp()
+        });
+
+        // Initialize storage for the user
+        await getUserStorage(user.uid, isAdmin);
+      } else {
+        // Update last login
+        await updateDoc(userRef, {
+          lastLogin: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      console.error('Error creating/updating user document:', error);
+    }
+  };
+
   // Sign in with Google
   const signInWithGoogle = async () => {
     try {
@@ -48,17 +80,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { user } = result;
       const adminStatus = await checkIfAdmin(user);
       
-      if (adminStatus) {
-        toast({
-          title: "Success",
-          description: "Welcome back, admin!",
-        });
-      } else {
-        toast({
-          title: "Not Admin",
-          description: "You're signed in, but not an admin. Using local storage.",
-        });
-      }
+      // Create or update user document
+      await createUserDocument(user, adminStatus);
+      
+      toast({
+        title: "Success",
+        description: adminStatus ? "Welcome back, admin!" : "Welcome! You now have 10MB of note storage.",
+      });
     } catch (error) {
       console.error('Error signing in with Google:', error);
       toast({

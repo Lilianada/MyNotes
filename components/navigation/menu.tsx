@@ -6,7 +6,8 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import HelpModal from "@/components/modals/help-modal"
 import ExportDialog from "@/components/modals/export-dialog"
-import { HelpCircle, Download } from "lucide-react"
+import { StorageModal } from "@/components/modals/storage-modal"
+import { HelpCircle, Download, HardDrive } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useNotes } from "@/contexts/notes/note-context"
 
@@ -19,7 +20,9 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
   const { fontType, toggleFont } = useFont();
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
   const { notes, selectedNoteId } = useNotes();
+  const { user, isAdmin } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
   
   const currentNote = selectedNoteId ? notes.find(note => note.id === selectedNoteId) : null;
@@ -91,6 +94,20 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
                 <Download className="w-4 h-4 mr-2" />
                 <span>Export</span>
               </button>
+              
+              {/* Storage Info - only for authenticated non-admin users */}
+              {user && !isAdmin && (
+                <button
+                  onClick={() => {
+                    setIsStorageModalOpen(true);
+                    setIsOpen(false);
+                  }}
+                  className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50 mt-1"
+                >
+                  <HardDrive className="w-4 h-4 mr-2" />
+                  <span>Storage Info</span>
+                </button>
+              )}
             </div>
           </div>
           
@@ -126,6 +143,12 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
         onClose={() => setIsExportModalOpen(false)}
         currentNote={currentNote}
         allNotes={notes}
+      />
+      
+      {/* Storage Modal */}
+      <StorageModal
+        isOpen={isStorageModalOpen}
+        onClose={() => setIsStorageModalOpen(false)}
       />
     </div>
   )

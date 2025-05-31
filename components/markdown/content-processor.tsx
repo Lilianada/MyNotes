@@ -19,8 +19,8 @@ export const useContentProcessor = (content: string, markdownRef: React.RefObjec
   
   // Handle auto-replacement of symbols before rendering
   const processedContent = useMemo(() => {
-    // Only replace arrow notation, no em dash replacement
-    return content.replace(/->/g, "→");
+    // Monaco editor already handles arrow conversion, so we don't need to do it here
+    return content;
   }, [content]);
 
   // Post-processing after rendering
@@ -36,19 +36,9 @@ export const useContentProcessor = (content: string, markdownRef: React.RefObjec
     // Replace notation symbols in paragraphs
     const paragraphs = markdownRef.current.querySelectorAll("p");
     paragraphs.forEach((p) => {
-      let needsUpdate = false;
-      
-      // Check for arrow notation
-      if (p.innerHTML.includes("->")) {
-        p.innerHTML = p.innerHTML.replace(/->/g, "→");
-        needsUpdate = true;
-      }
-      
-      // If updates were made, re-process the node to handle any new links
-      if (needsUpdate) {
-        p.innerHTML = processInternalLinks(p.innerHTML, notes, navigateToNoteById);
-        attachInternalLinkHandlers(p, navigateToNoteById);
-      }
+      // Process internal links without any arrow replacement since Monaco already handles it
+      p.innerHTML = processInternalLinks(p.innerHTML, notes, navigateToNoteById);
+      attachInternalLinkHandlers(p, navigateToNoteById);
     });
     
     // Fix task list attributes

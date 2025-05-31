@@ -7,6 +7,8 @@ import { useNotes } from "@/contexts/notes/note-context"
 import SearchNotes from "@/components/notes/search-notes"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { useAuth } from "@/contexts/auth-context"
+import { useStorage } from "@/contexts/storage-context"
+import { StorageProgress } from "@/components/ui/storage-progress"
 import { Note } from "@/types"
 
 
@@ -24,6 +26,7 @@ export function Header({ onNewNote, toggleSidebar, isSidebarOpen, isCreatingNote
   const { notes, selectNote } = useNotes()
   const searchRef = useRef<HTMLDivElement>(null)
   const { user, isAdmin } = useAuth();
+  const { userStorage, storagePercentage } = useStorage();
   
   // Close search when clicking outside
   useEffect(() => {
@@ -61,6 +64,13 @@ export function Header({ onNewNote, toggleSidebar, isSidebarOpen, isCreatingNote
       <div className="flex-grow text-center md:text-left md:flex-grow-0 md:ml-4 text-lg font-medium text-gray-800">
         NoteIt-Down
       </div>
+      
+      {/* Storage Progress for authenticated non-admin users */}
+      {user && !isAdmin && userStorage && (
+        <div className="hidden sm:flex items-center ml-4">
+          <StorageProgress />
+        </div>
+      )}
       
       {/* Search icon and dialog for all screen sizes */}
       {/* Spacer for layout */}

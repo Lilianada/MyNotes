@@ -10,6 +10,11 @@ import {
 } from "./note-storage";
 import { localStorageNotesService } from "@/lib/local-storage-notes";
 import { firebaseNotesService } from "@/lib/firebase-notes";
+import { syncLocalNotesToFirebase } from "@/lib/sync-service";
+import { calculateNoteSize } from "@/lib/storage-utils";
+import { getUserStorage, incrementStorage } from "@/lib/firebase-storage";
+import { useToast } from "@/hooks/use-toast";
+import { useStorage } from "@/contexts/storage-context";
 
 export function useNoteState() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -43,12 +48,20 @@ export function useNoteOperations(
   isAdmin: boolean,
   user: { uid: string } | null | undefined
 ) {
+  const { toast } = useToast();
+  const { refreshStorage } = useStorage();
+  
   const addNote = async (noteTitle: string): Promise<Note> => {
     const newNote = await NoteOperations.addNote(noteTitle, Boolean(isAdmin), user);
 
     // Add to state
     setNotes((prevNotes) => [...prevNotes, newNote]);
     setSelectedNoteId(newNote.id);
+
+    // Refresh storage tracking for non-admin users
+    if (user && !isAdmin) {
+      refreshStorage();
+    }
 
     return newNote;
   };
@@ -171,6 +184,11 @@ export function useNoteOperations(
 
     // Delete the note from storage
     await NoteOperations.deleteNote(id, noteToDelete, Boolean(isAdmin), user);
+    
+    // Refresh storage tracking for non-admin users
+    if (user && !isAdmin) {
+      refreshStorage();
+    }
   };
 
   const bulkDeleteNotes = async (ids: number[]): Promise<{ successful: number[], failed: { id: number, error: string }[] }> => {
@@ -197,7 +215,14 @@ export function useNoteOperations(
 
     // Delete the notes from storage
     try {
-      return await NoteOperations.bulkDeleteNotes(ids, notesToDelete, Boolean(isAdmin), user);
+      const result = await NoteOperations.bulkDeleteNotes(ids, notesToDelete, Boolean(isAdmin), user);
+      
+      // Refresh storage tracking for non-admin users
+      if (user && !isAdmin) {
+        refreshStorage();
+      }
+      
+      return result;
     } catch (error) {
       console.error("Failed to bulk delete notes:", error);
       // Return error result for all notes
@@ -258,6 +283,18 @@ export function useNoteOperations(
         note.id === id ? { ...note, archived, updatedAt: now } : note
       )
     );
+
+    // If we're archiving the currently selected note, switch to another note
+    if (archived && selectedNoteId === id) {
+      const remainingNotes = notes.filter((note) => note.id !== id && !note.archived);
+      if (remainingNotes.length > 0) {
+        // Find the most recently created note
+        const newestNote = getMostRecentNote(remainingNotes);
+        setSelectedNoteId(newestNote.id);
+      } else {
+        setSelectedNoteId(null);
+      }
+    }
 
     // Update the note in storage
     await NoteOperations.updateNoteData(

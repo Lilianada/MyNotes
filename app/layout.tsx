@@ -9,6 +9,7 @@ import "./monaco-editor.css"
 import { FontProvider } from "@/contexts/font-context"
 import { NoteProvider } from "@/contexts/notes/note-context"
 import { AuthProvider } from "@/contexts/auth-context"
+import { StorageProvider } from "@/contexts/storage-context"
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
@@ -23,12 +24,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={GeistMono.className}>
         <AuthProvider>
-          <FontProvider>
-            <NoteProvider>
-              {children}
-              <Toaster />
-            </NoteProvider>
-          </FontProvider>
+          <StorageProvider>
+            <FontProvider>
+              <NoteProvider>
+                {children}
+                <Toaster />
+              </NoteProvider>
+            </FontProvider>
+          </StorageProvider>
         </AuthProvider>
       </body>
     </html>

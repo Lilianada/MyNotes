@@ -3,6 +3,7 @@
 import { configureMarkdownTokens } from './monaco-markdown-tokens';
 import { configureMarkdownCompletions } from './monaco-markdown-completions';
 import { configureWikiLinkCompletion } from './monaco-wiki-links';
+import { configureMarkdownTheme } from './monaco-markdown-theme';
 
 // Main configuration function that orchestrates all Monaco markdown features
 export function configureMarkdownLanguage(monaco: any) {
@@ -11,6 +12,9 @@ export function configureMarkdownLanguage(monaco: any) {
   
   // Configure syntax highlighting and tokenization
   configureMarkdownTokens(monaco);
+  
+  // Configure markdown themes
+  configureMarkdownTheme(monaco);
   
   // Configure markdown completion providers
   configureMarkdownCompletions(monaco);

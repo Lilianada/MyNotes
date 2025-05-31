@@ -2,10 +2,9 @@
 
 import React from 'react';
 import { Note, NoteEditHistory } from '@/types';
-import { Calendar, Tag, History, Edit, Hash, RefreshCw, HardDrive } from 'lucide-react';
+import { Calendar, Tag, History, Edit, Hash, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { TabType } from './note-details-hooks';
-import { formatBytes } from '@/lib/storage-utils';
 
 interface DetailsTabContentProps {
   note: Note;
@@ -150,19 +149,6 @@ export function DetailsTabContent({
             <h3 className="text-sm font-medium">Word Count</h3>
             <p className="text-sm text-gray-500">
               {note.wordCount} {note.wordCount === 1 ? 'word' : 'words'}
-            </p>
-          </div>
-        </div>
-      )}
-      
-      {/* File Size Section */}
-      {note.fileSize !== undefined && (
-        <div className="flex items-start space-x-2">
-          <HardDrive size={18} className="text-gray-500 mt-0.5" />
-          <div>
-            <h3 className="text-sm font-medium">File Size</h3>
-            <p className="text-sm text-gray-500">
-              {formatBytes(note.fileSize)}
             </p>
           </div>
         </div>
