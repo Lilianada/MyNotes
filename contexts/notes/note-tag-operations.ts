@@ -18,11 +18,11 @@ export class NoteTagOperations {
     user: { uid: string } | null | undefined
   ): Promise<string[]> {
     try {
-      if (isAdmin && user && firebaseNotesService) {
-        // Use Firebase for admins
-        return await firebaseNotesService.updateNoteTags(id, tags);
+      if (user && firebaseNotesService) {
+        // Use Firebase for all authenticated users (both admin and regular)
+        return await firebaseNotesService.updateNoteTags(id, tags, user.uid, isAdmin);
       } else {
-        // Use localStorage for non-admins
+        // Use localStorage for anonymous users
         return localStorageNotesService.updateNoteTags(id, tags);
       }
     } catch (error) {

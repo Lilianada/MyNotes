@@ -138,9 +138,9 @@ export class EditHistoryService {
     isAdmin: boolean,
     user: { uid: string } | null | undefined
   ): Promise<void> {
-    if (isAdmin && user && firebaseNotesService) {
-      // Get current note to access existing history
-      const currentNote = await firebaseNotesService.getNote(noteId);
+    if (user && firebaseNotesService) {
+      // Use Firebase for all authenticated users (both admin and regular)
+      const currentNote = await firebaseNotesService.getNote(noteId, user.uid, isAdmin);
       if (!currentNote) {
         throw new Error(`Note ${noteId} not found`);
       }
@@ -151,12 +151,12 @@ export class EditHistoryService {
         this.config.maxVersions
       );
 
-      // Update note with new content and history
+      // Update note with new content and history (pass userId and isAdmin)
       await firebaseNotesService.updateNoteData(noteId, {
         content,
         editHistory: updatedHistory,
         updatedAt: new Date()
-      });
+      }, user.uid, isAdmin);
     } else {
       // Handle localStorage
       const notes = localStorageNotesService.getNotes();

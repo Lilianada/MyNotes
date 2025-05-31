@@ -57,12 +57,16 @@ export const updateNoteContent = async (noteId: number, content: string, userId?
     const sizeDifference = newFileSize - oldFileSize;
     
     // Add to edit history with enhanced data
-    const historyEntry = {
+    const historyEntry: any = {
       timestamp: new Date(),
       editType: 'update',
-      contentLength: content.length,
-      contentSnapshot: content.length > 100 ? content : undefined // Store snapshot for longer content
+      contentLength: content.length
     };
+    
+    // Only add contentSnapshot if content is longer than 100 characters
+    if (content.length > 100) {
+      historyEntry.contentSnapshot = content;
+    }
     
     await updateDoc(docRef, {
       content,
@@ -248,11 +252,18 @@ export const updateNoteData = async (noteId: number, updates: Partial<Note>, use
     const docRef = doc(notesRef, snapshot.docs[0].id);
     const currentData = snapshot.docs[0].data();
     
-    // Prepare update object with timestamp
+    // Prepare update object with timestamp, filtering out undefined values
     const updateData: any = {
-      ...updates,
       updatedAt: serverTimestamp()
     };
+    
+    // Only add defined values from updates to avoid undefined values in Firestore
+    Object.keys(updates).forEach(key => {
+      const value = (updates as any)[key];
+      if (value !== undefined) {
+        updateData[key] = value;
+      }
+    });
     
     // If content is being updated, calculate word count
     if (updates.content !== undefined) {

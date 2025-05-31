@@ -19,11 +19,11 @@ export class NoteCategoryOperations {
     user: { uid: string } | null | undefined
   ): Promise<void> {
     try {
-      if (isAdmin && user && firebaseNotesService) {
-        // Use Firebase for admins
-        await firebaseNotesService.updateNoteCategory(id, category);
+      if (user && firebaseNotesService) {
+        // Use Firebase for all authenticated users (both admin and regular)
+        await firebaseNotesService.updateNoteCategory(id, category, user.uid, isAdmin);
       } else {
-        // Use localStorage for non-admins
+        // Use localStorage for anonymous users
         localStorageNotesService.updateNoteCategory(id, category);
       }
     } catch (error) {
@@ -49,11 +49,11 @@ export class NoteCategoryOperations {
 
       // Update each note to remove the category
       for (const note of notesWithCategory) {
-        if (isAdmin && user && firebaseNotesService) {
-          // Use Firebase for admins
-          await firebaseNotesService.updateNoteCategory(note.id, null);
+        if (user && firebaseNotesService) {
+          // Use Firebase for all authenticated users (both admin and regular)
+          await firebaseNotesService.updateNoteCategory(note.id, null, user.uid, isAdmin);
         } else {
-          // Use localStorage for non-admins
+          // Use localStorage for anonymous users
           localStorageNotesService.updateNoteCategory(note.id, null);
         }
       }

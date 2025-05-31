@@ -42,9 +42,9 @@ export const loadUserNotes = async (
 
   try {
     // Determine which storage method to use
-    if (isAdmin && user && firebaseNotesService) {
-      // Use Firebase for admins
-      console.log("Loading notes from Firebase for admin user");
+    if (user && firebaseNotesService) {
+      // Use Firebase for all authenticated users (both admin and regular)
+      console.log(`Loading notes from Firebase for ${isAdmin ? 'admin' : 'regular'} user`);
       try {
         loadedNotes = await firebaseNotesService.getNotes(user.uid, isAdmin);
         notesLoadedFromStorage = loadedNotes.length > 0;

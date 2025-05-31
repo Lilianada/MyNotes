@@ -215,9 +215,16 @@ export class FirebaseDataOperations {
       // Update the document with new data
       // Note: History is managed by EditHistoryService when provided in updatedNote
       const updatePayload: any = {
-        ...cleanData,
         updatedAt: serverTimestamp()
       };
+      
+      // Only add defined values from cleanData to avoid undefined values in Firestore
+      Object.keys(cleanData).forEach(key => {
+        const value = cleanData[key];
+        if (value !== undefined) {
+          updatePayload[key] = value;
+        }
+      });
       
       // Only add editHistory if it's explicitly provided in the update
       if (updatedNote.editHistory !== undefined) {
