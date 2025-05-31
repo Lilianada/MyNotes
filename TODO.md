@@ -126,4 +126,4 @@ Content updated
 17 minutes ago
 Time:
 
-- As an admin, I also want to keep track of my storage usage without putting a cap on it since firebase has a free storage limit.
+- ✅ As an admin, I also want to keep track of my storage usage without putting a cap on it since firebase has a free storage limit.

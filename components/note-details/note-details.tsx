@@ -49,9 +49,33 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
   } = useCategoryHandlers(note, setActiveTab);
 
   // Handle tag selection and updates
-  const handleTagSelection = (tag: string) => {
+  const handleTagSelection = async (tag: string) => {
     console.log(`Tag selected: ${tag}`);
-    // Implementation based on your requirements
+    
+    if (!note) return;
+    
+    try {
+      const currentTags = note.tags || [];
+      let updatedTags: string[];
+      
+      if (currentTags.includes(tag)) {
+        // Remove tag if it already exists
+        updatedTags = currentTags.filter(t => t !== tag);
+      } else {
+        // Add tag if it doesn't exist and we're under the limit
+        if (currentTags.length < 5) {
+          updatedTags = [...currentTags, tag];
+        } else {
+          console.log('Tag limit reached (5), cannot add more tags');
+          return;
+        }
+      }
+      
+      // Update the note with new tags
+      await updateNoteTags(note.id, updatedTags);
+    } catch (error) {
+      console.error('Failed to update tags:', error);
+    }
   };
 
   // Handle metadata save

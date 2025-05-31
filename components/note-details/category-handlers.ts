@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Note, NoteCategory } from '@/types';
 import { TabType } from './note-details-hooks';
 import { useNotes } from '@/contexts/notes/note-context';
@@ -10,7 +10,18 @@ export function useCategoryHandlers(
   setActiveTab: (tab: TabType) => void
 ) {
   const [categories, setCategories] = useState<NoteCategory[]>([]);
-  const { updateNoteCategory, updateCategory, deleteCategory } = useNotes();
+  const { notes, updateNoteCategory, updateCategory, deleteCategory } = useNotes();
+  
+  // Extract all unique categories from notes when the component mounts
+  useEffect(() => {
+    const uniqueCategories = notes.reduce((acc: NoteCategory[], current: Note) => {
+      if (current.category && !acc.find(c => c.id === current.category?.id)) {
+        acc.push(current.category);
+      }
+      return acc;
+    }, []);
+    setCategories(uniqueCategories);
+  }, [notes]);
   
   const handleCategorySave = useCallback(async (category: NoteCategory | null) => {
     if (!note) return;
