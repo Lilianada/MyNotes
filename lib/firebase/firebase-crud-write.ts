@@ -155,19 +155,14 @@ export class FirebaseCRUDWrite {
       // Add new history entry (keeping history limited to most recent 20 entries)
       const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
       
-      // Create new note document with updated title
-      const newDocRef = doc(db, 'notes', newSlug);
-      await setDoc(newDocRef, {
-        ...oldData,
+      // Update the existing document in place
+      await updateDoc(oldDocRef, {
         noteTitle,
         slug: newSlug,
         filePath,
         updatedAt: serverTimestamp(),
         editHistory: updatedHistory
       });
-      
-      // Delete old document after migration
-      await deleteDoc(oldDocRef);
       
       return filePath;
     } catch (error) {

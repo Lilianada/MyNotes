@@ -1,6 +1,6 @@
 import React from "react";
 import { Note } from "@/types";
-import DeleteConfirmation from "../delete-confirmation";
+import DeleteConfirmation from "../modals/delete-confirmation";
 import NoteDetails from "@/components/note-details/note-details";
 
 interface SidebarDialogsProps {
