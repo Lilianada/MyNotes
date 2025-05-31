@@ -5,8 +5,8 @@ import {
   getMostRecentNote, 
   loadUserNotes 
 } from "./note-storage";
-import { localStorageNotesService } from "@/lib/local-storage-notes";
-import { addUniqueIdsToLocalNotes } from "@/lib/sync-service";
+import { localStorageNotesService } from "@/lib/storage/local-storage-notes";
+import { addUniqueIdsToLocalNotes } from "@/lib/notes/sync-service";
 
 export async function initializeNotes(
   isAdmin: boolean,
@@ -77,7 +77,7 @@ export async function initializeNotes(
         let localNotes: Note[] = [];
         try {
           if (typeof window !== "undefined") {
-            const localStorageService = await import('@/lib/local-storage-notes').then(m => m.localStorageNotesService);
+            const localStorageService = await import('@/lib/storage/local-storage-notes').then(m => m.localStorageNotesService);
             localNotes = localStorageService.getNotes();
             if (localNotes.length > 0) {
               console.log(`[${currentContext}] Found ${localNotes.length} notes in local storage while waiting for Firebase`);

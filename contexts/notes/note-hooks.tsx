@@ -8,11 +8,11 @@ import {
   getMostRecentNote, 
   syncLocalToFirebase 
 } from "./note-storage";
-import { localStorageNotesService } from "@/lib/local-storage-notes";
-import { firebaseNotesService } from "@/lib/firebase-notes";
-import { syncLocalNotesToFirebase } from "@/lib/sync-service";
-import { calculateNoteSize } from "@/lib/storage-utils";
-import { getUserStorage, incrementStorage } from "@/lib/firebase-storage";
+import { localStorageNotesService } from "@/lib/storage/local-storage-notes";
+import { firebaseNotesService } from "@/lib/firebase/firebase-notes";
+import { syncLocalNotesToFirebase } from "@/lib/notes/sync-service";
+import { calculateNoteSize } from "@/lib/storage/storage-utils";
+import { getUserStorage, incrementStorage } from "@/lib/firebase/firebase-storage";
 import { useToast } from "@/hooks/use-toast";
 import { useStorage } from "@/contexts/storage-context";
 

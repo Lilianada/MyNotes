@@ -1,5 +1,5 @@
 import { Note, NoteCategory } from '@/types';
-import { db } from '../firebase';
+import { db } from '../firebase/firebase';
 import { 
   collection, 
   doc, 
@@ -9,7 +9,7 @@ import {
   query, 
   where 
 } from 'firebase/firestore';
-import { countWords } from '../word-count';
+import { countWords } from '../data-processing/word-count';
 
 /**
  * Update a note's content

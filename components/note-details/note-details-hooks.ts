@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Note, NoteCategory, NoteEditHistory } from '@/types';
-import { firebaseNotesService } from '@/lib/firebase-notes';
-import { localStorageNotesService } from '@/lib/local-storage-notes';
+import { firebaseNotesService } from '@/lib/firebase/firebase-notes';
+import { localStorageNotesService } from '@/lib/storage/local-storage-notes';
 import { editHistoryService } from '@/lib/edit-history/edit-history-service';
 import { useAuth } from '@/contexts/auth-context';
 import { useNotes } from '@/contexts/notes/note-context';

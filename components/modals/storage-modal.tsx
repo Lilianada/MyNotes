@@ -6,7 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, HardDrive, FileText, AlertTriangle } from 'lucide-react';
 import { useStorage } from '@/contexts/storage-context';
-import { formatBytes } from '@/lib/storage-utils';
+import { formatBytes } from '@/lib/storage/storage-utils';
 
 interface StorageModalProps {
   isOpen: boolean;

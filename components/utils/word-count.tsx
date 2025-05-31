@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { formatWordCount, countWords } from '@/lib/word-count';
+import { formatWordCount, countWords } from '@/lib/data-processing/word-count';
 import { Copy, Check } from 'lucide-react';
 
 interface WordCountProps {

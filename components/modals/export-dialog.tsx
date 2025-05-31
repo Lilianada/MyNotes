@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Note } from '@/types';
-import { exportNote, exportAllNotes } from '@/lib/export-utils';
+import { exportNote, exportAllNotes } from '@/lib/data-processing/export-utils';
 import { FileDown, FileText, AlertCircle } from 'lucide-react';
 
 interface ExportDialogProps {

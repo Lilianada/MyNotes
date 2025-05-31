@@ -3,7 +3,7 @@
  */
 
 import { UserStorage } from '@/types';
-import { db } from '@/lib/firebase';
+import { db } from '@/lib/firebase/firebase';
 import { 
   doc, 
   getDoc, 
@@ -15,8 +15,8 @@ import {
   where,
   getDocs
 } from 'firebase/firestore';
-import { createDefaultUserStorage, calculateTotalStorage } from '@/lib/storage-utils';
-import { firebaseNotesService } from '@/lib/firebase-notes';
+import { createDefaultUserStorage, calculateTotalStorage } from '@/lib/storage/storage-utils';
+import { firebaseNotesService } from '@/lib/firebase/firebase-notes';
 
 /**
  * Get user storage information

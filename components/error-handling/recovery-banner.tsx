@@ -27,7 +27,7 @@ export function RecoveryBanner() {
         
         // Check if notes exist in localStorage as a potential recovery source
         if (typeof window !== "undefined") {
-          const localStorageModule = await import('@/lib/local-storage-notes');
+          const localStorageModule = await import('@/lib/storage/local-storage-notes');
           const localNotes = localStorageModule.localStorageNotesService.getNotes();
           
           if (localNotes.length > 0) {
@@ -55,7 +55,7 @@ export function RecoveryBanner() {
       });
       
       // Get notes from localStorage
-      const localStorageModule = await import('@/lib/local-storage-notes');
+      const localStorageModule = await import('@/lib/storage/local-storage-notes');
       const localNotes = localStorageModule.localStorageNotesService.getNotes();
       
       if (localNotes.length > 0) {

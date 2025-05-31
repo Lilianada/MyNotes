@@ -1,9 +1,9 @@
 "use client";
 
 import { Note } from "@/types";
-import { firebaseNotesService } from "@/lib/firebase-notes";
-import { localStorageNotesService } from "@/lib/local-storage-notes";
-import { countWords } from "@/lib/word-count";
+import { firebaseNotesService } from "@/lib/firebase/firebase-notes";
+import { localStorageNotesService } from "@/lib/storage/local-storage-notes";
+import { countWords } from "@/lib/data-processing/word-count";
 
 /**
  * Basic CRUD operations for notes

@@ -6,7 +6,7 @@ import {
   type SidebarContext 
 } from "./types"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { cookies } from "@/lib/cookies"
+import { cookies } from "@/lib/data-processing/cookies"
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
 

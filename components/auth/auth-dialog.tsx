@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { User } from "firebase/auth";
 import { LucideProps, CloudCog } from "lucide-react";
-import { cn } from "@/lib/utils"; // Make sure you have this utils function
+import { cn } from "@/lib/data-processing/utils"; // Make sure you have this utils function
 
 // Google icon
 const Google = (props: LucideProps) => (

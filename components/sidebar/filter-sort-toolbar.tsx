@@ -77,36 +77,40 @@ export function FilterSortToolbar({
 
   if (isSelectionMode) {
     return (
-      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onSelectAll}
-              className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-medium"
-            >
-              {selectedNoteIds.size === filteredNotesLength ? 'Deselect All' : 'Select All'}
-            </button>
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {selectedNoteIds.size} selected
+      <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+        {/* First row: Selection count and select all */}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {selectedNoteIds.size} selected
+          </span>
+          <button
+            onClick={onSelectAll}
+            className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 font-medium"
+          >
+            {selectedNoteIds.size === filteredNotesLength ? 'Deselect All' : 'Select All'}
+          </button>
+        </div>
+        
+        {/* Second row: Action buttons */}
+        <div className="flex items-center gap-1">
+          <button
+            onClick={onBulkDelete}
+            disabled={selectedNoteIds.size === 0 || isBulkDeleting}
+            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-sm text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            title={`Delete ${selectedNoteIds.size} selected notes`}
+          >
+            <Trash2 className="w-4 h-4" />
+            <span className="text-xs">
+              {isBulkDeleting ? 'Deleting...' : 'Delete'}
             </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onBulkDelete}
-              disabled={selectedNoteIds.size === 0 || isBulkDeleting}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm text-white bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 rounded-md disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-              {isBulkDeleting ? 'Deleting...' : `Delete (${selectedNoteIds.size})`}
-            </button>
-            <button
-              onClick={onToggleSelectionMode}
-              className="flex items-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <X className="w-4 h-4" />
-              Cancel
-            </button>
-          </div>
+          </button>
+          <button
+            onClick={onToggleSelectionMode}
+            className="flex items-center justify-center gap-1 px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            title="Cancel selection"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       </div>
     );

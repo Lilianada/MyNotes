@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react"
 import { Search } from "lucide-react"
 import { Note } from "@/types"
-import { createPlainTextPreview } from "@/lib/markdown-utils"
+import { createPlainTextPreview } from "@/lib/markdown/markdown-utils"
 
 interface SearchNotesProps {
   notes: Note[]

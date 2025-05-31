@@ -1,9 +1,9 @@
 "use client";
 
 import { Note, NoteEditHistory } from "@/types";
-import { firebaseNotesService } from "@/lib/firebase-notes";
-import { localStorageNotesService } from "@/lib/local-storage-notes";
-import { sanitizeNoteData } from "@/lib/data-sanitizer";
+import { firebaseNotesService } from "@/lib/firebase/firebase-notes";
+import { localStorageNotesService } from "@/lib/storage/local-storage-notes";
+import { sanitizeNoteData } from "@/lib/data-processing/data-sanitizer";
 
 /**
  * Data update and history operations for notes

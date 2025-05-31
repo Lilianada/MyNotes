@@ -5,7 +5,7 @@ import {
   getDocs, 
   Timestamp
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from './firebase';
 import { NoteEditHistory } from '@/types';
 
 /**

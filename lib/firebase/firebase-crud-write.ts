@@ -10,9 +10,9 @@ import {
   query, 
   where
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from './firebase';
 import { Note } from '@/types';
-import { countWords } from '../word-count';
+import { countWords } from '../data-processing/word-count';
 import { 
   createSlugFromTitle, 
   getUniqueSlug

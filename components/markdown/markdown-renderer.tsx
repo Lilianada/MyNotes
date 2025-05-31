@@ -4,7 +4,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Components } from 'react-markdown';
-import { remarkParagraphSpacing } from '@/lib/remark-paragraph-spacing';
+import { remarkParagraphSpacing } from '@/lib/markdown/remark-paragraph-spacing';
 import { getMarkdownBodyClass } from './styles';
 
 interface MarkdownRendererProps {

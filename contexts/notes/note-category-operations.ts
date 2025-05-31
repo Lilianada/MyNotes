@@ -1,8 +1,8 @@
 "use client";
 
 import { Note, NoteCategory } from "@/types";
-import { firebaseNotesService } from "@/lib/firebase-notes";
-import { localStorageNotesService } from "@/lib/local-storage-notes";
+import { firebaseNotesService } from "@/lib/firebase/firebase-notes";
+import { localStorageNotesService } from "@/lib/storage/local-storage-notes";
 
 /**
  * Category-related operations for notes

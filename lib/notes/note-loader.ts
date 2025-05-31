@@ -3,7 +3,7 @@
 import { existsSync, readdirSync, readFileSync } from "fs";
 import { resolve } from "path";
 import type { Note } from "@/types";
-import { ensureNotesDirectory, titleFromFilename } from "./file-system";
+import { ensureNotesDirectory, titleFromFilename } from "../storage/file-system";
 
 // Load notes from the file system
 export async function loadNotesFromFiles(): Promise<Note[]> {

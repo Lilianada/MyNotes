@@ -8,7 +8,7 @@ import {
   query, 
   where
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db } from './firebase';
 import { Note, NoteCategory, NoteEditHistory } from '@/types';
 import { convertEditHistory } from './firebase-helpers';
 

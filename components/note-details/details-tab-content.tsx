@@ -5,7 +5,7 @@ import { Note, NoteEditHistory } from '@/types';
 import { Calendar, Tag, History, Edit, Hash, RefreshCw, HardDrive } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { TabType } from './note-details-hooks';
-import { formatBytes } from '@/lib/storage-utils';
+import { formatBytes } from '@/lib/storage/storage-utils';
 
 interface DetailsTabContentProps {
   note: Note;

@@ -3,8 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserStorage, StorageAlert } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
-import { getUserStorage, recalculateUserStorage } from '@/lib/firebase-storage';
-import { checkStorageAlerts, getStoragePercentage } from '@/lib/storage-utils';
+import { getUserStorage, recalculateUserStorage } from '@/lib/firebase/firebase-storage';
+import { checkStorageAlerts, getStoragePercentage } from '@/lib/storage/storage-utils';
 import { useToast } from '@/hooks/use-toast';
 
 interface StorageContextType {

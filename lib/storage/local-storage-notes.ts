@@ -1,7 +1,7 @@
 "use client";
 
 import { Note, NoteCategory, NoteEditHistory } from '@/types';
-import { countWords } from './word-count';
+import { countWords } from '../data-processing/word-count';
 import { generateUniqueId, calculateNoteSize } from './storage-utils';
 
 // Helper function to create a slug from a title

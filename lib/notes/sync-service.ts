@@ -3,10 +3,10 @@
  */
 
 import { Note } from '@/types';
-import { firebaseNotesService } from '@/lib/firebase-notes';
-import { localStorageNotesService } from '@/lib/local-storage-notes';
-import { generateUniqueId, calculateNoteSize } from '@/lib/storage-utils';
-import { getUserStorage, incrementStorage } from '@/lib/firebase-storage';
+import { firebaseNotesService } from '@/lib/firebase/firebase-notes';
+import { localStorageNotesService } from '@/lib/storage/local-storage-notes';
+import { generateUniqueId, calculateNoteSize } from '@/lib/storage/storage-utils';
+import { getUserStorage, incrementStorage } from '@/lib/firebase/firebase-storage';
 
 /**
  * Sync local storage notes to Firebase for a user

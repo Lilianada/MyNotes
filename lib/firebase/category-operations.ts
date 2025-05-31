@@ -1,5 +1,5 @@
 import { NoteCategory } from '@/types';
-import { db } from '../firebase';
+import { db } from '../firebase/firebase';
 import { 
   collection, 
   doc, 

@@ -1,5 +1,5 @@
 import { Note, NoteCategory, NoteEditHistory } from '@/types';
-import { db } from '../firebase';
+import { db } from './firebase';
 import { 
   collection, 
   doc, 
@@ -14,8 +14,8 @@ import {
   where, 
   addDoc
 } from 'firebase/firestore';
-import { countWords } from '../word-count';
-import { generateUniqueId, calculateNoteSize } from '../storage-utils';
+import { countWords } from '../data-processing/word-count';
+import { generateUniqueId, calculateNoteSize } from '../storage/storage-utils';
 import { 
   createSlugFromTitle, 
   getUniqueSlug, 

@@ -5,7 +5,7 @@
  * while allowing the implementation to be refactored into smaller modules
  */
 
-import { firebaseNotesService } from './firebase-notes/index';
+import { firebaseNotesService } from './index';
 
 export { firebaseNotesService };
 export default firebaseNotesService;

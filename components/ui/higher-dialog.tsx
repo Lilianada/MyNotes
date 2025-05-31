@@ -4,7 +4,7 @@ import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/data-processing/utils"
 
 // Increased z-index Dialog components to use for nested dialogs
 export const HigherDialog = DialogPrimitive.Root

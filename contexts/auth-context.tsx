@@ -8,10 +8,10 @@ import {
   signOut as firebaseSignOut,
 } from 'firebase/auth';
 import { getDoc, doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { auth, googleProvider, db } from '@/lib/firebase';
+import { auth, googleProvider, db } from '@/lib/firebase/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { AuthLoadingState } from '@/components/ui/loading-states';
-import { getUserStorage } from '@/lib/firebase-storage';
+import { getUserStorage } from '@/lib/firebase/firebase-storage';
 
 interface AuthContextType {
   user: User | null;

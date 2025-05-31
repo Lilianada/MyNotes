@@ -8,7 +8,7 @@ import { GeistMono } from 'geist/font/mono';
 import { useFont } from '@/contexts/font-context';
 import { useMonacoThemes } from '@/hooks/use-monaco-themes';
 import { useNotes } from "@/contexts/notes/note-context";
-import { configureMarkdownLanguage, configureWikiLinkCompletion } from '@/lib/monaco-markdown';
+import { configureMarkdownLanguage, configureWikiLinkCompletion } from '@/lib/markdown/monaco-markdown';
 import { MonacoEditorProps, Monaco, EditorInstance } from './types';
 import { 
   configureEditorShortcuts,

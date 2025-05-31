@@ -4,7 +4,7 @@ import React from 'react';
 import { Progress } from '@/components/ui/progress';
 import { HardDrive } from 'lucide-react';
 import { useStorage } from '@/contexts/storage-context';
-import { formatBytes } from '@/lib/storage-utils';
+import { formatBytes } from '@/lib/storage/storage-utils';
 
 export function StorageProgress() {
   const { userStorage, storagePercentage, storageAlert } = useStorage();

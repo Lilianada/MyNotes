@@ -1,9 +1,9 @@
 "use client";
 
 import { Note, NoteCategory, NoteEditHistory } from "@/types";
-import { firebaseNotesService } from "@/lib/firebase-notes";
-import { localStorageNotesService } from "@/lib/local-storage-notes";
-import { loadNotesFromFiles } from "@/lib/note-loader";
+import { firebaseNotesService } from "@/lib/firebase/firebase-notes";
+import { localStorageNotesService } from "@/lib/storage/local-storage-notes";
+import { loadNotesFromFiles } from "@/lib/notes/note-loader";
 
 interface LoadNotesResult {
   loadedNotes: Note[];

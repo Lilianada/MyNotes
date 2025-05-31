@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useRef, useEffect } from "react";
-import { processInternalLinks, attachInternalLinkHandlers } from "@/lib/markdown-utils";
+import { processInternalLinks, attachInternalLinkHandlers } from "@/lib/markdown/markdown-utils";
 import { useNotes } from "@/contexts/notes/note-context";
 
 interface ContentProcessorProps {
