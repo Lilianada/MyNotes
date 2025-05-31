@@ -21,20 +21,17 @@ Remember to keep it minimal, simple, straightforward, do not tamoer with existin
 
 - ✅ Archive notes: add an option to details modal for user to archive notes. When note is archived, hide it from the list of notes on the sidebar. This means we will need to add archived? as a oolean prop to notes so that on our frontend we check if archived is true or false to know which notes to display on the sidebar and which one not to. Make sure to refactor the file into smaller files when it goes above 250 lines of code without breaking any functionality. Make sure to delete any unused imports or files after the operation is done.
 
-- Best Way to Implement Edit History: Use autosave at a reasonable interval (every 30-60 seconds of inactivity, or when the user leaves the page).
+- ✅ Best Way to Implement Edit History: Use autosave at a reasonable interval (every 30-60 seconds of inactivity, or when the user leaves the page).
     - Only save a new history entry if the content has changed significantly (e.g., more than X characters or X% difference). You could compare the current content to the last saved version and skip saving if changes are minor.
     - Only keep the last N versions (e.g., 10 or 20) per note to avoid unbounded growth.
     - Prune old versions beyond your retention policy.
 
-- Improve on notes syncing, at no point in time should local storage override database storage. 
 
-- Allow login and saving of notes for new users not just admin. Use 'users' collection for the new users while also maintaining the 'admin' and 'notes' collections for just admin.
+- Allow login and saving of notes for new users not just admin. Use 'users' collection for the new users while also maintaining the 'admin' and 'notes' collections for just admin. Improve on notes syncing, at no point in time should local storage override database storage. 
 
 - All users asides admin user should be given storage limit for their notes. each user gets a certain amount, and the file size per note should be calculated in order to track and manage users storage. 
 
-
-
-Certainly! Here’s a revised, **code-free** explanation of how you can achieve your goals:
+- ✅ Fix my editors both monaco and note-editor to use the global font selected. I have two fonts and i change between both from time to time so the editors should also use the selected note than a hard coded one.
 
 ---
 

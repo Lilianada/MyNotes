@@ -30,10 +30,12 @@ export const updateNoteContent = async (noteId: number, content: string): Promis
     // Calculate word count
     const wordCount = countWords(content);
     
-    // Add to edit history
+    // Add to edit history with enhanced data
     const historyEntry = {
       timestamp: new Date(),
-      editType: 'update'
+      editType: 'update',
+      contentLength: content.length,
+      contentSnapshot: content.length > 100 ? content : undefined // Store snapshot for longer content
     };
     
     await updateDoc(docRef, {
@@ -178,11 +180,12 @@ export const updateNoteData = async (noteId: number, updates: Partial<Note>): Pr
     if (snapshot.empty) {
       throw new Error(`Note with ID ${noteId} not found`);
     }
-    
+
     const docRef = doc(db, 'notes', snapshot.docs[0].id);
+    const currentData = snapshot.docs[0].data();
     
     // Prepare update object with timestamp
-    const updateData = {
+    const updateData: any = {
       ...updates,
       updatedAt: serverTimestamp()
     };
@@ -190,6 +193,23 @@ export const updateNoteData = async (noteId: number, updates: Partial<Note>): Pr
     // If content is being updated, calculate word count
     if (updates.content !== undefined) {
       updateData.wordCount = countWords(updates.content);
+    }
+
+    // Handle edit history if provided in updates
+    if (updates.editHistory !== undefined) {
+      // Use the provided history (already pruned by the service)
+      updateData.editHistory = updates.editHistory;
+    } else if (updates.content !== undefined) {
+      // Auto-create history entry for content updates if not provided
+      const historyEntry = {
+        timestamp: new Date(),
+        editType: 'update',
+        contentLength: updates.content.length,
+        contentSnapshot: updates.content.length > 100 ? updates.content : undefined
+      };
+      
+      const existingHistory = currentData?.editHistory || [];
+      updateData.editHistory = [historyEntry, ...existingHistory].slice(0, 20); // Keep last 20
     }
     
     await updateDoc(docRef, updateData);

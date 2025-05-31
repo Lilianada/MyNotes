@@ -3,11 +3,16 @@
 import { forwardRef, useEffect, useState, useRef } from "react";
 import type { Note } from "@/types";
 import { KeyboardEvent } from "react";
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
+import { useFont } from '@/contexts/font-context';
 import MarkdownRenderer from "@/components/markdown/markdown-renderer";
 import NoteTitleEditor from "@/components/navigation/note-title-editor";
 import WordCount from "@/components/utils/word-count";
 import EditorShortcuts from "./editor-shortcuts";
 import MonacoMarkdownEditor from "./monaco-markdown-editor";
+import { useEditorWithHistory } from "@/lib/edit-history/edit-history-hooks";
+import { useAuth } from "@/contexts/auth-context";
 
 interface NoteEditorProps {
   note: Note;
@@ -35,9 +40,31 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
     const [renderHTML, setRenderHTML] = useState(false);
     const [useMonacoEditor, setUseMonacoEditor] = useState(true);
     const lastCursorPositionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
+    const { fontType } = useFont();
     
     // Track whether we're currently in the middle of an update
     const isUpdatingRef = useRef(false);
+
+    // Get auth context for edit history
+    const { isAdmin, user } = useAuth();
+
+    // Get the appropriate font family based on font context
+    const fontFamilyClass = fontType === 'mono' ? GeistMono.className : GeistSans.className;
+
+    // Integrate edit history with enhanced autosave
+    const { handleContentChange, handleSave } = useEditorWithHistory(
+      note,
+      onChange,
+      onSave,
+      isAdmin,
+      user,
+      {
+        autosaveInterval: 45000, // 45 seconds
+        minChangeThreshold: 10, // minimum 10 characters changed
+        minChangePercentage: 3, // minimum 3% change
+        maxVersions: 20 // keep last 20 versions
+      }
+    );
 
     // Focus the editor ONLY when a new note is selected
     useEffect(() => {
@@ -47,20 +74,11 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
       // Only run when note.id changes
     }, [note.id, ref]);
 
-    useEffect(() => {
-      // Auto-save when user stops typing
-      const saveTimeout = setTimeout(() => {
-        onSave();
-      }, 1000);
-
-      return () => clearTimeout(saveTimeout);
-    }, [note.content, onSave]);
-
     const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
       // Ctrl+S or Cmd+S to save
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
-        onSave();
+        handleSave(); // Use enhanced save with history
       }
       
       // Auto-complete parentheses, brackets, and backticks
@@ -223,8 +241,8 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
         end: selectionEnd
       };
       
-      // Update content
-      onChange(value);
+      // Update content using enhanced handler with history tracking
+      handleContentChange(value);
       
       // Restore cursor position after state update
       requestAnimationFrame(() => {
@@ -237,9 +255,9 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
     };
 
     const toggleView = () => {
-      // Save current state before toggling
+      // Save current state before toggling using enhanced save
       if (!renderHTML) {
-        onSave();
+        handleSave();
       }
       setRenderHTML((prev) => !prev);
     };
@@ -291,8 +309,8 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
               <div className="h-full">
                 <MonacoMarkdownEditor
                   note={note}
-                  onChange={onChange}
-                  onSave={onSave}
+                  onChange={handleContentChange}
+                  onSave={handleSave}
                 />
               </div>
             ) : (
@@ -301,7 +319,7 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
                 ref={ref}
                 value={note.content}
                 onChange={handleInputChange}
-                className="w-full h-full flex-1 p-4 border-none outline-none resize-none text-sm sm:text-[15px] bg-transparent scrollbar-hide text-justify leading-relaxed tracking-wide"
+                className={`w-full h-full flex-1 p-4 border-none outline-none resize-none text-sm sm:text-[15px] bg-transparent scrollbar-hide text-justify leading-relaxed tracking-wide ${fontFamilyClass}`}
                 placeholder="Start typing with Markdown support..."
                 spellCheck="false"
                 onCompositionStart={() => isUpdatingRef.current = true}

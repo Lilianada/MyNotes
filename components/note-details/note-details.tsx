@@ -36,7 +36,8 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
     archived,
     setArchived,
     updateNote,
-    archiveNote
+    archiveNote,
+    loadEditHistory
   } = useNoteDetailsHooks(note, isOpen);
 
   const {
@@ -106,6 +107,7 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
               editHistory={editHistory} 
               isLoading={isLoading}
               onTabChange={setActiveTab}
+              onRefreshHistory={loadEditHistory}
             />
           )}
           

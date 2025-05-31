@@ -35,10 +35,11 @@ export function configureBracketCompletion(editor: EditorInstance): void {
 // Configure editor options and appearance
 export function configureEditorOptions(
   editor: EditorInstance, 
-  isDarkTheme: boolean
+  isDarkTheme: boolean,
+  fontFamily?: string
 ): void {
   editor.updateOptions({
-    fontFamily: 'var(--font-mono)',
+    fontFamily: fontFamily || 'var(--font-mono)',
     fontSize: 14,
     lineHeight: 24,
     wordWrap: 'on',

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Note, NoteCategory, NoteEditHistory } from '@/types';
 import { firebaseNotesService } from '@/lib/firebase-notes';
 import { localStorageNotesService } from '@/lib/local-storage-notes';
+import { editHistoryService } from '@/lib/edit-history/edit-history-service';
 import { useAuth } from '@/contexts/auth-context';
 import { useNotes } from '@/contexts/notes/note-context';
 
@@ -49,22 +50,31 @@ export function useNoteDetailsState(note: Note | null, isOpen: boolean) {
     setIsLoading(true);
     
     try {
-      let history: NoteEditHistory[] = [];
-      
-      if (isAdmin && user && firebaseNotesService) {
-        history = await firebaseNotesService.getNoteHistory(note.id);
-      } else {
-        history = localStorageNotesService.getNoteHistory(note.id);
-      }
-      
+      // Use the enhanced edit history service
+      const history = await editHistoryService.getHistory(note.id, isAdmin || false, user);
       setEditHistory(history);
     } catch (error) {
       console.error('Failed to load edit history:', error);
+      // Fallback to direct service calls
+      try {
+        let fallbackHistory: NoteEditHistory[] = [];
+        
+        if (isAdmin && user && firebaseNotesService) {
+          fallbackHistory = await firebaseNotesService.getNoteHistory(note.id);
+        } else {
+          fallbackHistory = localStorageNotesService.getNoteHistory(note.id);
+        }
+        
+        setEditHistory(fallbackHistory);
+      } catch (fallbackError) {
+        console.error('Fallback history loading also failed:', fallbackError);
+        setEditHistory([]);
+      }
     } finally {
       setIsLoading(false);
     }
   }, [note, isAdmin, user]);
-  
+
   return {
     activeTab,
     setActiveTab,
@@ -78,6 +88,7 @@ export function useNoteDetailsState(note: Note | null, isOpen: boolean) {
     setPublishStatus,
     archived,
     setArchived,
+    loadEditHistory, // Expose for manual refresh
   };
 }
 

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Note, NoteEditHistory } from '@/types';
-import { Calendar, Tag, History, Edit, Hash } from 'lucide-react';
+import { Calendar, Tag, History, Edit, Hash, RefreshCw } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { TabType } from './note-details-hooks';
 
@@ -11,13 +11,15 @@ interface DetailsTabContentProps {
   editHistory: NoteEditHistory[];
   isLoading: boolean;
   onTabChange: (tab: TabType) => void;
+  onRefreshHistory?: () => void;
 }
 
 export function DetailsTabContent({ 
   note, 
   editHistory, 
   isLoading, 
-  onTabChange 
+  onTabChange,
+  onRefreshHistory
 }: DetailsTabContentProps) {
   return (
     <div className="space-y-4">
@@ -50,29 +52,90 @@ export function DetailsTabContent({
       <div className="flex items-start space-x-2">
         <History size={18} className="text-gray-500 mt-0.5" />
         <div className="flex-1">
-          <h3 className="text-sm font-medium">Edit History</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium">Edit History</h3>
+            {onRefreshHistory && (
+              <button
+                onClick={onRefreshHistory}
+                disabled={isLoading}
+                className="p-1 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                title="Refresh history"
+              >
+                <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+              </button>
+            )}
+          </div>
           {isLoading ? (
             <p className="text-sm text-gray-500">Loading...</p>
           ) : editHistory.length > 0 ? (
-            <ul className="mt-1 text-sm text-gray-500 space-y-1 max-h-40 overflow-y-auto">
+            <div className="mt-1 max-h-48 overflow-y-auto space-y-2">
               {editHistory.map((entry, index) => (
-                <li key={index} className="flex items-center py-1">
-                  <span className="mr-2">
-                    {entry.editType === 'create' && '🆕'}
-                    {entry.editType === 'update' && '✏️'}
-                    {entry.editType === 'title' && '📝'}
-                  </span>
-                  <span>
-                    {entry.editType === 'create' && 'Created'}
-                    {entry.editType === 'update' && 'Content updated'}
-                    {entry.editType === 'title' && 'Title updated'}
-                  </span>
-                  <span className="ml-auto text-xs">
-                    {formatDistanceToNow(entry.timestamp, { addSuffix: true })}
-                  </span>
-                </li>
+                <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-900">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg">
+                        {entry.editType === 'create' && '🆕'}
+                        {entry.editType === 'update' && '✏️'}
+                        {entry.editType === 'title' && '📝'}
+                        {entry.editType === 'tags' && '🏷️'}
+                        {entry.editType === 'category' && '📁'}
+                        {entry.editType === 'autosave' && '💾'}
+                      </span>
+                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {entry.editType === 'create' && 'Created'}
+                        {entry.editType === 'update' && 'Content updated'}
+                        {entry.editType === 'title' && 'Title updated'}
+                        {entry.editType === 'tags' && 'Tags updated'}
+                        {entry.editType === 'category' && 'Category updated'}
+                        {entry.editType === 'autosave' && 'Auto-saved'}
+                      </span>
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {formatDistanceToNow(entry.timestamp, { addSuffix: true })}
+                    </span>
+                  </div>
+                  
+                  <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Time:</span>
+                      <span>{format(entry.timestamp, 'MMM d, HH:mm:ss')}</span>
+                    </div>
+                    
+                    {entry.contentLength !== undefined && (
+                      <div className="flex justify-between">
+                        <span>Content Length:</span>
+                        <span>{entry.contentLength} characters</span>
+                      </div>
+                    )}
+                    
+                    {entry.changePercentage !== undefined && (
+                      <div className="flex justify-between">
+                        <span>Change:</span>
+                        <span className={`font-medium ${
+                          entry.changePercentage > 20 ? 'text-red-600' : 
+                          entry.changePercentage > 10 ? 'text-orange-600' : 
+                          'text-green-600'
+                        }`}>
+                          {entry.changePercentage.toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                    
+                    {entry.contentSnapshot && (
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-blue-600 hover:text-blue-800 text-xs">
+                          View content snapshot
+                        </summary>
+                        <div className="mt-2 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded text-xs font-mono max-h-24 overflow-y-auto">
+                          {entry.contentSnapshot.substring(0, 200)}
+                          {entry.contentSnapshot.length > 200 && '...'}
+                        </div>
+                      </details>
+                    )}
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
             <p className="text-sm text-gray-500">No edit history available</p>
           )}

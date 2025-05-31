@@ -67,7 +67,7 @@ export const localStorageNotesService = {
   },
   
   // Add history entry
-  addHistoryEntry(id: number, editType: 'create' | 'update' | 'title' | 'tags'): void {
+  addHistoryEntry(id: number, editType: 'create' | 'update' | 'title' | 'tags' | 'category' | 'autosave', contentSnapshot?: string, changePercentage?: number): void {
     if (typeof window === 'undefined') {
       return;
     }
@@ -76,13 +76,35 @@ export const localStorageNotesService = {
       const history = this.getNoteHistory(id);
       const newEntry: NoteEditHistory = {
         timestamp: new Date(),
-        editType
+        editType,
+        contentSnapshot,
+        contentLength: contentSnapshot?.length,
+        changePercentage
       };
       
       const updatedHistory = [newEntry, ...history];
-      window.localStorage.setItem(`note_history_${id}`, JSON.stringify(updatedHistory));
+      
+      // Prune history to keep only the most recent 20 entries
+      const prunedHistory = updatedHistory.slice(0, 20);
+      
+      window.localStorage.setItem(`note_history_${id}`, JSON.stringify(prunedHistory));
     } catch (error) {
       console.error('Failed to add history entry:', error);
+    }
+  },
+
+  // Update edit history (for batch updates)
+  updateEditHistory(id: number, history: NoteEditHistory[]): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
+    try {
+      // Prune history to keep only the most recent 20 entries
+      const prunedHistory = history.slice(0, 20);
+      window.localStorage.setItem(`note_history_${id}`, JSON.stringify(prunedHistory));
+    } catch (error) {
+      console.error('Failed to update edit history:', error);
     }
   },
   

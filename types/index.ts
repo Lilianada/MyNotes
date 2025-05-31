@@ -8,7 +8,10 @@ export interface NoteCategory {
 
 export interface NoteEditHistory {
   timestamp: Date;
-  editType: 'create' | 'update' | 'title' | 'tags' | 'category';
+  editType: 'create' | 'update' | 'title' | 'tags' | 'category' | 'autosave';
+  contentSnapshot?: string; // Store content snapshot for significant changes
+  contentLength?: number; // Track content length for change detection
+  changePercentage?: number; // Track percentage of content changed
 }
 
 export interface Note {
