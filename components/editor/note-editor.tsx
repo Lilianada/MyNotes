@@ -57,13 +57,8 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
       onChange,
       onSave,
       isAdmin,
-      user,
-      {
-        autosaveInterval: 45000, // 45 seconds
-        minChangeThreshold: 10, // minimum 10 characters changed
-        minChangePercentage: 3, // minimum 3% change
-        maxVersions: 20 // keep last 20 versions
-      }
+      user
+      // Use default configuration from edit-history service
     );
 
     // Focus the editor ONLY when a new note is selected

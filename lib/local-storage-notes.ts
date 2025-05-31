@@ -156,14 +156,14 @@ export const localStorageNotesService = {
   updateNoteTitle(id: number, noteTitle: string): string {
     const notes = this.getNotes();
     const slug = createSlugFromTitle(noteTitle);
-    const filePath = `notes/${slug}.md`;
+    const filePath = `notes/${slug}.md`; // Virtual path for backward compatibility
     
     const updatedNotes = notes.map(note => 
       note.id === id ? { 
         ...note, 
         noteTitle,
-        slug,
-        filePath
+        slug
+        // Note: Removed actual filePath setting - localStorage only
       } : note
     );
     window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
@@ -171,7 +171,7 @@ export const localStorageNotesService = {
     // Add history entry
     this.addHistoryEntry(id, 'title');
     
-    return filePath;
+    return filePath; // Return virtual path for API compatibility
   },
   
   // Delete a note

@@ -1,7 +1,6 @@
 "use client";
 
 import { Note } from "@/types";
-import { saveNoteToFile, createEmptyNoteFile } from "@/app/actions";
 import { firebaseNotesService } from "@/lib/firebase-notes";
 import { localStorageNotesService } from "@/lib/local-storage-notes";
 import { countWords } from "@/lib/word-count";
@@ -28,12 +27,7 @@ export class NoteCRUDOperations {
       } else {
         // Use localStorage for non-admins
         newNote = localStorageNotesService.addNote(noteTitle);
-
-        // Also create the file for backwards compatibility
-        const result = await createEmptyNoteFile(noteTitle);
-        if (result.success) {
-          newNote.filePath = result.filePath;
-        }
+        // Note: Removed filesystem operations - localStorage only for non-admin users
       }
 
       return newNote;
@@ -63,14 +57,7 @@ export class NoteCRUDOperations {
       } else {
         // Use localStorage for non-admins
         localStorageNotesService.updateNoteContent(id, content);
-
-        // Also update file for backwards compatibility
-        await saveNoteToFile(
-          content,
-          id,
-          noteToUpdate.noteTitle,
-          noteToUpdate.slug
-        );
+        // Note: Removed filesystem operations - localStorage only for non-admin users
       }
       
       return { wordCount };
@@ -100,17 +87,7 @@ export class NoteCRUDOperations {
       } else {
         // Use localStorage for non-admins
         filePath = localStorageNotesService.updateNoteTitle(id, title);
-
-        // Also update file for backwards compatibility
-        const result = await saveNoteToFile(
-          noteToUpdate.content,
-          id,
-          title,
-          noteToUpdate.slug
-        );
-        if (result.success && result.filePath) {
-          filePath = result.filePath;
-        }
+        // Note: Removed filesystem operations - localStorage only for non-admin users
       }
 
       return { filePath };

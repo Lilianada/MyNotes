@@ -30,7 +30,6 @@
 
 /* Font styles */
 .monaco-editor .view-lines {
-  font-family: var(--font-mono), monospace;
   font-size: 14px;
   line-height: 1.6;
 }
