@@ -244,6 +244,54 @@ export function useNoteOperations(
     }
   };
 
+  const archiveNote = async (id: number, archived: boolean = true): Promise<void> => {
+    // Find the note to update
+    const noteToUpdate = notes.find((note) => note.id === id);
+
+    if (!noteToUpdate) return;
+    
+    const now = new Date();
+
+    // Update in state first for immediate UI update
+    setNotes((prevNotes) =>
+      prevNotes.map((note) =>
+        note.id === id ? { ...note, archived, updatedAt: now } : note
+      )
+    );
+
+    // Update the note in storage
+    await NoteOperations.updateNoteData(
+      id, 
+      { archived },
+      Boolean(isAdmin), 
+      user
+    );
+  };
+
+  const updateNoteData = async (id: number, updatedNote: Partial<Note>): Promise<void> => {
+    // Find the note to update
+    const noteToUpdate = notes.find((note) => note.id === id);
+
+    if (!noteToUpdate) return;
+    
+    const now = new Date();
+
+    // Update in state first for immediate UI update
+    setNotes((prevNotes) =>
+      prevNotes.map((note) =>
+        note.id === id ? { ...note, ...updatedNote, updatedAt: now } : note
+      )
+    );
+
+    // Update the note in storage
+    await NoteOperations.updateNoteData(
+      id, 
+      updatedNote,
+      Boolean(isAdmin), 
+      user
+    );
+  };
+
   return {
     addNote,
     updateNote,
@@ -252,6 +300,8 @@ export function useNoteOperations(
     bulkDeleteNotes,
     selectNote,
     getNoteHistory,
-    syncLocalNotesToFirebase
+    syncLocalNotesToFirebase,
+    archiveNote,
+    updateNoteData
   };
 }

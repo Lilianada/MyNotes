@@ -17,6 +17,11 @@ export function useSortedAndFilteredNotes(
 ) {
   // Filter notes first
   const filteredNotes = notes.filter(note => {
+    // Hide archived notes unless specifically filtering for them
+    if (filterOptions.selectedArchive === null && note.archived) {
+      return false;
+    }
+    
     // Filter by tag if selected
     if (filterOptions.selectedTag && (!note.tags || !note.tags.includes(filterOptions.selectedTag))) {
       return false;

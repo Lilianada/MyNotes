@@ -19,6 +19,7 @@ interface NoteDetailsProps {
 }
 
 export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
+  const { updateNoteData } = useNotes();
   const { notes, updateNoteTags, updateTagAcrossNotes, deleteTagFromAllNotes } = useNotes();
   
   const {
@@ -32,7 +33,10 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
     setDescription,
     publishStatus,
     setPublishStatus,
-    updateNote
+    archived,
+    setArchived,
+    updateNote,
+    archiveNote
   } = useNoteDetailsHooks(note, isOpen);
 
   const {
@@ -54,8 +58,17 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
     if (!note) return;
 
     try {
-      // Update your note metadata here
-      await updateNote(note.id, note.content);
+      // Create the updated note object with all metadata changes
+      const updatedNoteData = {
+        description,
+        publish: publishStatus,
+        archived,
+        updatedAt: new Date()
+      };
+
+      // Update the note data using the general updateNoteData method
+      await updateNoteData(note.id, updatedNoteData);
+      
       setActiveTab('details');
     } catch (error) {
       console.error('Failed to update metadata:', error);
@@ -117,6 +130,8 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
               setDescription={setDescription}
               publishStatus={publishStatus}
               setPublishStatus={setPublishStatus}
+              archived={archived}
+              setArchived={setArchived}
               onSave={handleMetadataSave}
             />
           )}

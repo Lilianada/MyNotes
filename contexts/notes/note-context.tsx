@@ -30,6 +30,8 @@ interface NoteContextType {
   bulkDeleteNotes: (ids: number[]) => Promise<{ successful: number[], failed: { id: number, error: string }[] }>;
   selectNote: (id: number | null) => void;
   syncLocalNotesToFirebase: () => Promise<void>;
+  archiveNote: (id: number, archived?: boolean) => Promise<void>;
+  updateNoteData: (id: number, updatedNote: Partial<Note>) => Promise<void>;
   // Tags and relationships
   updateNoteTags: (id: number, tags: string[]) => Promise<string[]>;  // Updated to return string[]
   updateTagAcrossNotes: (oldTag: string, newTag: string) => Promise<void>;

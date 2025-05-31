@@ -16,6 +16,7 @@ export function useNoteDetailsState(note: Note | null, isOpen: boolean) {
   const [categories, setCategories] = useState<NoteCategory[]>([]);
   const [description, setDescription] = useState<string>('');
   const [publishStatus, setPublishStatus] = useState<boolean>(false);
+  const [archived, setArchived] = useState<boolean>(false);
   
   const { user, isAdmin } = useAuth();
   const { notes } = useNotes();
@@ -38,6 +39,7 @@ export function useNoteDetailsState(note: Note | null, isOpen: boolean) {
       loadEditHistory();
       setDescription(note.description || '');
       setPublishStatus(note.publish || false);
+      setArchived(note.archived || false);
     }
   }, [isOpen, note]);
   
@@ -74,6 +76,8 @@ export function useNoteDetailsState(note: Note | null, isOpen: boolean) {
     setDescription,
     publishStatus,
     setPublishStatus,
+    archived,
+    setArchived,
   };
 }
 
@@ -85,7 +89,8 @@ export function useNoteDetailsActions(note: Note | null, setActiveTab: (tab: Tab
     deleteTagFromAllNotes,
     updateNote,
     updateCategory,
-    deleteCategory
+    deleteCategory,
+    archiveNote
   } = useNotes();
   
   const handleCategorySave = useCallback(async (category: NoteCategory | null) => {
@@ -106,7 +111,8 @@ export function useNoteDetailsActions(note: Note | null, setActiveTab: (tab: Tab
     deleteTagFromAllNotes,
     updateNote,
     updateCategory,
-    deleteCategory
+    deleteCategory,
+    archiveNote
   };
 }
 

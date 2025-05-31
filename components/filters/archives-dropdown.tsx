@@ -21,8 +21,11 @@ export const ArchivesDropdown: React.FC<ArchivesDropdownProps> = ({
   selectedArchive,
   onSelectArchive,
 }) => {
-  // TODO: Implement archive functionality
-  // For now, this is just a placeholder UI component
+  const getDisplayText = () => {
+    if (selectedArchive === true) return 'Archived';
+    if (selectedArchive === false) return 'Active';
+    return 'All';
+  };
   
   return (
     <DropdownMenu>
@@ -31,13 +34,12 @@ export const ArchivesDropdown: React.FC<ArchivesDropdownProps> = ({
           variant="outline" 
           size="sm"
           className={`flex items-center gap-2 ${selectedArchive !== null ? 'bg-blue-50 border-blue-200' : ''}`}
-          disabled // Disabled until implementation is ready
         >
           <Archive size={14} />
-          <span>Archives</span>
+          <span>{getDisplayText()}</span>
           {selectedArchive !== null && (
             <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs">
-              1
+              ●
             </Badge>
           )}
           <ChevronDown size={12} />
@@ -47,30 +49,24 @@ export const ArchivesDropdown: React.FC<ArchivesDropdownProps> = ({
         {selectedArchive !== null && (
           <>
             <DropdownMenuItem onClick={() => onSelectArchive(null)} className="text-blue-600">
-              Clear filter
+              Show All Notes
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>
         )}
-        <DropdownMenuItem disabled>
-          <div className="flex items-center justify-between w-full">
-            <span>Active Notes</span>
-            <Badge variant="outline" className="text-xs">
-              -
-            </Badge>
-          </div>
+        <DropdownMenuItem 
+          onClick={() => onSelectArchive(false)}
+          className={selectedArchive === false ? 'bg-blue-50' : ''}
+        >
+          <Archive size={14} className="mr-2" />
+          Active Notes
         </DropdownMenuItem>
-        <DropdownMenuItem disabled>
-          <div className="flex items-center justify-between w-full">
-            <span>Archived Notes</span>
-            <Badge variant="outline" className="text-xs">
-              -
-            </Badge>
-          </div>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem disabled className="text-gray-500 text-xs">
-          Archive functionality coming soon
+        <DropdownMenuItem 
+          onClick={() => onSelectArchive(true)}
+          className={selectedArchive === true ? 'bg-blue-50' : ''}
+        >
+          <Archive size={14} className="mr-2" />
+          Archived Notes
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -9,6 +9,8 @@ interface MetadataTabContentProps {
   setDescription: (description: string) => void;
   publishStatus: boolean;
   setPublishStatus: (status: boolean) => void;
+  archived: boolean;
+  setArchived: (archived: boolean) => void;
   onSave: () => void;
 }
 
@@ -18,6 +20,8 @@ export function MetadataTabContent({
   setDescription, 
   publishStatus, 
   setPublishStatus,
+  archived,
+  setArchived,
   onSave 
 }: MetadataTabContentProps) {
   return (
@@ -57,6 +61,19 @@ export function MetadataTabContent({
         />
         <label htmlFor="publish" className="text-sm font-medium text-gray-700">
           Publish
+        </label>
+      </div>
+      
+      <div className="flex items-center">
+        <input
+          type="checkbox"
+          id="archived"
+          checked={archived}
+          onChange={(e) => setArchived(e.target.checked)}
+          className="mr-2"
+        />
+        <label htmlFor="archived" className="text-sm font-medium text-gray-700">
+          Archive Note
         </label>
       </div>
       

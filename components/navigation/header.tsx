@@ -2,12 +2,11 @@
 
 import { useState, useRef, useEffect } from "react"
 import { Menu } from "./menu"
-import { Menu as MenuIcon, X, Plus, Search, UserCircle, CloudIcon, HardDriveIcon, HelpCircle } from "lucide-react"
+import { Menu as MenuIcon, X, Plus, Search, UserCircle} from "lucide-react"
 import { useNotes } from "@/contexts/notes/note-context"
 import SearchNotes from "@/components/notes/search-notes"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { useAuth } from "@/contexts/auth-context"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { Note } from "@/types"
 
 
@@ -18,36 +17,13 @@ interface HeaderProps {
   isCreatingNote?: boolean
 }
 
-// Storage mode indicator component
-function StorageModeIndicator() {
-  const { user, isAdmin } = useAuth();
-  
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex items-center mr-2">
-            {isAdmin && user ? (
-              <CloudIcon size={16} className="text-green-500" />
-            ) : (
-              <HardDriveIcon size={16} className="text-gray-500" />
-            )}
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="bottom">
-          <p>{isAdmin && user ? "Firebase Cloud Storage" : "Local Storage"}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
-
 export function Header({ onNewNote, toggleSidebar, isSidebarOpen, isCreatingNote = false }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false)
   const { notes, selectNote } = useNotes()
   const searchRef = useRef<HTMLDivElement>(null)
+  const { user, isAdmin } = useAuth();
   
   // Close search when clicking outside
   useEffect(() => {
@@ -143,11 +119,16 @@ export function Header({ onNewNote, toggleSidebar, isSidebarOpen, isCreatingNote
               aria-label="Account"
               title="Account"
             >
-              <UserCircle size={18} />
+               <div className="flex items-center mr-2">
+            {isAdmin && user ? (
+              <UserCircle size={16} className="text-green-500" />
+            ) : (
+              <UserCircle size={16} className="text-gray-500" />
+            )}
+          </div>
             </button>
           }
         />
-        <StorageModeIndicator />
       </div>
     </header>
   )
