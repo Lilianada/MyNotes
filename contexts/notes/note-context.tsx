@@ -13,6 +13,7 @@ import { initializeNotes } from "./note-initialization";
 import { useNoteTags } from "./note-tags";
 import { useNoteRelationships } from "./note-relationships";
 import { useNoteCategories } from "./note-categories";
+import { editHistoryService } from "@/lib/edit-history/edit-history-service";
 
 interface NoteContextType {
   notes: Note[];
@@ -65,6 +66,9 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     initContextRef
   } = useNoteState();
 
+  // Get auth loading state to ensure we don't initialize before auth is ready
+  const { loading: authLoading } = useAuth();
+
   const noteOperations = useNoteOperations(
     notes,
     setNotes,
@@ -97,24 +101,38 @@ export function NoteProvider({ children }: { children: ReactNode }) {
 
   // Initialize notes when the user state changes
   useEffect(() => {
+    console.log(`🔍 Note context effect triggered - user: ${user?.uid || 'none'}, isAdmin: ${isAdmin}, authLoading: ${authLoading}, notes.length: ${notes.length}`);
+    
+    // Wait for auth to be fully loaded before initializing
+    if (authLoading) {
+      console.log('⏳ Auth still loading, waiting...');
+      return;
+    }
+    
     // Only initialize if the user state is settled and we're not already loading
     if (user !== undefined) {
-      // Determine the current context type (admin or regular)
       const currentContext = isAdmin ? 'admin' : 'regular';
       
-      // If notes were already successfully loaded by another context, don't reload
-      if (hasInitializedRef.current && notes.length > 0) {
-        console.log(`Skipping initialization for ${currentContext} context - notes already loaded by ${initContextRef.current} context`);
+      // If notes were already successfully loaded, don't reload unless user/admin status changed
+      if (hasInitializedRef.current && notes.length > 0 && initContextRef.current === currentContext) {
+        console.log(`Skipping initialization - notes already loaded for ${currentContext} context`);
         return;
       }
       
-      // Add a semaphore mechanism to prevent multiple concurrent initializations
-      const initializationKey = `notes_initialization_${user?.uid || 'anonymous'}_${currentContext}`;
+      // If admin status changed, allow re-initialization
+      if (hasInitializedRef.current && initContextRef.current !== currentContext) {
+        console.log(`Admin status changed from ${initContextRef.current} to ${currentContext}, reinitializing`);
+        hasInitializedRef.current = false;
+        initContextRef.current = "";
+      }
+      
+      // Use a single initialization key per user
+      const userInitializationKey = `notes_initialization_${user?.uid || 'anonymous'}`;
       
       // Check if we're already initializing to prevent duplicate calls
-      if (typeof window !== 'undefined' && !window[initializationKey]) {
+      if (typeof window !== 'undefined' && !window[userInitializationKey]) {
         // Set flag to indicate initialization is in progress
-        window[initializationKey] = true;
+        window[userInitializationKey] = true;
         
         console.log(`Starting notes initialization for ${currentContext} context`);
 
@@ -142,12 +160,46 @@ export function NoteProvider({ children }: { children: ReactNode }) {
           .finally(() => {
             // Clear the flag when initialization is complete
             if (typeof window !== 'undefined') {
-              window[initializationKey] = false;
+              window[userInitializationKey] = false;
             }
           });
+      } else if (typeof window !== 'undefined' && window[userInitializationKey]) {
+        console.log(`Initialization already in progress for ${currentContext} context`);
       }
     }
-  }, [user, isAdmin, notes.length, hasInitializedRef, initContextRef, setNotes, setSelectedNoteId, setIsLoading]);
+  }, [user, isAdmin, authLoading, notes.length, hasInitializedRef, initContextRef, setNotes, setSelectedNoteId, setIsLoading]);
+
+  // Cleanup effect when user signs out
+  useEffect(() => {
+    // If user becomes null (signed out), clear all state
+    if (user === null) {
+      console.log('🧹 User signed out, clearing notes state and edit history');
+      console.log('📊 Before cleanup - Notes count:', notes.length, 'Selected note:', selectedNoteId);
+      
+      // Clear notes and selection
+      setNotes([]);
+      setSelectedNoteId(null);
+      
+      // Reset initialization flags
+      hasInitializedRef.current = false;
+      initContextRef.current = "";
+      
+      // Clear edit history tracking
+      editHistoryService.cleanup();
+      
+      // Clear any pending initialization flags
+      if (typeof window !== 'undefined') {
+        Object.keys(window).forEach(key => {
+          if (key.startsWith('notes_initialization_')) {
+            window[key] = false;
+          }
+        });
+      }
+      
+      setIsLoading(false);
+      console.log('✅ Cleanup complete - state should be cleared');
+    }
+  }, [user, setNotes, setSelectedNoteId, setIsLoading, hasInitializedRef, initContextRef]);
 
   return (
     <NoteContext.Provider

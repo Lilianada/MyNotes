@@ -15,6 +15,7 @@ import { calculateNoteSize } from "@/lib/storage/storage-utils";
 import { getUserStorage, incrementStorage } from "@/lib/firebase/firebase-storage";
 import { useToast } from "@/hooks/use-toast";
 import { useStorage } from "@/contexts/storage-context";
+import { editHistoryService } from "@/lib/edit-history/edit-history-service";
 
 export function useNoteState() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -185,6 +186,9 @@ export function useNoteOperations(
     // Delete the note from storage
     await NoteOperations.deleteNote(id, noteToDelete, Boolean(isAdmin), user);
     
+    // Clean up edit history tracking for the deleted note
+    editHistoryService.cleanupTracking(id);
+    
     // Refresh storage tracking for non-admin users
     if (user && !isAdmin) {
       refreshStorage();
@@ -216,6 +220,11 @@ export function useNoteOperations(
     // Delete the notes from storage
     try {
       const result = await NoteOperations.bulkDeleteNotes(ids, notesToDelete, Boolean(isAdmin), user);
+      
+      // Clean up edit history tracking for all deleted notes
+      result.successful.forEach(id => {
+        editHistoryService.cleanupTracking(id);
+      });
       
       // Refresh storage tracking for non-admin users
       if (user && !isAdmin) {
@@ -253,10 +262,10 @@ export function useNoteOperations(
       const localNotes = localStorageNotesService.getNotes();
       
       // Sync the notes
-      await syncLocalToFirebase(localNotes, user.uid);
+      await syncLocalToFirebase(localNotes, user.uid, isAdmin);
       
       // After syncing, reload notes from Firebase
-      const firebaseNotes = await firebaseNotesService.getNotes(user.uid);
+      const firebaseNotes = await firebaseNotesService.getNotes(user.uid, isAdmin);
       setNotes(firebaseNotes);
       
       // If there are notes, select the most recent one

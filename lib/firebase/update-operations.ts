@@ -7,17 +7,21 @@ import {
   updateDoc, 
   serverTimestamp, 
   query, 
-  where 
+  where,
+  getDoc
 } from 'firebase/firestore';
 import { countWords } from '../data-processing/word-count';
+import { calculateNoteSize } from '../storage/storage-utils';
+import { incrementStorage, decrementStorage } from './firebase-storage';
 
 /**
  * Update a note's content
  */
-export const updateNoteContent = async (noteId: number, content: string): Promise<void> => {
+export const updateNoteContent = async (noteId: number, content: string, userId?: string, isAdmin: boolean = false): Promise<void> => {
   try {
-    // Find the document by note ID
-    const notesRef = collection(db, 'notes');
+    // Determine which collection to use
+    const collectionName = isAdmin ? 'notes' : 'userNotes';
+    const notesRef = collection(db, collectionName);
     const q = query(notesRef, where("id", "==", noteId));
     const snapshot = await getDocs(q);
     
@@ -25,10 +29,22 @@ export const updateNoteContent = async (noteId: number, content: string): Promis
       throw new Error(`Note with ID ${noteId} not found`);
     }
     
-    const docRef = doc(db, 'notes', snapshot.docs[0].id);
+    const docRef = doc(db, collectionName, snapshot.docs[0].id);
+    const currentData = snapshot.docs[0].data();
     
-    // Calculate word count
+    // Calculate word count and new file size
     const wordCount = countWords(content);
+    
+    // Create temporary note object for size calculation
+    const tempNote: Note = {
+      ...currentData,
+      content,
+      wordCount
+    } as Note;
+    
+    const newFileSize = calculateNoteSize(tempNote);
+    const oldFileSize = currentData.fileSize || 0;
+    const sizeDifference = newFileSize - oldFileSize;
     
     // Add to edit history with enhanced data
     const historyEntry = {
@@ -42,10 +58,25 @@ export const updateNoteContent = async (noteId: number, content: string): Promis
       content,
       updatedAt: serverTimestamp(),
       wordCount,
-      "editHistory": snapshot.docs[0].data().editHistory
-        ? [...snapshot.docs[0].data().editHistory, historyEntry]
+      fileSize: newFileSize,
+      "editHistory": currentData.editHistory
+        ? [...currentData.editHistory, historyEntry]
         : [historyEntry]
     });
+    
+    // Update storage tracking for non-admin users if file size changed significantly
+    if (!isAdmin && userId && Math.abs(sizeDifference) > 100) { // Only track if change is > 100 bytes
+      try {
+        if (sizeDifference > 0) {
+          await incrementStorage(userId, sizeDifference);
+        } else {
+          await decrementStorage(userId, Math.abs(sizeDifference));
+        }
+      } catch (storageError) {
+        console.error('Error updating storage tracking:', storageError);
+        // Don't fail the update if storage tracking fails
+      }
+    }
   } catch (error) {
     console.error(`Error updating note ${noteId}:`, error);
     throw error;

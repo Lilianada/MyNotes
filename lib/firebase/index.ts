@@ -19,16 +19,16 @@ export const firebaseNotesService = {
   getChildNotes,
   
   // Update operations
-  updateNoteContent,
+  updateNoteContent: (noteId: number, content: string, userId?: string, isAdmin?: boolean) => updateNoteContent(noteId, content, userId, isAdmin),
   updateNoteTitle,
   updateNoteCategory,
   updateNoteTags,
   updateNoteData,
   
   // Delete operations
-  deleteNote,
-  deleteMultipleNotes,
-  bulkDeleteNotes,
+  deleteNote: (noteId: number, userId?: string, isAdmin?: boolean) => deleteNote(noteId, userId, isAdmin),
+  deleteMultipleNotes: (noteIds: number[], userId?: string, isAdmin?: boolean) => deleteMultipleNotes(noteIds, userId, isAdmin),
+  bulkDeleteNotes: (noteIds: number[], userId?: string, isAdmin?: boolean) => deleteMultipleNotes(noteIds, userId, isAdmin),
   deleteCategory,
   deleteTagFromAllNotes,
   

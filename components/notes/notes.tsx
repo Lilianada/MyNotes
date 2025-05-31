@@ -148,7 +148,7 @@ export function Notes() {
                   </>
                 ) : (
                   <>
-                    <p className="text-lg mb-4">Start typing...</p>
+                    <p className="text-lg mb-4">Make things as simple as possible, but not simpler. <br/> <span className="text-sm text-blue-300 italic"> - Albert Einstein</span></p>
                     <p className="text-sm">Click the + button to create a new note</p>
                   </>
                 )}

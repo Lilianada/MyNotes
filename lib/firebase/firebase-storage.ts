@@ -20,10 +20,12 @@ import { firebaseNotesService } from '@/lib/firebase/firebase-notes';
 
 /**
  * Get user storage information
+ * Now using users/{userId}/storage/info subcollection structure
  */
 export async function getUserStorage(userId: string, isAdmin: boolean = false): Promise<UserStorage> {
   try {
-    const storageRef = doc(db, 'userStorage', userId);
+    // New structure: users/{userId}/storage/info
+    const storageRef = doc(db, 'users', userId, 'storage', 'info');
     const storageDoc = await getDoc(storageRef);
     
     if (storageDoc.exists()) {
@@ -53,10 +55,12 @@ export async function getUserStorage(userId: string, isAdmin: boolean = false): 
 
 /**
  * Update user storage information
+ * Now using users/{userId}/storage/info subcollection structure
  */
 export async function updateUserStorage(userStorage: UserStorage): Promise<void> {
   try {
-    const storageRef = doc(db, 'userStorage', userStorage.userId);
+    // New structure: users/{userId}/storage/info
+    const storageRef = doc(db, 'users', userStorage.userId, 'storage', 'info');
     await updateDoc(storageRef, {
       totalStorage: userStorage.totalStorage,
       noteCount: userStorage.noteCount,
@@ -73,8 +77,8 @@ export async function updateUserStorage(userStorage: UserStorage): Promise<void>
  */
 export async function recalculateUserStorage(userId: string, isAdmin: boolean = false): Promise<UserStorage> {
   try {
-    // Get all user notes
-    const notes = await firebaseNotesService.getNotes(userId);
+    // Get all user notes from the correct collection based on user type
+    const notes = await firebaseNotesService.getNotes(userId, isAdmin);
     
     // Calculate total storage
     const totalStorage = calculateTotalStorage(notes);
@@ -113,10 +117,12 @@ export async function canUserAddNote(userId: string, noteSize: number, isAdmin: 
 
 /**
  * Increment storage usage when adding a note
+ * Now using users/{userId}/storage/info subcollection structure
  */
 export async function incrementStorage(userId: string, noteSize: number): Promise<void> {
   try {
-    const storageRef = doc(db, 'userStorage', userId);
+    // New structure: users/{userId}/storage/info
+    const storageRef = doc(db, 'users', userId, 'storage', 'info');
     const storageDoc = await getDoc(storageRef);
     
     if (storageDoc.exists()) {
@@ -135,10 +141,12 @@ export async function incrementStorage(userId: string, noteSize: number): Promis
 
 /**
  * Decrement storage usage when deleting a note
+ * Now using users/{userId}/storage/info subcollection structure
  */
 export async function decrementStorage(userId: string, noteSize: number): Promise<void> {
   try {
-    const storageRef = doc(db, 'userStorage', userId);
+    // New structure: users/{userId}/storage/info
+    const storageRef = doc(db, 'users', userId, 'storage', 'info');
     const storageDoc = await getDoc(storageRef);
     
     if (storageDoc.exists()) {

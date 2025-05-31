@@ -300,7 +300,7 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
                 value={note.content}
                 onChange={handleInputChange}
                 className={`w-full h-full flex-1 p-4 border-none outline-none resize-none text-sm sm:text-[15px] bg-transparent scrollbar-hide text-justify leading-relaxed tracking-wide ${fontFamilyClass}`}
-                placeholder="Start typing with Markdown support..."
+                placeholder="Make things as simple as possible, but not simpler. -Albert Einstein"
                 spellCheck="false"
                 onCompositionStart={() => isUpdatingRef.current = true}
                 onCompositionEnd={(e) => {

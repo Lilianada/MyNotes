@@ -21,13 +21,14 @@ export class NoteCRUDOperations {
     let newNote: Note;
 
     try {
-      if (isAdmin && user) {
-        // Use Firebase for admins
-        newNote = await firebaseNotesService.addNote(user.uid, noteTitle);
+      if (user) {
+        // Use Firebase for all authenticated users (both admin and regular)
+        console.log(`Creating note for authenticated user: ${user.uid}, isAdmin: ${isAdmin}`);
+        newNote = await firebaseNotesService.addNote(user.uid, noteTitle, isAdmin);
       } else {
-        // Use localStorage for non-admins
+        // Use localStorage only for anonymous/unauthenticated users
+        console.log("Creating note for anonymous user in localStorage");
         newNote = localStorageNotesService.addNote(noteTitle);
-        // Note: Removed filesystem operations - localStorage only for non-admin users
       }
 
       return newNote;
@@ -51,13 +52,12 @@ export class NoteCRUDOperations {
     const wordCount = countWords(content);
 
     try {
-      if (isAdmin && user) {
-        // Use Firebase for admins
-        await firebaseNotesService.updateNoteContent(id, content);
+      if (user) {
+        // Use Firebase for all authenticated users (both admin and regular)
+        await firebaseNotesService.updateNoteContent(id, content, user.uid, isAdmin);
       } else {
-        // Use localStorage for non-admins
+        // Use localStorage for anonymous users
         localStorageNotesService.updateNoteContent(id, content);
-        // Note: Removed filesystem operations - localStorage only for non-admin users
       }
       
       return { wordCount };
@@ -80,14 +80,13 @@ export class NoteCRUDOperations {
     try {
       let filePath: string | undefined;
 
-      if (isAdmin && user) {
-        // Use Firebase for admins
+      if (user) {
+        // Use Firebase for all authenticated users (both admin and regular)
         await firebaseNotesService.updateNoteTitle(id, title);
         // For Firebase users, we don't need to return a filePath
       } else {
-        // Use localStorage for non-admins
+        // Use localStorage for anonymous users
         filePath = localStorageNotesService.updateNoteTitle(id, title);
-        // Note: Removed filesystem operations - localStorage only for non-admin users
       }
 
       return { filePath };
@@ -106,26 +105,25 @@ export class NoteCRUDOperations {
     isAdmin: boolean,
     user: { uid: string } | null | undefined
   ): Promise<void> {
-    try {
-      // Handle linked notes first - remove bidirectional links
-      if (noteToDelete.linkedNoteIds && noteToDelete.linkedNoteIds.length > 0) {
-        // For each linked note, we need to remove this note from its linkedNoteIds
-        if (isAdmin && user) {
-          // Handle in Firebase
-          for (const linkedId of noteToDelete.linkedNoteIds) {
-            const linkedNote = await firebaseNotesService.getNote(linkedId);
-            if (linkedNote && linkedNote.linkedNoteIds) {
-              // Filter out the note being deleted
-              const updatedLinks = linkedNote.linkedNoteIds.filter(linkId => linkId !== id);
-              await firebaseNotesService.updateNoteData(linkedId, {
-                ...linkedNote,
-                linkedNoteIds: updatedLinks,
-                updatedAt: new Date()
-              });
+    try {        // Handle linked notes first - remove bidirectional links
+        if (noteToDelete.linkedNoteIds && noteToDelete.linkedNoteIds.length > 0) {
+          // For each linked note, we need to remove this note from its linkedNoteIds
+          if (user) {
+            // Handle in Firebase for all authenticated users
+            for (const linkedId of noteToDelete.linkedNoteIds) {
+              const linkedNote = await firebaseNotesService.getNote(linkedId);
+              if (linkedNote && linkedNote.linkedNoteIds) {
+                // Filter out the note being deleted
+                const updatedLinks = linkedNote.linkedNoteIds.filter(linkId => linkId !== id);
+                await firebaseNotesService.updateNoteData(linkedId, {
+                  ...linkedNote,
+                  linkedNoteIds: updatedLinks,
+                  updatedAt: new Date()
+                });
+              }
             }
-          }
-        } else {
-          // Handle in localStorage
+          } else {
+            // Handle in localStorage for anonymous users
           const allNotes = localStorageNotesService.getNotes();
           for (const linkedId of noteToDelete.linkedNoteIds) {
             const linkedNote = allNotes.find(note => note.id === linkedId);
@@ -143,8 +141,8 @@ export class NoteCRUDOperations {
       }
       
       // Handle children notes - remove parent reference
-      if (isAdmin && user) {
-        // Handle in Firebase
+      if (user) {
+        // Handle in Firebase for all authenticated users
         const childNotes = await firebaseNotesService.getChildNotes(user.uid, id);
         for (const childNote of childNotes) {
           await firebaseNotesService.updateNoteData(childNote.id, {
@@ -154,7 +152,7 @@ export class NoteCRUDOperations {
           });
         }
       } else {
-        // Handle in localStorage
+        // Handle in localStorage for anonymous users
         const allNotes = localStorageNotesService.getNotes();
         for (const childNote of allNotes) {
           if (childNote.parentId === id) {
@@ -168,11 +166,14 @@ export class NoteCRUDOperations {
       }
 
       // Now delete the note itself
-      if (isAdmin && user) {
-        // Use Firebase for admins
-        await firebaseNotesService.deleteNote(id);
+      if (user) {
+        // Use Firebase for all authenticated users
+        const result = await firebaseNotesService.deleteNote(id, user.uid, isAdmin);
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to delete note');
+        }
       } else {
-        // Use localStorage for non-admins
+        // Use localStorage for anonymous users
         localStorageNotesService.deleteNote(id);
       }
     } catch (error) {
@@ -198,8 +199,8 @@ export class NoteCRUDOperations {
         // Handle linked notes first - remove bidirectional links
         if (noteToDelete.linkedNoteIds && noteToDelete.linkedNoteIds.length > 0) {
           // For each linked note, we need to remove this note from its linkedNoteIds
-          if (isAdmin && user) {
-            // Handle in Firebase
+          if (user) {
+            // Handle in Firebase for all authenticated users
             for (const linkedId of noteToDelete.linkedNoteIds) {
               try {
                 const linkedNote = await firebaseNotesService.getNote(linkedId);
@@ -217,7 +218,7 @@ export class NoteCRUDOperations {
               }
             }
           } else {
-            // Handle in localStorage
+            // Handle in localStorage for anonymous users
             const allNotes = localStorageNotesService.getNotes();
             for (const linkedId of noteToDelete.linkedNoteIds) {
               try {
@@ -239,8 +240,8 @@ export class NoteCRUDOperations {
         }
         
         // Handle children notes - remove parent reference
-        if (isAdmin && user) {
-          // Handle in Firebase
+        if (user) {
+          // Handle in Firebase for all authenticated users
           try {
             const childNotes = await firebaseNotesService.getChildNotes(user.uid, id);
             for (const childNote of childNotes) {
@@ -254,7 +255,7 @@ export class NoteCRUDOperations {
             console.warn(`Failed to update child notes for note ${id}:`, childError);
           }
         } else {
-          // Handle in localStorage
+          // Handle in localStorage for anonymous users
           try {
             const allNotes = localStorageNotesService.getNotes();
             for (const childNote of allNotes) {
@@ -273,14 +274,11 @@ export class NoteCRUDOperations {
       }
       
       // Now bulk delete the notes themselves
-      if (isAdmin && user) {
-        // Use Firebase for admins
-        const success = await firebaseNotesService.bulkDeleteNotes(ids);
-        return success 
-          ? { successful: ids, failed: [] } 
-          : { successful: [], failed: ids.map(id => ({ id, error: 'Failed to delete note' })) };
+      if (user) {
+        // Use Firebase for all authenticated users
+        return await firebaseNotesService.bulkDeleteNotes(ids, user.uid, isAdmin);
       } else {
-        // Use localStorage for non-admins
+        // Use localStorage for anonymous users
         return localStorageNotesService.bulkDeleteNotes(ids);
       }
     } catch (error) {

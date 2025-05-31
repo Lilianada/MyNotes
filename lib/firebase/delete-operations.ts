@@ -6,62 +6,125 @@ import {
   deleteDoc, 
   query, 
   where,
-  writeBatch
+  writeBatch,
+  getDoc
 } from 'firebase/firestore';
+import { decrementStorage } from './firebase-storage';
+import { calculateNoteSize } from '../storage/storage-utils';
 
 /**
  * Delete a note by ID
  */
-export const deleteNote = async (noteId: number): Promise<boolean> => {
+export const deleteNote = async (noteId: number, userId?: string, isAdmin: boolean = false): Promise<{ success: boolean, error?: string }> => {
   try {
-    // Find the document by note ID
-    const notesRef = collection(db, 'notes');
+    // Determine which collection to use
+    const collectionName = isAdmin ? 'notes' : 'userNotes';
+    const notesRef = collection(db, collectionName);
     const q = query(notesRef, where("id", "==", noteId));
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
-      return false;
+      return { success: false, error: 'Note not found' };
     }
     
+    // Get note data for storage tracking
+    const noteData = snapshot.docs[0].data();
+    const noteFileSize = noteData.fileSize || 0;
+    
     // Get document reference
-    const docRef = doc(db, 'notes', snapshot.docs[0].id);
+    const docRef = doc(db, collectionName, snapshot.docs[0].id);
     
     // Delete the document
     await deleteDoc(docRef);
     
-    return true;
+    // Update storage tracking for non-admin users
+    if (!isAdmin && userId && noteFileSize > 0) {
+      try {
+        await decrementStorage(userId, noteFileSize);
+      } catch (storageError) {
+        console.error('Error updating storage tracking:', storageError);
+        // Don't fail the deletion if storage tracking fails
+      }
+    }
+    
+    return { success: true };
   } catch (error) {
     console.error(`Error deleting note ${noteId}:`, error);
-    return false;
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
   }
 };
 
 /**
  * Delete multiple notes by ID
  */
-export const deleteMultipleNotes = async (noteIds: number[]): Promise<boolean> => {
+export const deleteMultipleNotes = async (noteIds: number[], userId?: string, isAdmin: boolean = false): Promise<{ successful: number[], failed: { id: number, error: string }[] }> => {
+  const successful: number[] = [];
+  const failed: { id: number, error: string }[] = [];
+  
   try {
     const batch = writeBatch(db);
-    const notesRef = collection(db, 'notes');
+    const collectionName = isAdmin ? 'notes' : 'userNotes';
+    const notesRef = collection(db, collectionName);
+    let totalStorageDecrement = 0;
+    let notesFound: number[] = [];
     
     // For each note ID, find the corresponding document and add to batch
     for (const noteId of noteIds) {
-      const q = query(notesRef, where("id", "==", noteId));
-      const snapshot = await getDocs(q);
-      
-      if (!snapshot.empty) {
-        const docRef = doc(db, 'notes', snapshot.docs[0].id);
-        batch.delete(docRef);
+      try {
+        const q = query(notesRef, where("id", "==", noteId));
+        const snapshot = await getDocs(q);
+        
+        if (!snapshot.empty) {
+          const noteData = snapshot.docs[0].data();
+          const noteFileSize = noteData.fileSize || 0;
+          totalStorageDecrement += noteFileSize;
+          
+          const docRef = doc(db, collectionName, snapshot.docs[0].id);
+          batch.delete(docRef);
+          notesFound.push(noteId);
+        } else {
+          failed.push({ id: noteId, error: 'Note not found' });
+        }
+      } catch (error) {
+        failed.push({ 
+          id: noteId, 
+          error: error instanceof Error ? error.message : 'Unknown error' 
+        });
       }
     }
     
-    // Commit the batch
-    await batch.commit();
+    // Only commit if we have notes to delete
+    if (notesFound.length > 0) {
+      await batch.commit();
+      successful.push(...notesFound);
+      
+      // Update storage tracking for non-admin users
+      if (!isAdmin && userId && totalStorageDecrement > 0) {
+        try {
+          await decrementStorage(userId, totalStorageDecrement);
+        } catch (storageError) {
+          console.error('Error updating storage tracking:', storageError);
+          // Don't fail the deletion if storage tracking fails
+        }
+      }
+    }
     
-    return true;
+    return { successful, failed };
   } catch (error) {
     console.error(`Error batch deleting notes:`, error);
-    return false;
+    // Mark all notes as failed if batch operation fails
+    noteIds.forEach(id => {
+      if (!successful.includes(id) && !failed.find(f => f.id === id)) {
+        failed.push({ 
+          id, 
+          error: error instanceof Error ? error.message : 'Batch operation failed' 
+        });
+      }
+    });
+    return { successful, failed };
   }
 };
 

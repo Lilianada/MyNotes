@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 import { countWords } from '../data-processing/word-count';
 import { generateUniqueId, calculateNoteSize } from '../storage/storage-utils';
+import { incrementStorage, decrementStorage } from './firebase-storage';
 import { 
   createSlugFromTitle, 
   getUniqueSlug, 
@@ -129,6 +130,16 @@ export const addNote = async (userId: string, noteTitle: string, isAdmin: boolea
     // Create document with slug as the document ID
     const docRef = doc(db, collectionName, slug);
     await setDoc(docRef, noteData);
+    
+    // Update storage tracking for non-admin users
+    if (!isAdmin) {
+      try {
+        await incrementStorage(userId, fileSize);
+      } catch (storageError) {
+        console.error('Error updating storage tracking:', storageError);
+        // Don't fail the note creation if storage tracking fails
+      }
+    }
     
     return {
       ...tempNote,

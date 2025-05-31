@@ -37,7 +37,7 @@ export function NotesList({
 }: NotesListProps) {
   if (filteredNotes.length === 0) {
     return (
-      <p className="text-center text-gray-400 p-4">No notes yet</p>
+      <p className="text-center text-gray-400 text-base p-4">No notes yet</p>
     );
   }
 

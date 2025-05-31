@@ -23,15 +23,13 @@ export async function initializeNotes(
   
   setIsLoading(true);
   try {
-    // If notes are already loaded and we've marked initialization as complete,
-    // skip the loading process to avoid the race condition
+    // Double-check if another context has already loaded notes while we were waiting
     if (notes.length > 0 && hasInitializedRef.current) {
-      console.log(`[${currentContext}] Notes already loaded by ${initContextRef.current} context, skipping initialization`);
+      console.log(`[${currentContext}] Notes already loaded by ${initContextRef.current} context during initialization, skipping`);
       setIsLoading(false);
       return;
     }
     
-    // Special handling for when loading state might be stuck
     // If notes are already loaded but initialization flag isn't set, fix the state
     if (notes.length > 0 && !hasInitializedRef.current) {
       console.log(`[${currentContext}] Found notes but initialization flag not set, repairing state`);
@@ -57,6 +55,13 @@ export async function initializeNotes(
     // Try to load notes with retries if needed
     while (!success && attempts < MAX_RETRY_ATTEMPTS) {
       attempts++;
+      
+      // Check if another context has loaded notes while we were in the retry loop
+      if (notes.length > 0 && hasInitializedRef.current) {
+        console.log(`[${currentContext}] Another context loaded notes during retry attempt ${attempts}, stopping`);
+        setIsLoading(false);
+        return;
+      }
       
       try {
         console.log(`Attempt ${attempts} to load notes...`);
@@ -91,11 +96,12 @@ export async function initializeNotes(
         const result = await Promise.race([
           loadNotesPromise,
           timeoutPromise.catch(timeoutError => {
-            console.error(`[${currentContext}] Note loading timeout on attempt ${attempts}:`, timeoutError.message);
+            // Handle timeout gracefully without console errors
+            console.log(`[${currentContext}] Note loading taking longer than expected on attempt ${attempts}, using fallback strategy`);
             
             // If we found notes in local storage, use them as a fallback
             if (localNotes.length > 0) {
-              console.log(`[${currentContext}] Using ${localNotes.length} notes from local storage after timeout`);
+              console.log(`[${currentContext}] Using ${localNotes.length} notes from local storage as fallback`);
               return { loadedNotes: localNotes, notesLoadedFromStorage: true, error: undefined };
             }
             
@@ -106,7 +112,7 @@ export async function initializeNotes(
         // Process the result from the race
         if (result.error) {
           error = result.error;
-          console.error(`[${currentContext}] Error loading notes on attempt ${attempts}:`, error);
+          // console.error(`[${currentContext}] Error loading notes on attempt ${attempts}:`, error);
           
           if (attempts >= MAX_RETRY_ATTEMPTS) {
             // This was our last attempt - show error toast
@@ -155,7 +161,7 @@ export async function initializeNotes(
 
     // After all attempts, check for errors
     if (error && !success) {
-      console.error("Error loading notes after all attempts:", error);
+      // console.error("Error loading notes after all attempts:", error);
       // Show error message to user
       if (typeof window !== "undefined" && window.document) {
         const { toast } = await import("@/components/ui/use-toast");

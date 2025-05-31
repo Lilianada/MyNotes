@@ -34,49 +34,44 @@ export function configureMarkdownTokens(monaco: any) {
   monaco.languages.setMonarchTokensProvider('markdown', {
     tokenizer: {
       root: [
-        // Headers (# title) - fixed regex to properly capture all header levels
-        [/^(\s{0,3})(#{1,6})(\s+.*?$)/, ['', markdownTokenTypes.header, markdownTokenTypes.header]],
+        // Headers (# title) - simplified to avoid grouping issues
+        [/^#{1,6}\s+.*$/, markdownTokenTypes.header],
         
         // Code blocks with language ```js code ```
-        [/^(\s*)(```)([\w-]*$)/, ['', markdownTokenTypes.codeLang, markdownTokenTypes.codeLang]],
-        [/^(\s*)(```\s*)$/, ['', markdownTokenTypes.codeLang]],
+        [/^```[\w-]*$/, markdownTokenTypes.codeLang],
+        [/^```\s*$/, markdownTokenTypes.codeLang],
         
         // Lists (unordered and ordered)
-        [/^(\s*)([\*\-+]|\d+\.)\s+/, ['', markdownTokenTypes.list]],
+        [/^\s*[\*\-+]\s+/, markdownTokenTypes.list],
+        [/^\s*\d+\.\s+/, markdownTokenTypes.list],
 
-        // Bold ** **
-        [/\*\*([^*]+)\*\*/, markdownTokenTypes.strong],
+        // Bold ** ** - match entire pattern
+        [/\*\*[^*]+\*\*/, markdownTokenTypes.strong],
         // Bold __ __
-        [/__([^_]+)__/, markdownTokenTypes.strong],
+        [/__[^_]+__/, markdownTokenTypes.strong],
         
         // Italic * *
-        [/\*([^*]+)\*/, markdownTokenTypes.emphasis],
+        [/\*[^*]+\*/, markdownTokenTypes.emphasis],
         // Italic _ _
-        [/_([^_]+)_/, markdownTokenTypes.emphasis],
+        [/_[^_]+_/, markdownTokenTypes.emphasis],
         
         // Inline code ` `
-        [/`([^`]+)`/, markdownTokenTypes.code],
+        [/`[^`]+`/, markdownTokenTypes.code],
         
-        // Backlinks [[text]]
-        [/(\[\[)([^\]]+)(\]\])/, 
-          [markdownTokenTypes.backlink, markdownTokenTypes.linkText, markdownTokenTypes.backlink]
-        ],
+        // Backlinks [[text]] - simplified without groups
+        [/\[\[[^\]]+\]\]/, markdownTokenTypes.backlink],
         
-        // Links [text](url)
-        [/(\[)([^\]]+)(\])(\()([^\)]+)(\))/, 
-          [markdownTokenTypes.link, markdownTokenTypes.linkText, markdownTokenTypes.link, markdownTokenTypes.link, markdownTokenTypes.url, markdownTokenTypes.link]
-        ],
+        // Links [text](url) - simplified without groups
+        [/\[[^\]]+\]\([^\)]+\)/, markdownTokenTypes.link],
         
-        // Images ![alt](url)
-        [/(\!\[)([^\]]+)(\])(\()([^\)]+)(\))/, 
-          [markdownTokenTypes.image, markdownTokenTypes.linkText, markdownTokenTypes.image, markdownTokenTypes.image, markdownTokenTypes.url, markdownTokenTypes.image]
-        ],
+        // Images ![alt](url) - simplified without groups
+        [/!\[[^\]]*\]\([^\)]+\)/, markdownTokenTypes.image],
         
-        // Blockquotes
-        [/^(\s*)(>) .*$/, ['', markdownTokenTypes.quote]],
+        // Blockquotes - simplified
+        [/^\s*>.*$/, markdownTokenTypes.quote],
         
         // Horizontal rule (---, ***, ___)
-        [/^(\s*)([-*_]{3,})\s*$/, ['', markdownTokenTypes.hr]],
+        [/^\s*[-*_]{3,}\s*$/, markdownTokenTypes.hr],
         
         // Special character transformations
         [/->/, 'special-character'],

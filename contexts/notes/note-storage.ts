@@ -46,7 +46,7 @@ export const loadUserNotes = async (
       // Use Firebase for admins
       console.log("Loading notes from Firebase for admin user");
       try {
-        loadedNotes = await firebaseNotesService.getNotes(user.uid);
+        loadedNotes = await firebaseNotesService.getNotes(user.uid, isAdmin);
         notesLoadedFromStorage = loadedNotes.length > 0;
       } catch (firebaseError) {
         console.error("Error loading notes from Firebase:", firebaseError);
@@ -76,10 +76,10 @@ export const loadUserNotes = async (
             
             // Sync local notes to Firebase immediately
             try {
-              await syncLocalToFirebase(localNotes, user.uid);
+              await syncLocalToFirebase(localNotes, user.uid, isAdmin);
               
               // Load the newly synced notes from Firebase
-              loadedNotes = await firebaseNotesService.getNotes(user.uid);
+              loadedNotes = await firebaseNotesService.getNotes(user.uid, isAdmin);
               notesLoadedFromStorage = loadedNotes.length > 0;
             } catch (syncError) {
               console.error("Error syncing notes to Firebase:", syncError);
@@ -98,7 +98,7 @@ export const loadUserNotes = async (
       // For regular authenticated users, also use Firebase
       console.log("Loading notes from Firebase for regular authenticated user");
       try {
-        loadedNotes = await firebaseNotesService.getNotes(user.uid);
+        loadedNotes = await firebaseNotesService.getNotes(user.uid, isAdmin);
         notesLoadedFromStorage = loadedNotes.length > 0;
       } catch (firebaseError) {
         console.error("Error loading notes from Firebase for regular user:", firebaseError);
@@ -128,10 +128,10 @@ export const loadUserNotes = async (
             
             // Sync local notes to Firebase immediately
             try {
-              await syncLocalToFirebase(localNotes, user.uid);
+              await syncLocalToFirebase(localNotes, user.uid, isAdmin);
               
               // Load the newly synced notes from Firebase
-              loadedNotes = await firebaseNotesService.getNotes(user.uid);
+              loadedNotes = await firebaseNotesService.getNotes(user.uid, isAdmin);
               notesLoadedFromStorage = loadedNotes.length > 0;
             } catch (syncError) {
               console.error("Error syncing notes to Firebase:", syncError);
@@ -213,7 +213,8 @@ export const loadUserNotes = async (
  */
 export const syncLocalToFirebase = async (
   localNotes: Note[],
-  userId: string
+  userId: string,
+  isAdmin: boolean = false
 ): Promise<number> => {
   if (!firebaseNotesService) {
     throw new Error("Firebase notes service is not available");
@@ -231,10 +232,10 @@ export const syncLocalToFirebase = async (
   for (const note of localNotes) {
     try {
       // Create a new note with the title
-      const newNote = await firebaseNotesService.addNote(userId, note.noteTitle);
+      const newNote = await firebaseNotesService.addNote(userId, note.noteTitle, isAdmin);
       
       // Update its content
-      await firebaseNotesService.updateNoteContent(newNote.id, note.content);
+      await firebaseNotesService.updateNoteContent(newNote.id, note.content, userId, isAdmin);
       
       // Update category if present
       if (note.category) {

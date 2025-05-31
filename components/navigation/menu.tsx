@@ -94,9 +94,17 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
                 <Download className="w-4 h-4 mr-2" />
                 <span>Export</span>
               </button>
-              
+            </div>
+          </div>
+
               {/* Storage Info - only for authenticated non-admin users */}
               {user && !isAdmin && (
+          <div className="border-t border-gray-100 mt-2 pt-2">
+            <div className="py-1 px-4">
+              <p className="text-xs text-gray-500">Storage</p>
+            </div>
+            <div className="p-2">
+              
                 <button
                   onClick={() => {
                     setIsStorageModalOpen(true);
@@ -107,9 +115,9 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
                   <HardDrive className="w-4 h-4 mr-2" />
                   <span>Storage Info</span>
                 </button>
-              )}
             </div>
           </div>
+              )}
           
           <div className="border-t border-gray-100 mt-2 pt-2">
             <div className="py-1 px-4">
