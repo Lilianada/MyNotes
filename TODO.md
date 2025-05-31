@@ -27,9 +27,9 @@ Remember to keep it minimal, simple, straightforward, do not tamoer with existin
     - Prune old versions beyond your retention policy.
 
 
-- Allow login and saving of notes for new users not just admin. Use 'users' collection for the new users while also maintaining the 'admin' and 'notes' collections for just admin. Improve on notes syncing, at no point in time should local storage override database storage. 
+-  ✅ Allow login and saving of notes for new users not just admin. Use 'users' collection for the new users while also maintaining the 'admin' and 'notes' collections for just admin. Improve on notes syncing, at no point in time should local storage override database storage. 
 
-- All users asides admin user should be given storage limit for their notes. each user gets a 10MB storage, and the file size per note should be calculated in order to track and manage users storage. 
+-  ✅ All users asides admin user should be given storage limit for their notes. each user gets a 10MB storage, and the file size per note should be calculated in order to track and manage users storage. 
 Display an alert when user gets to 7mb+
 Add a progress ba for them to be able to track their storage usage
 Add this Storage to the ellipsis dropdown on the header so that when user clicks on it, a modal with info on storage will open for them to see details.

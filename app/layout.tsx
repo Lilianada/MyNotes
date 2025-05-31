@@ -3,9 +3,9 @@ import type { Metadata } from "next"
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import "./globals.css"
-import "./markdown.css"
-import "./editor-preview.css"
-import "./monaco-editor.css"
+import "../styles/markdown.css"
+import "../styles/editor-preview.css"
+import "../styles/monaco-editor.css"
 import { FontProvider } from "@/contexts/font-context"
 import { NoteProvider } from "@/contexts/notes/note-context"
 import { AuthProvider } from "@/contexts/auth-context"

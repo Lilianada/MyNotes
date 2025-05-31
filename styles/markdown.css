@@ -1,4 +1,3 @@
-/* Fixes for markdown rendering */
 
 /* Fix for inline code - ensure it displays properly inline */
 code.inline-code {
@@ -72,13 +71,6 @@ ul.task-list li::before {
 .markdown-body em { color: #b45309; font-style: italic; }
 .markdown-body del { text-decoration: line-through; color: #6b7280; }
 
-/* Arrow character styling */
-.arrow-character {
-  display: inline-block;
-  color: #3b82f6;
-  font-weight: normal;
-  margin: 0 1px;
-}
 
 /* Ensure arrow character is visible and properly styled */
 p:contains('→') {
@@ -116,7 +108,6 @@ p:contains('→') {
 
 /* Fix whitespace handling for better paragraph separation */
 .markdown-body {
-  white-space: pre-wrap;
   line-height: 1.6;
 }
 

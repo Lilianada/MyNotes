@@ -2,7 +2,7 @@
  * Centralized markdown styles configuration
  * 
  * This module provides utilities and configurations for markdown styling.
- * The actual CSS styles are defined in /app/markdown.css and imported globally.
+ * The actual CSS styles are defined in /styles/markdown.css and imported globally.
  */
 
 // CSS class names used by markdown components

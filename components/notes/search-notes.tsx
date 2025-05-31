@@ -18,8 +18,7 @@ export function SearchNotes({ notes, onSelectNote }: SearchNotesProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<EnhancedNote[]>([])
   const searchInputRef = useRef<HTMLInputElement>(null)
-  
-  // Enhanced filter notes based on search query with scoring
+
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([])
@@ -28,47 +27,41 @@ export function SearchNotes({ notes, onSelectNote }: SearchNotesProps) {
 
     const query = searchQuery.toLowerCase()
     const queryTerms = query.split(' ').filter(term => term.length > 0)
-    
+
     const resultsWithScore = notes.map(note => {
       let score = 0
       let matchTypes: string[] = []
-      
-      // Check each query term
+
       for (const term of queryTerms) {
-        // Title matches (highest priority)
         if (note.noteTitle.toLowerCase().includes(term)) {
           score += 10
           if (!matchTypes.includes('title')) matchTypes.push('title')
         }
-        
-        // Tag matches (high priority)
+
         if (note.tags && note.tags.some(tag => tag.toLowerCase().includes(term))) {
           score += 8
           const matchingTags = note.tags.filter(tag => tag.toLowerCase().includes(term))
-          if (!matchTypes.includes('tags')) {
+          if (!matchTypes.some((mt) => mt.startsWith('tags:'))) {
             matchTypes.push(`tags: ${matchingTags.join(', ')}`)
           }
         }
-        
-        // Category matches (high priority)
+
         if (note.category && note.category.name.toLowerCase().includes(term)) {
           score += 8
-          if (!matchTypes.includes('category')) {
+          if (!matchTypes.some((mt) => mt.startsWith('category:'))) {
             matchTypes.push(`category: ${note.category.name}`)
           }
         }
-        
-        // Content matches (lower priority)
+
         if (note.content.toLowerCase().includes(term)) {
           score += 3
           if (!matchTypes.includes('content')) matchTypes.push('content')
         }
       }
-      
+
       return { note, score, matchTypes }
     })
-    
-    // Filter notes with score > 0 and sort by score (descending)
+
     const results = resultsWithScore
       .filter(item => item.score > 0)
       .sort((a, b) => b.score - a.score)
@@ -77,74 +70,88 @@ export function SearchNotes({ notes, onSelectNote }: SearchNotesProps) {
     setSearchResults(results)
   }, [searchQuery, notes])
 
-  // Handle keyboard navigation in search results
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
-      // Keep focus but clear input
       setSearchQuery("")
     }
-    // Add support for Enter to select first result
     if (e.key === "Enter" && searchResults.length > 0) {
       e.preventDefault()
       handleSelectNote(searchResults[0])
     }
   }
 
-  // Function to determine what matched in the search
   const getMatchInfo = (note: Note, query: string) => {
     const lowerQuery = query.toLowerCase()
     const matches = []
-    
+
     if (note.noteTitle.toLowerCase().includes(lowerQuery)) {
       matches.push('title')
     }
-    
+
     if (note.content.toLowerCase().includes(lowerQuery)) {
       matches.push('content')
     }
-    
+
     if (note.tags && note.tags.some(tag => tag.toLowerCase().includes(lowerQuery))) {
       const matchingTags = note.tags.filter(tag => tag.toLowerCase().includes(lowerQuery))
       matches.push(`tags: ${matchingTags.join(', ')}`)
     }
-    
+
     if (note.category && note.category.name.toLowerCase().includes(lowerQuery)) {
       matches.push(`category: ${note.category.name}`)
     }
-    
+
     return matches
   }
 
-  // Enhanced function to highlight matched text with better support for multiple terms
+  // Returns the first line containing any of the search terms, or a generic preview if none found
+  const getLineWithMatch = (content: string, query: string): string => {
+    if (!query || !content) return createPlainTextPreview(content);
+
+    const queryTerms = query
+      .toLowerCase()
+      .split(' ')
+      .filter(term => term.length > 0);
+
+    if (queryTerms.length === 0) return createPlainTextPreview(content);
+
+    const lines = content.split(/\r?\n/);
+    for (const line of lines) {
+      for (const term of queryTerms) {
+        if (line.toLowerCase().includes(term)) {
+          return line;
+        }
+      }
+    }
+    return createPlainTextPreview(content);
+  };
+
   const highlightMatch = (text: string, query: string): JSX.Element => {
     if (!query || !text) return <>{text}</>;
-    
-    const queryTerms = query.toLowerCase().split(' ').filter(term => term.length > 0)
-    let highlightedText = text
-    
-    // Apply highlighting for each term
-    queryTerms.forEach(term => {
-      const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
-      highlightedText = highlightedText.replace(regex, '|||HIGHLIGHT_START|||$1|||HIGHLIGHT_END|||')
-    })
-    
-    // Split by our markers and create elements
-    const parts = highlightedText.split(/(|||HIGHLIGHT_START|||.*?|||HIGHLIGHT_END|||)/)
-    
+
+    const queryTerms = query
+      .toLowerCase()
+      .split(' ')
+      .filter(term => term.length > 0);
+
+    if (queryTerms.length === 0) return <>{text}</>;
+
+    const regex = new RegExp(`(${queryTerms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'gi');
+    const parts = text.split(regex);
+
     return (
       <>
-        {parts.map((part, index) => {
-          if (part.startsWith('|||HIGHLIGHT_START|||') && part.endsWith('|||HIGHLIGHT_END|||')) {
-            const highlightedContent = part.replace(/|||HIGHLIGHT_START|||/, '').replace(/|||HIGHLIGHT_END|||/, '')
-            return <span key={index} className="bg-yellow-200">{highlightedContent}</span>
-          }
-          return <span key={index}>{part}</span>
-        })}
+        {parts.map((part, i) =>
+          queryTerms.some(term => part && part.toLowerCase() === term) ? (
+            <span key={i} className="bg-yellow-200">{part}</span>
+          ) : (
+            <span key={i}>{part}</span>
+          )
+        )}
       </>
     );
   };
 
-  // Handle selecting a note from search results
   const handleSelectNote = (note: Note) => {
     onSelectNote(note)
     setSearchQuery("")
@@ -170,6 +177,7 @@ export function SearchNotes({ notes, onSelectNote }: SearchNotesProps) {
         <ul className="max-h-60 overflow-auto py-1">
           {searchResults.map((note) => {
             const matchInfo = note.matchTypes || getMatchInfo(note, searchQuery)
+            const previewLine = getLineWithMatch(note.content, searchQuery)
             return (
               <li
                 key={note.id}
@@ -180,9 +188,8 @@ export function SearchNotes({ notes, onSelectNote }: SearchNotesProps) {
                   {highlightMatch(note.noteTitle, searchQuery)}
                 </div>
                 <div className="text-xs text-gray-500 truncate">
-                  {highlightMatch(createPlainTextPreview(note.content), searchQuery)}
+                  {highlightMatch(previewLine, searchQuery)}
                 </div>
-                {/* Show tags and category info */}
                 <div className="flex items-center gap-2 mt-1">
                   {note.category && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">

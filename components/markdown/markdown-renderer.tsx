@@ -30,7 +30,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkParagraphSpacing]}
         components={{
-          // Headers - use CSS from app/markdown.css
+          // Headers - use CSS from styles/markdown.css
           h1: ({ children }) => <h1>{children}</h1>,
           h2: ({ children }) => <h2>{children}</h2>,
           h3: ({ children }) => <h3>{children}</h3>,
@@ -38,7 +38,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           h5: ({ children }) => <h5>{children}</h5>,
           h6: ({ children }) => <h6>{children}</h6>,
           
-          // Paragraphs - use CSS from app/markdown.css
+          // Paragraphs - use CSS from styles/markdown.css
           p: ({ children }) => <p>{children}</p>,
           
           // Custom text component to handle backlinks  
@@ -65,19 +65,19 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             return children;
           },
           
-          // Text formatting - use CSS from app/markdown.css
+          // Text formatting - use CSS from styles/markdown.css
           strong: ({ children }) => <strong>{children}</strong>,
           em: ({ children }) => <em>{children}</em>,
           del: ({ children }) => <del>{children}</del>,
           
-          // Lists - use CSS from app/markdown.css
+          // Lists - use CSS from styles/markdown.css
           ul: ({ children }) => <ul>{children}</ul>,
           ol: ({ children }) => <ol>{children}</ol>,
           li: ({ children }) => <li>{children}</li>,
           
-          // Blockquotes - use CSS from app/markdown.css
+          // Blockquotes - use CSS from styles/markdown.css
           blockquote: ({ children }) => <blockquote>{children}</blockquote>,
-          // Code blocks and inline code - use CSS from app/markdown.css
+          // Code blocks and inline code - use CSS from styles/markdown.css
           code: ({ inline, children, className, ...props }: CodeProps) => {
             const match = /language-(\w+)/.exec(className || '');
             const language = match ? match[1] : '';
@@ -99,7 +99,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             );
           },
           
-          // Links - use CSS from app/markdown.css
+          // Links - use CSS from styles/markdown.css
           a: ({ children, href }) => (
             <a href={href} target="_blank" rel="noopener noreferrer">
               {children}
@@ -109,7 +109,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           // Horizontal rule
           hr: () => <hr />,
           
-          // Tables - use CSS from app/markdown.css
+          // Tables - use CSS from styles/markdown.css
           table: ({ children }) => <table>{children}</table>,
           thead: ({ children }) => <thead>{children}</thead>,
           tbody: ({ children }) => <tbody>{children}</tbody>,

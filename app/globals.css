@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 @import 'highlight.js/styles/github.css';
-@import './markdown.css';
+@import '../styles/markdown.css';
 
 @layer base {
   :root {
