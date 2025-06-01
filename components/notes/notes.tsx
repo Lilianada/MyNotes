@@ -116,7 +116,7 @@ export function Notes() {
   const activeNote = selectedNoteId ? notes.find(note => note.id === selectedNoteId) : null
 
   return (
-    <div className="w-full mx-auto max-h-[calc(100vh_-_70px)] h-screen flex flex-col">
+    <div className="w-full mx-auto max-h-[calc(100vh_-_70px)] h-full flex flex-col">
 
       {/* Title Input Modal */}
       {showTitleInput && (
