@@ -38,20 +38,23 @@ export function configureEditorOptions(
   isDarkTheme: boolean,
   fontFamily?: string
 ): void {
+  // Check if we're on a mobile device
+  const isMobile = window.innerWidth < 768;
+  
   editor.updateOptions({
     fontFamily: fontFamily || 'var(--font-mono)',
-    fontSize: 14,
-    lineHeight: 24,
+    fontSize: isMobile ? 16 : 14, // Larger font on mobile to prevent zoom
+    lineHeight: isMobile ? 28 : 24,
     wordWrap: 'on',
     wrappingIndent: 'same',
-    lineNumbers: 'on',
+    lineNumbers: isMobile ? 'off' : 'on', // Hide line numbers on mobile to save space
     renderLineHighlight: 'all',
     scrollBeyondLastLine: false,
     minimap: { enabled: false },
     scrollbar: {
       vertical: 'visible',
-      horizontalScrollbarSize: 8,
-      verticalScrollbarSize: 8
+      horizontalScrollbarSize: isMobile ? 12 : 8, // Larger scrollbars on mobile
+      verticalScrollbarSize: isMobile ? 12 : 8
     },
     padding: {
       top: 16,
@@ -59,5 +62,14 @@ export function configureEditorOptions(
     },
     fontLigatures: true,
     tabSize: 2,
+    // Mobile-specific options to prevent zoom
+    quickSuggestions: !isMobile, // Disable suggestions on mobile
+    parameterHints: { enabled: !isMobile },
+    suggestOnTriggerCharacters: !isMobile,
+    acceptSuggestionOnEnter: isMobile ? 'off' : 'on',
+    // Improve touch interaction
+    multiCursorModifier: 'alt',
+    selectionHighlight: !isMobile, // Reduce visual noise on mobile
+    occurrencesHighlight: !isMobile,
   });
 }

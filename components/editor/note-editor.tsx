@@ -244,29 +244,31 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
     };
 
     return (
-      <div className="flex flex-col h-full max-h-[calc(100vh_-_7rem)]">
-        <div className="mb-2 flex justify-between items-center">
+      <div className="flex flex-col h-full max-h-[calc(100vh_-_7rem)] md:max-h-[calc(100vh_-_7rem)]">
+        <div className="mb-2 flex justify-between items-center flex-wrap gap-2">
           <NoteTitleEditor
             noteTitle={note.noteTitle}
             noteId={note.id}
             onUpdateTitle={onUpdateTitle}
           />
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
             <WordCount content={note.content} />
-            <EditorShortcuts />
+            <div className="hidden sm:block">
+              <EditorShortcuts />
+            </div>
             {!renderHTML && (
               <button
                 onClick={() => setUseMonacoEditor(prev => !prev)}
-                className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                className="text-xs px-1 sm:px-2 py-1 bg-gray-100 rounded hover:bg-gray-200 whitespace-nowrap"
                 title={useMonacoEditor ? "Switch to simple editor" : "Switch to advanced editor"}
                 type="button"
               >
-                {useMonacoEditor ? "Simple Editor" : "Advanced Editor"}
+                {useMonacoEditor ? "Simple" : "Advanced"}
               </button>
             )}
             <button
               onClick={toggleView}
-              className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+              className="text-xs px-1 sm:px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
               title={renderHTML ? "Switch to edit mode" : "Switch to view mode"}
               type="button"
             >

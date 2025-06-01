@@ -248,3 +248,52 @@ ul li.task-list-item {
   list-style-type: none;
   padding-left: 0;
 }
+
+/* Mobile responsiveness fixes */
+@media (max-width: 768px) {
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
+  }
+  
+  /* Improve touch scrolling */
+  html, body {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: hidden;
+  }
+  
+  /* Ensure touch targets are large enough */
+  button, 
+  [role="button"],
+  input[type="checkbox"],
+  .clickable {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improve sidebar scrolling on mobile */
+  #sidebar {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Fix header accessibility on mobile */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+  }
+  
+  /* Prevent horizontal scroll */
+  .main-content {
+    overflow-x: hidden;
+    width: 100%;
+  }
+  
+  /* Improve editor container on mobile */
+  .editor-container {
+    height: calc(100vh - 120px);
+    overflow: hidden;
+  }
+}

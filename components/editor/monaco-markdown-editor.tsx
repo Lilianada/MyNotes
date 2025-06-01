@@ -11,8 +11,8 @@ import { useNotes } from "@/contexts/notes/note-context";
 import { configureMarkdownLanguage, configureWikiLinkCompletion } from '@/lib/markdown/monaco-markdown';
 import { MonacoEditorProps, Monaco, EditorInstance } from './types';
 import { 
-  configureEditorShortcuts,
-  configureBracketCompletion, 
+  configureEditorShortcuts, 
+  configureBracketCompletion,  
   configureEditorOptions 
 } from './editor-config';
 import { useEditorCursorState, useEditorFocus } from './editor-hooks';
@@ -48,11 +48,29 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
     setPreviousContent(note.content);
   }, [note.content]);
 
-  // Update editor font when font type changes
+  // Update editor font and mobile settings when font type or window size changes
   React.useEffect(() => {
     if (editorInstance) {
       configureEditorOptions(editorInstance, isDarkTheme, fontFamily);
     }
+    
+    // Listen for resize events to reconfigure on orientation change
+    const handleResize = () => {
+      if (editorInstance) {
+        setTimeout(() => {
+          configureEditorOptions(editorInstance, isDarkTheme, fontFamily);
+          editorInstance.layout();
+        }, 100);
+      }
+    };
+    
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
   }, [editorInstance, isDarkTheme, fontFamily]);
 
   // Handle editor mounting
@@ -85,7 +103,18 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
         options={{
           wordWrap: 'on',
           minimap: { enabled: false },
-          fontSize: 14,
+          fontSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 16 : 14,
+          lineNumbers: typeof window !== 'undefined' && window.innerWidth < 768 ? 'off' : 'on',
+          scrollBeyondLastLine: false,
+          automaticLayout: true,
+          scrollbar: {
+            verticalScrollbarSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 12 : 8,
+            horizontalScrollbarSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 12 : 8,
+          },
+          quickSuggestions: typeof window !== 'undefined' && window.innerWidth >= 768,
+          parameterHints: { enabled: typeof window !== 'undefined' && window.innerWidth >= 768 },
+          suggestOnTriggerCharacters: typeof window !== 'undefined' && window.innerWidth >= 768,
+          acceptSuggestionOnEnter: typeof window !== 'undefined' && window.innerWidth < 768 ? 'off' : 'on',
         }}
         beforeMount={(monaco) => {
           defineMonacoThemes(monaco);

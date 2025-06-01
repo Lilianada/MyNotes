@@ -65,7 +65,8 @@ export default function Home() {
           isCreatingNote={isCreatingNote}
         />
         
-        <main className="flex-1 grid gap-0 sm:gap-3 md:grid-cols-[300px_1fr] lg:grid-cols-[24%_75%] overflow-hidden relative">{/* Mobile overlay to close sidebar when clicking outside */}
+        <main className="flex-1 grid gap-0 sm:gap-3 md:grid-cols-[300px_1fr] lg:grid-cols-[24%_75%] overflow-hidden relative main-content">
+          {/* Mobile overlay to close sidebar when clicking outside */}
           {isSidebarOpen && (
             <div 
               className="fixed inset-0 bg-black bg-opacity-30 z-20 md:hidden"
@@ -81,7 +82,7 @@ export default function Home() {
               selectNote(note.id)
             }}
           />
-          <div className="p-2 w-full overflow-hidden">
+          <div className="p-2 w-full overflow-hidden editor-container">
             <Notes />
           </div>
         </main>

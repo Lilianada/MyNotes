@@ -5,6 +5,9 @@
   box-shadow: none;
   height: 100%;
   padding: 0;
+  /* Prevent zoom on mobile Safari */
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 /* Custom styles for Monaco editor */
@@ -92,7 +95,45 @@
 
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
   background-color: #f0f6fc;
-  color: #24292e;
+}
+[data-theme="dark"] .monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
+  background-color: #2d333b;
+  color: #e6edf3;
+}
+
+/* Mobile-specific Monaco Editor fixes */
+@media (max-width: 768px) {
+  /* Prevent zoom on focus/input */
+  .monaco-editor input,
+  .monaco-editor textarea,
+  .monaco-editor .inputarea {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
+    transform: translateZ(0); /* Hardware acceleration for smooth scrolling */
+  }
+  
+  /* Improve touch scrolling */
+  .monaco-editor .overflow-guard,
+  .monaco-editor .monaco-scrollable-element {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  /* Hide unnecessary UI elements on mobile */
+  .monaco-editor .margin-view-overlays,
+  .monaco-editor .current-line {
+    display: none;
+  }
+  
+  /* Larger touch targets for mobile */
+  .monaco-editor .view-lines {
+    padding: 8px 12px;
+  }
+  
+  /* Improve selection handles on mobile */
+  .monaco-editor .selected-text {
+    background-color: #007acc40;
+  }
 }
 
 [data-theme="dark"] .monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
