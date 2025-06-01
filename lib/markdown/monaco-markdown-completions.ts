@@ -52,21 +52,24 @@ export function configureMarkdownCompletions(monaco: any) {
       
       // Check if we just typed a second asterisk (for bold)
       if (beforeCursor.endsWith('**')) {
-        return {
-          suggestions: [{
-            label: 'Bold text',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '${1:text}**',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            detail: 'Complete to bold text (**text**)',
-            range: {
-              startLineNumber: position.lineNumber,
-              endLineNumber: position.lineNumber,
-              startColumn: position.column,
-              endColumn: position.column
-            }
-          }]
-        };
+        // Check if it's not already a triple asterisk to avoid ****
+        if (!beforeCursor.endsWith('***')) {
+          return {
+            suggestions: [{
+              label: 'Bold text',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '${1:text}**',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: 'Complete to bold text (**text**)',
+              range: {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: position.column,
+                endColumn: position.column
+              }
+            }]
+          };
+        }
       }
       
       return { suggestions: [] };
@@ -82,21 +85,25 @@ export function configureMarkdownCompletions(monaco: any) {
       
       // Check if we just typed the second bracket for backlink
       if (beforeCursor.endsWith('[[')) {
-        return {
-          suggestions: [{
-            label: 'Backlink',
-            kind: monaco.languages.CompletionItemKind.Snippet,
-            insertText: '${1:link text}]]',
-            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-            detail: 'Complete to backlink ([[link]])',
-            range: {
-              startLineNumber: position.lineNumber,
-              endLineNumber: position.lineNumber,
-              startColumn: position.column,
-              endColumn: position.column
-            }
-          }]
-        };
+        // Ensure we're not in a regular link [text](url) context
+        const fullBefore = lineContent.substring(0, position.column - 2);
+        if (!fullBefore.match(/\[.*\]\(.*$/)) {
+          return {
+            suggestions: [{
+              label: 'Backlink',
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: '${1:link text}]]',
+              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              detail: 'Complete to backlink ([[link]])',
+              range: {
+                startLineNumber: position.lineNumber,
+                endLineNumber: position.lineNumber,
+                startColumn: position.column,
+                endColumn: position.column
+              }
+            }]
+          };
+        }
       }
       
       return { suggestions: [] };
@@ -141,6 +148,20 @@ export function configureMarkdownCompletions(monaco: any) {
           label: '### Heading 3',
           kind: monaco.languages.CompletionItemKind.Keyword,
           insertText: 'Heading 3',
+          range
+        });
+      } else if (linePrefix.match(/^####\s*$/)) {
+        suggestions.push({
+          label: '#### Heading 4',
+          kind: monaco.languages.CompletionItemKind.Keyword,
+          insertText: 'Heading 4',
+          range
+        });
+      } else if (linePrefix.match(/^#####\s*$/)) {
+        suggestions.push({
+          label: '##### Heading 5',
+          kind: monaco.languages.CompletionItemKind.Keyword,
+          insertText: 'Heading 5',
           range
         });
       }

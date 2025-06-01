@@ -58,7 +58,7 @@ export class EditHistoryService {
   }
 
   /**
-   * Perform autosave if changes are significant enough
+   * Perform autosave - always save current state when leaving note
    */
   private async performAutosave(
     noteId: number,
@@ -71,11 +71,8 @@ export class EditHistoryService {
 
       const lastContent = this.lastSavedContent.get(noteId) || '';
 
-      // Check if changes are significant enough to save
-      if (!shouldCreateHistoryEntry(lastContent, newContent, this.config)) {
-        console.log(`[EditHistory] Skipping autosave for note ${noteId} - changes not significant enough`);
-        return;
-      }
+      // Always create history entry on note leave - remove significance check to prevent data loss
+      console.log(`[EditHistory] Performing autosave for note ${noteId}`);
 
       // Create history entry
       const historyEntry = createHistoryEntry(lastContent, newContent, 'autosave');

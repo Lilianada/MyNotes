@@ -64,6 +64,32 @@
   font-weight: 600;
 }
 
+/* Bold text highlighting in Monaco editor */
+.monaco-editor .mtk5 {
+  color: #d97706;
+  font-weight: bold;
+}
+
+/* Backlinks highlighting in Monaco editor */
+.monaco-editor .mtk6 {
+  color: #0369a1;
+  background-color: rgba(224, 242, 254, 0.3);
+  padding: 1px 2px;
+  border-radius: 2px;
+}
+
+/* Dark theme backlinks */
+[data-theme="dark"] .monaco-editor .mtk6 {
+  color: #0ea5e9;
+  background-color: rgba(12, 74, 110, 0.3);
+}
+
+/* Italic text highlighting in Monaco editor */
+.monaco-editor .mtk7 {
+  color: #b45309;
+  font-style: italic;
+}
+
 /* Special characters */
 .monaco-editor .special-character {
   color: #4f46e5;

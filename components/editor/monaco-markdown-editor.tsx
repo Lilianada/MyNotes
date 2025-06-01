@@ -111,10 +111,10 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
             verticalScrollbarSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 12 : 8,
             horizontalScrollbarSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 12 : 8,
           },
-          quickSuggestions: typeof window !== 'undefined' && window.innerWidth >= 768,
-          parameterHints: { enabled: typeof window !== 'undefined' && window.innerWidth >= 768 },
-          suggestOnTriggerCharacters: typeof window !== 'undefined' && window.innerWidth >= 768,
-          acceptSuggestionOnEnter: typeof window !== 'undefined' && window.innerWidth < 768 ? 'off' : 'on',
+          quickSuggestions: true, // Enable autocompletion on all devices
+          parameterHints: { enabled: true }, // Enable parameter hints on all devices  
+          suggestOnTriggerCharacters: true, // Enable trigger character suggestions on all devices
+          acceptSuggestionOnEnter: typeof window !== 'undefined' && window.innerWidth < 768 ? 'smart' : 'on',
         }}
         beforeMount={(monaco) => {
           defineMonacoThemes(monaco);
