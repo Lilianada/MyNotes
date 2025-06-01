@@ -15,6 +15,7 @@ interface TagListProps {
   onUpdateTag: (oldTag: string, newTag: string) => Promise<void>;
   onDeleteTag: (tag: string) => Promise<void>;
   maxTagsAllowed: number;
+  selectionMode?: 'immediate' | 'multi-select';
 }
 
 export function TagList({ 
@@ -23,7 +24,8 @@ export function TagList({
   onSelectTag, 
   onUpdateTag, 
   onDeleteTag, 
-  maxTagsAllowed 
+  maxTagsAllowed,
+  selectionMode = 'immediate'
 }: TagListProps) {
   const canSelectMoreTags = selectedTags.length < maxTagsAllowed;
   const existingTags = tags.map(t => t.tag);
@@ -49,6 +51,7 @@ export function TagList({
           onDeleteTag={onDeleteTag}
           canSelectMoreTags={canSelectMoreTags}
           existingTags={existingTags}
+          selectionMode={selectionMode}
         />
       ))}
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Note } from '@/types';
 import NoteRelationships from '@/components/relationships/note-relationships';
 import { NoteDetailsTabs } from './note-details-tabs';
@@ -48,10 +48,48 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
     handleDeleteCategory
   } = useCategoryHandlers(note, setActiveTab);
 
-  // Handle tag selection and updates
-  const handleTagSelection = async (tag: string) => {
+  // Local state for tag selection management
+  const [pendingTags, setPendingTags] = useState<string[]>([]);
+  const [tagSelectionMode, setTagSelectionMode] = useState<'immediate' | 'multi-select'>('immediate');
+
+  // Initialize pending tags when note changes or when entering tag selection mode
+  useEffect(() => {
+    if (note && activeTab === 'tags') {
+      setPendingTags(note.tags || []);
+      setTagSelectionMode('immediate');
+    }
+  }, [note, activeTab]);
+
+  // Handle tag selection for multiple selection mode
+  const handleTagSelection = (tag: string) => {
     console.log(`Tag selected: ${tag}`);
     
+    if (!note) return;
+    
+    if (tagSelectionMode) {
+      // In selection mode, update pending tags only
+      setPendingTags(prev => {
+        if (prev.includes(tag)) {
+          // Remove tag if it already exists
+          return prev.filter(t => t !== tag);
+        } else {
+          // Add tag if we're under the limit
+          if (prev.length < 5) {
+            return [...prev, tag];
+          } else {
+            console.log('Tag limit reached (5), cannot add more tags');
+            return prev;
+          }
+        }
+      });
+    } else {
+      // In immediate mode (legacy behavior), update directly
+      handleImmediateTagUpdate(tag);
+    }
+  };
+
+  // Handle immediate tag updates (for single-click mode)
+  const handleImmediateTagUpdate = async (tag: string) => {
     if (!note) return;
     
     try {
@@ -75,6 +113,35 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
       await updateNoteTags(note.id, updatedTags);
     } catch (error) {
       console.error('Failed to update tags:', error);
+    }
+  };
+
+  // Apply pending tag changes
+  const handleApplyTagChanges = async () => {
+    if (!note) return;
+    
+    try {
+      await updateNoteTags(note.id, pendingTags);
+      setTagSelectionMode('immediate');
+      console.log('Tags updated successfully');
+    } catch (error) {
+      console.error('Failed to update tags:', error);
+    }
+  };
+
+  // Cancel tag selection mode
+  const handleCancelTagSelection = () => {
+    setPendingTags(note?.tags || []);
+    setTagSelectionMode('immediate');
+  };
+
+  // Toggle between selection modes
+  const toggleTagSelectionMode = () => {
+    if (tagSelectionMode === 'immediate') {
+      setPendingTags(note?.tags || []);
+      setTagSelectionMode('multi-select');
+    } else {
+      setTagSelectionMode('immediate');
     }
   };
 

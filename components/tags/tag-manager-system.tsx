@@ -18,6 +18,7 @@ interface TagManagerSystemProps {
   selectedTags: string[];
   onSelectTag: (tag: string) => void;
   maxTagsAllowed?: number;
+  selectionMode?: 'immediate' | 'multi-select';
 }
 
 export function TagManagerSystem({ 
@@ -26,7 +27,8 @@ export function TagManagerSystem({
   onDeleteTagFromAllNotes,
   selectedTags = [],
   onSelectTag,
-  maxTagsAllowed = 5
+  maxTagsAllowed = 5,
+  selectionMode = 'immediate'
 }: TagManagerSystemProps) {
   const { sortedTags } = useTagProcessing(allNotes);
 
@@ -105,6 +107,7 @@ export function TagManagerSystem({
         onUpdateTag={onUpdateTagAcrossNotes}
         onDeleteTag={handleDeleteTag}
         maxTagsAllowed={maxTagsAllowed}
+        selectionMode={selectionMode}
       />
       
       <CreateTagForm 
