@@ -87,8 +87,8 @@ export const localStorageNotesService = {
       
       const updatedHistory = [newEntry, ...history];
       
-      // Prune history to keep only the most recent 15 entries
-      const prunedHistory = updatedHistory.slice(0, 15);
+      // Prune history to keep only the most recent 10 entries
+      const prunedHistory = updatedHistory.slice(0, 10);
       
       window.localStorage.setItem(`note_history_${id}`, JSON.stringify(prunedHistory));
     } catch (error) {
@@ -103,8 +103,8 @@ export const localStorageNotesService = {
     }
     
     try {
-      // Prune history to keep only the most recent 15 entries
-      const prunedHistory = history.slice(0, 15);
+      // Prune history to keep only the most recent 10 entries
+      const prunedHistory = history.slice(0, 10);
       window.localStorage.setItem(`note_history_${id}`, JSON.stringify(prunedHistory));
     } catch (error) {
       console.error('Failed to update edit history:', error);
