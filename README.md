@@ -1,158 +1,288 @@
 # NoteItDown
 
-A minimalist notes application built with Next.js and TypeScript that saves notes as markdown files on the server.
+<div align="center">
 
-## Features
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-15-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-3-blue)
 
-- Clean, minimalist interface focused on simple note-taking
-- Markdown support for rich text formatting including:
-  - Headers (# H1, ## H2, ### H3)
-  - Text formatting (**bold**, *italic*)
-  - Code blocks (```code```)
-  - Inline code (`code`)
-  - Lists (- item, 1. item)
-  - Checkboxes ([ ] todo, [x] done)
-  - Wiki-style internal links ([[Note Title]]) for connecting notes
-- Note linking and hierarchies:
-  - Create parent-child relationships between notes
-  - Link notes bidirectionally
-  - Visual indicators for linked and hierarchical notes
-  - Navigate between related notes easily
-- Powerful search functionality to find notes by title or content
-- Light and dark mode support
-- Server-side file storage using markdown (.md) files
-- Keyboard shortcuts for efficient use
+*A powerful, minimalist note-taking application built with Next.js and TypeScript*
 
-## Tech Stack
+[Features](#-features) • [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Contributing](#-contributing)
 
-- Next.js 15
-- TypeScript
-- Tailwind CSS
-- Server Actions for file operations
+</div>
 
-## Getting Started
+---
+
+## 🚀 Overview
+
+NoteItDown is a modern, feature-rich note-taking application that combines the simplicity of markdown with powerful organizational tools. Built with Next.js 15 and TypeScript, it offers a clean interface for creating, organizing, and connecting your thoughts.
+
+### Why NoteItDown?
+
+- **📝 Markdown-First**: Native markdown support with live preview
+- **🔗 Smart Linking**: Wiki-style note linking with bidirectional connections
+- **🏷️ Advanced Tagging**: Multi-select tagging system with visual feedback
+- **📁 Hierarchical Organization**: Parent-child note relationships
+- **🔍 Powerful Search**: Real-time search across all notes
+- **🎨 Customizable**: Themes, categories, and color-coded organization
+- **💾 Flexible Storage**: File system or cloud storage options
+
+---
+
+## ✨ Features
+
+### Core Functionality
+- **Rich Markdown Editor** with syntax highlighting and live preview
+- **Real-time Auto-save** to prevent data loss
+- **Advanced Search** with content indexing and highlighting
+- **Dark/Light Mode** with system preference detection
+- **Keyboard Shortcuts** for power users
+
+### Organization & Structure
+- **📁 Categories** with custom colors and organization
+- **🏷️ Advanced Tagging System**
+  - Create unlimited custom tags with colors
+  - Multi-select mode for batch operations
+  - Visual feedback with checkmarks
+  - Support for up to 5 tags per note
+- **🔗 Note Relationships**
+  - Wiki-style linking with `[[Note Title]]` syntax
+  - Parent-child hierarchies
+  - Bidirectional link tracking
+  - Visual relationship indicators
+
+### Content Features
+- **Code Block Support** with syntax highlighting
+- **Checkbox Lists** for todo items
+- **Internal Linking** with auto-completion
+- **Export Options** for sharing and backup
+- **Edit History** tracking and recovery
+
+---
+
+## 🏁 Quick Start
 
 ### Prerequisites
-
-- Node.js (v18 or newer)
-- npm or yarn
+- Node.js 18+ 
+- npm or yarn package manager
 
 ### Installation
 
-1. Clone the repository or download the source code
-2. Install dependencies:
-   ```bash
-   yarn install
-   # or
-   npm install
-   ```
-3. Run the development server:
-   ```bash
-   yarn dev
-   # or
-   npm run dev
-   ```
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## Building for Production
-
 ```bash
-yarn build
+# Clone the repository
+git clone https://github.com/yourusername/noteitdown.git
+cd noteitdown
+
+# Install dependencies
+npm install
 # or
-npm run build
+yarn install
+
+# Start development server
+npm run dev
+# or
+yarn dev
 ```
 
-## Search Functionality
+Open [http://localhost:3000](http://localhost:3000) to see your application.
 
-The application includes a powerful search feature that allows users to:
-- Search notes by title or content
-- See previews of matching notes with highlighted matches
-- Quickly navigate to search results
-- Real-time search as you type
+### First Steps
 
-## Code Block Support
+1. **Create Your First Note**
+   - Click the "+" button in the sidebar
+   - Give your note a title and start writing in Markdown
+   - Your changes are automatically saved
 
-NoteItDown provides excellent support for code blocks in your notes:
-- Syntax highlighting for multiple languages
-- Monospace formatting for code sections
-- Support for both inline code using backticks (`code`) 
-- Multi-line code blocks using triple backticks:
-  ```
-  function example() {
-    return "This is a code block";
-  }
-  ```
+2. **Organize with Tags**
+   - Open note details (⋮ button)
+   - Navigate to the "Tags" tab
+   - Create custom tags or apply existing ones
 
-## Storage Options
+3. **Link Notes Together**
+   - Type `[[` to start linking to another note
+   - Select from existing notes or create new ones
+   - Build your knowledge network
 
-NoteItDown offers flexible storage options to meet different needs:
+---
 
-### File System Storage (Default)
-- Notes are saved as Markdown (.md) files on the server
+## 📚 Documentation
+
+### Tech Stack
+- **Frontend**: Next.js 15, TypeScript, Tailwind CSS
+- **Editor**: Monaco Editor with markdown support
+- **UI Components**: Radix UI primitives
+- **Storage**: File system / Cloud storage adapters
+- **Styling**: Tailwind CSS with custom themes
+
+### Markdown Support
+
+NoteItDown supports full Markdown syntax plus additional features:
+
+```markdown
+# Headers (H1-H6)
+**Bold** and *italic* text
+`inline code` and code blocks
+- Lists and numbered lists
+- [ ] Todo items
+- [x] Completed items
+[[Internal Links]] to other notes
+```
+
+### Advanced Tagging System
+
+#### Tag Modes
+- **Immediate Mode**: Tags apply instantly when clicked
+- **Multi-Select Mode**: Select multiple tags before applying
+
+#### Using Tags
+1. Open note details panel (⋮ button)
+2. Go to "Tags" tab
+3. Create new tags with custom colors
+4. Toggle multi-select for batch operations
+5. Apply changes or cancel to revert
+
+#### Visual Indicators
+- **Selected Tags**: Blue background with white checkmark
+- **Unselected Tags**: Subtle border with empty circle
+- **Hover Effects**: Visual feedback when hovering over tags
+- **Color Coding**: Each tag displays its assigned color
+
+### Note Linking & Hierarchies
+
+#### Wiki-Style Links
+```markdown
+[[Note Title]]              # Basic link
+[[Note Title|Display Text]] # Custom display text
+```
+
+#### Relationships
+- **Parent-Child**: Create hierarchical note structures
+- **Bidirectional Links**: Links work both ways automatically
+- **Visual Indicators**: Icons show relationship types in sidebar
+
+### Storage Options
+
+#### File System (Default)
+- Notes saved as `.md` files on server
 - Perfect for self-hosted deployments
-- Requires file system access on the server
+- Requires file system access
 
-### Notion Integration (Optional)
-NoteItDown can be configured to use Notion as a database backend:
-- Store notes in Notion databases instead of the filesystem
-- Perfect for serverless deployments on platforms like Vercel
-- Enables collaboration features through Notion
-- Requires a Notion API key and database ID
+#### Cloud Storage (Optional)
+- Integration with cloud providers
+- Serverless deployment friendly
+- Collaborative features support
 
-To enable Notion integration:
-1. Add your Notion API key and Database ID to `.env.local`
-2. Follow the setup guide in the `.env.local` file
-3. Restart the application
+---
 
-## License
+## 🛠️ Development
 
-MIT
+### Build for Production
 
-## Acknowledgements
+```bash
+# Build the application
+npm run build
+# or
+yarn build
 
-Built with [Next.js](https://nextjs.org/) and [Tailwind CSS](https://tailwindcss.com/).
+# Start production server
+npm start
+# or
+yarn start
+```
 
-## Note Linking and Hierarchies
+### Project Structure
 
-The MyNotes app supports powerful note linking and hierarchy features:
+```
+├── app/                 # Next.js app directory
+├── components/          # React components
+│   ├── editor/         # Markdown editor components
+│   ├── tags/           # Tagging system
+│   ├── notes/          # Note management
+│   └── ui/             # Reusable UI components
+├── lib/                # Utility functions and services
+├── types/              # TypeScript type definitions
+└── public/             # Static assets
+```
 
-### Wiki-style Links
-- Use double brackets to create links between notes: `[[Note Title]]`
-- Add custom display text with a pipe: `[[Note Title|Display Text]]`
-- Auto-completion suggests existing note titles as you type
-- Clicking on links navigates directly to the linked note
+---
 
-### Parent-Child Relationships
-- Set any note as a parent or child of another note
-- Create hierarchical structures for organizing related content
-- Visual indicators in the sidebar show parent/child relationships
-- Parent notes show a blue folder icon
-- Child notes show a green upward folder icon
+## 🎯 Roadmap
 
-### Bidirectional Linking
-- Links between notes are automatically bidirectional
-- When you link Note A to Note B, Note B is also linked to Note A
-- Linked notes are indicated with a purple link icon in the sidebar
-- All relationships are preserved when moving notes
+### Version 2.1.0 ✅
+- [x] Multi-select tagging system
+- [x] Enhanced visual feedback
+- [x] Batch tag operations
+- [x] Improved UI transitions
 
-### Managing Relationships
-1. Open the note details panel by clicking the vertical dots icon
-2. Navigate to the "Links" tab
-3. Use "Set Parent" to establish a parent-child relationship
-4. Use "Manage Links" to create connections between notes
+### Version 2.2.0 🔄
+- [ ] User preference persistence
+- [ ] Tag search and filtering
+- [ ] Keyboard shortcuts for tagging
+- [ ] Tag usage analytics
+- [ ] Export/import functionality
 
+### Version 2.3.0 📋
+- [ ] Collaborative editing
+- [ ] Plugin system
+- [ ] Advanced markdown features
+- [ ] Mobile app companion
 
+---
 
-## Known Issues
+## 🐛 Known Issues
 
-The following issues are currently being tracked for future fixes:
+| Issue | Description | Status |
+|-------|-------------|--------|
+| Font Rendering | Inconsistent across browsers | Investigating |
+| Mobile Safari | Scrolling issues in editor | In Progress |
+| Large Images | Scaling on small screens | Planned Fix |
+| Tag Storage | User preferences not persisted | Next Release |
+| Code Blocks | Horizontal scrolling issues | Investigating |
+| Responsiveness | Mobile screen compatibility | In Progress |
 
-1. **Font Rendering**: Some fonts may render inconsistently across different browsers
-2. **Image Scaling**: Large images in notes may not scale properly on smaller screens
-3. **Export Format Compatibility**: Exported notes may lose some formatting when imported into certain applications
-4. **Mobile Safari**: Occasional scrolling issues in the editor on iOS devices
-5. **Long Code Blocks**: Very long code blocks without spaces may cause horizontal scrolling issues
-6. **Responsiveness Issues**: Might not be full responsive on all mobile screen sizes.
-7. ---
+---
 
-If you encounter any of these issues or find new ones, please report them in the project's issue tracker.
+## 🤝 Contributing
+
+We welcome contributions! Here's how to get started:
+
+1. **Fork the repository**
+2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
+3. **Make your changes** and add tests if applicable
+4. **Commit your changes**: `git commit -m 'Add amazing feature'`
+5. **Push to branch**: `git push origin feature/amazing-feature`
+6. **Open a Pull Request**
+
+### Development Guidelines
+- Follow TypeScript best practices
+- Add JSDoc comments for public APIs
+- Write tests for new features
+- Follow the existing code style
+- Update documentation as needed
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **[Next.js](https://nextjs.org/)** - The React framework for production
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[Monaco Editor](https://microsoft.github.io/monaco-editor/)** - Code editor powering VS Code
+- **[Radix UI](https://www.radix-ui.com/)** - Low-level UI primitives
+
+---
+
+<div align="center">
+
+**Built with ❤️ by the NoteItDown team**
+
+[Website](https://noteitdown.dev) • [Documentation](https://docs.noteitdown.dev) • [Support](mailto:support@noteitdown.dev)
+
+</div>
