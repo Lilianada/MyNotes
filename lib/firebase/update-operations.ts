@@ -58,7 +58,7 @@ export const updateNoteContent = async (noteId: number, content: string, userId?
     
     // Add to edit history with enhanced data
     const historyEntry: any = {
-      timestamp: new Date(),
+      timestamp: serverTimestamp(),
       editType: 'update',
       contentLength: content.length
     };

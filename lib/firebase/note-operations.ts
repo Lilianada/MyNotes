@@ -96,7 +96,7 @@ export const addNote = async (userId: string, noteTitle: string, isAdmin: boolea
     
     // Create initial history entry
     const initialHistory = [{
-      timestamp: new Date(),
+      timestamp: serverTimestamp(),
       editType: 'create'
     }];
 
@@ -125,7 +125,10 @@ export const addNote = async (userId: string, noteTitle: string, isAdmin: boolea
       slug,
       wordCount: 0,
       tags: [],
-      editHistory: initialHistory as NoteEditHistory[],
+      editHistory: [{
+        timestamp: new Date(),
+        editType: 'create'
+      }] as NoteEditHistory[],
       archived: false
     };
     

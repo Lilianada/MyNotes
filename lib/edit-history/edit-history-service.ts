@@ -151,8 +151,7 @@ export class EditHistoryService {
       // Update note with new content and history (pass userId and isAdmin)
       await firebaseNotesService.updateNoteData(noteId, {
         content,
-        editHistory: updatedHistory,
-        updatedAt: new Date()
+        editHistory: updatedHistory
       }, user.uid, isAdmin);
     } else {
       // Handle localStorage
