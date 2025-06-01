@@ -115,6 +115,17 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
           parameterHints: { enabled: true }, // Enable parameter hints on all devices  
           suggestOnTriggerCharacters: true, // Enable trigger character suggestions on all devices
           acceptSuggestionOnEnter: typeof window !== 'undefined' && window.innerWidth < 768 ? 'smart' : 'on',
+          suggest: {
+            showWords: true,
+            showSnippets: true,
+            showKeywords: true,
+            showFunctions: true,
+            showVariables: true,
+            showClasses: true,
+            showModules: true,
+            showProperties: true,
+            insertMode: 'insert'
+          }
         }}
         beforeMount={(monaco) => {
           defineMonacoThemes(monaco);

@@ -13,30 +13,25 @@ export function configureMarkdownCompletions(monaco: any) {
     triggerCharacters: ['*'],
     provideCompletionItems: (model: { getValueInRange: (arg0: any) => any; getLineContent: (arg0: any) => any; }, position: { lineNumber: any; column: number; }) => {
       const lineContent = model.getLineContent(position.lineNumber);
-      const currentChar = lineContent.charAt(position.column - 2); // Character just typed
+      const beforeCursor = lineContent.substring(0, position.column - 1);
       
-      // Check for single asterisk for italic
-      if (currentChar === '*') {
-        const beforeAsterisk = lineContent.substring(0, position.column - 2);
-        
-        // Check if we're not already in a bold section (avoid ****)
-        if (!beforeAsterisk.endsWith('*')) {
-          return {
-            suggestions: [{
-              label: 'Italic text',
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: '*${1:text}*',
-              insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              detail: 'Complete to italic text (*text*)',
-              range: {
-                startLineNumber: position.lineNumber,
-                endLineNumber: position.lineNumber,
-                startColumn: position.column - 1,
-                endColumn: position.column
-              }
-            }]
-          };
-        }
+      // Check for single asterisk for italic (when user just typed one asterisk)
+      if (beforeCursor.endsWith('*') && !beforeCursor.endsWith('**')) {
+        return {
+          suggestions: [{
+            label: 'Italic text',
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: '${1:text}*',
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            detail: 'Complete to italic text (*text*)',
+            range: {
+              startLineNumber: position.lineNumber,
+              endLineNumber: position.lineNumber,
+              startColumn: position.column,
+              endColumn: position.column
+            }
+          }]
+        };
       }
       
       return { suggestions: [] };
@@ -334,6 +329,72 @@ export function configureMarkdownCompletions(monaco: any) {
           }
         );
       }
+      
+      return { suggestions };
+    }
+  });
+
+  // Add a general completion provider that always provides suggestions
+  monaco.languages.registerCompletionItemProvider('markdown', {
+    provideCompletionItems: (model: { getWordUntilPosition: (arg0: any) => any; getLineContent: (arg0: any) => any; }, position: { lineNumber: any; column: number; }) => {
+      const word = model.getWordUntilPosition(position);
+      const range = {
+        startLineNumber: position.lineNumber,
+        endLineNumber: position.lineNumber,
+        startColumn: word.startColumn,
+        endColumn: word.endColumn
+      };
+      
+      const suggestions = [
+        {
+          label: 'Bold',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '**${1:bold text}**',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          range,
+          detail: 'Bold text (**text**)'
+        },
+        {
+          label: 'Italic',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '*${1:italic text}*',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          range,
+          detail: 'Italic text (*text*)'
+        },
+        {
+          label: 'Heading 1',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '# ${1:Heading}',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          range,
+          detail: 'Heading level 1'
+        },
+        {
+          label: 'Heading 2',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '## ${1:Heading}',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          range,
+          detail: 'Heading level 2'
+        },
+        {
+          label: 'Link',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '[${1:link text}](${2:url})',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          range,
+          detail: 'Markdown link'
+        },
+        {
+          label: 'Backlink',
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: '[[${1:note title}]]',
+          insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          range,
+          detail: 'Wiki-style backlink'
+        }
+      ];
       
       return { suggestions };
     }

@@ -20,6 +20,11 @@ export function configureEditorShortcuts(
   editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyZ, () => {
     editor.trigger('keyboard', 'redo', null);
   });
+
+  // Add command to manually trigger suggest widget (Ctrl+Space)
+  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
+    editor.trigger('keyboard', 'editor.action.triggerSuggest', null);
+  });
 }
 
 // Configure auto-completion for brackets
@@ -63,10 +68,21 @@ export function configureEditorOptions(
     fontLigatures: true,
     tabSize: 2,
     // Mobile-specific options to prevent zoom
-    quickSuggestions: !isMobile, // Disable suggestions on mobile
-    parameterHints: { enabled: !isMobile },
-    suggestOnTriggerCharacters: !isMobile,
-    acceptSuggestionOnEnter: isMobile ? 'off' : 'on',
+    quickSuggestions: true, // Enable suggestions on all devices
+    parameterHints: { enabled: true },
+    suggestOnTriggerCharacters: true,
+    acceptSuggestionOnEnter: isMobile ? 'smart' : 'on',
+    suggest: {
+      showWords: true,
+      showSnippets: true,
+      showKeywords: true,
+      showFunctions: true,
+      showVariables: true,
+      showClasses: true,
+      showModules: true,
+      showProperties: true,
+      insertMode: 'insert'
+    },
     // Improve touch interaction
     multiCursorModifier: 'alt',
     selectionHighlight: !isMobile, // Reduce visual noise on mobile

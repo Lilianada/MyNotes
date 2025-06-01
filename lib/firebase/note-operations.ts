@@ -96,7 +96,7 @@ export const addNote = async (userId: string, noteTitle: string, isAdmin: boolea
     
     // Create initial history entry
     const initialHistory = [{
-      timestamp: serverTimestamp(),
+      timestamp: new Date(), // Use regular Date for array elements
       editType: 'create'
     }];
 
