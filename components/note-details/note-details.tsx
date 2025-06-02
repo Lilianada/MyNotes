@@ -50,70 +50,35 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
 
   // Local state for tag selection management
   const [pendingTags, setPendingTags] = useState<string[]>([]);
-  const [tagSelectionMode, setTagSelectionMode] = useState<'immediate' | 'multi-select'>('immediate');
 
   // Initialize pending tags when note changes or when entering tag selection mode
   useEffect(() => {
     if (note && activeTab === 'tags') {
       setPendingTags(note.tags || []);
-      setTagSelectionMode('immediate');
     }
   }, [note, activeTab]);
 
-  // Handle tag selection for multiple selection mode
+  // Handle tag selection for multi-select mode
   const handleTagSelection = (tag: string) => {
     console.log(`Tag selected: ${tag}`);
     
     if (!note) return;
     
-    if (tagSelectionMode) {
-      // In selection mode, update pending tags only
-      setPendingTags(prev => {
-        if (prev.includes(tag)) {
-          // Remove tag if it already exists
-          return prev.filter(t => t !== tag);
-        } else {
-          // Add tag if we're under the limit
-          if (prev.length < 5) {
-            return [...prev, tag];
-          } else {
-            console.log('Tag limit reached (5), cannot add more tags');
-            return prev;
-          }
-        }
-      });
-    } else {
-      // In immediate mode (legacy behavior), update directly
-      handleImmediateTagUpdate(tag);
-    }
-  };
-
-  // Handle immediate tag updates (for single-click mode)
-  const handleImmediateTagUpdate = async (tag: string) => {
-    if (!note) return;
-    
-    try {
-      const currentTags = note.tags || [];
-      let updatedTags: string[];
-      
-      if (currentTags.includes(tag)) {
+    // Always use multi-select behavior - update pending tags only
+    setPendingTags(prev => {
+      if (prev.includes(tag)) {
         // Remove tag if it already exists
-        updatedTags = currentTags.filter(t => t !== tag);
+        return prev.filter(t => t !== tag);
       } else {
-        // Add tag if it doesn't exist and we're under the limit
-        if (currentTags.length < 5) {
-          updatedTags = [...currentTags, tag];
+        // Add tag if we're under the limit
+        if (prev.length < 5) {
+          return [...prev, tag];
         } else {
           console.log('Tag limit reached (5), cannot add more tags');
-          return;
+          return prev;
         }
       }
-      
-      // Update the note with new tags
-      await updateNoteTags(note.id, updatedTags);
-    } catch (error) {
-      console.error('Failed to update tags:', error);
-    }
+    });
   };
 
   // Apply pending tag changes
@@ -122,7 +87,6 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
     
     try {
       await updateNoteTags(note.id, pendingTags);
-      setTagSelectionMode('immediate');
       console.log('Tags updated successfully');
     } catch (error) {
       console.error('Failed to update tags:', error);
@@ -132,17 +96,6 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
   // Cancel tag selection mode
   const handleCancelTagSelection = () => {
     setPendingTags(note?.tags || []);
-    setTagSelectionMode('immediate');
-  };
-
-  // Toggle between selection modes
-  const toggleTagSelectionMode = () => {
-    if (tagSelectionMode === 'immediate') {
-      setPendingTags(note?.tags || []);
-      setTagSelectionMode('multi-select');
-    } else {
-      setTagSelectionMode('immediate');
-    }
   };
 
   // Handle metadata save
@@ -236,6 +189,9 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
               updateTagAcrossNotes={updateTagAcrossNotes}
               deleteTagFromAllNotes={deleteTagFromAllNotes}
               onSelectTag={handleTagSelection}
+              pendingTags={pendingTags}
+              onApplyTagChanges={handleApplyTagChanges}
+              onCancelTagSelection={handleCancelTagSelection}
             />
           )}
         </div>

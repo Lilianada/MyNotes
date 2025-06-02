@@ -3,9 +3,24 @@
 import React from 'react';
 import { Note, NoteEditHistory } from '@/types';
 import { Calendar, Tag, History, Edit, Hash, RefreshCw, HardDrive } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow, format, isValid } from 'date-fns';
 import { TabType } from './note-details-hooks';
 import { formatBytes } from '@/lib/storage/storage-utils';
+
+// Helper function to safely convert and validate dates
+const safeDate = (dateValue: any): Date => {
+  if (!dateValue) return new Date();
+  
+  let date: Date;
+  if (dateValue instanceof Date) {
+    date = dateValue;
+  } else {
+    date = new Date(dateValue);
+  }
+  
+  // If the date is invalid, return current date as fallback
+  return isValid(date) ? date : new Date();
+};
 
 interface DetailsTabContentProps {
   note: Note;
@@ -29,7 +44,7 @@ export function DetailsTabContent({
         <div>
           <h3 className="text-sm font-medium">Created</h3>
           <p className="text-sm text-gray-500">
-            {format(note.createdAt, 'PPP')} ({formatDistanceToNow(note.createdAt, { addSuffix: true })})
+            {format(safeDate(note.createdAt), 'PPP')} ({formatDistanceToNow(safeDate(note.createdAt), { addSuffix: true })})
           </p>
         </div>
       </div>
@@ -92,14 +107,14 @@ export function DetailsTabContent({
                       </span>
                     </div>
                     <span className="text-xs text-gray-500">
-                      {formatDistanceToNow(entry.timestamp, { addSuffix: true })}
+                      {formatDistanceToNow(safeDate(entry.timestamp), { addSuffix: true })}
                     </span>
                   </div>
                   
                   <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
                     <div className="flex justify-between">
                       <span>Time:</span>
-                      <span>{format(entry.timestamp, 'MMM d, HH:mm:ss')}</span>
+                      <span>{format(safeDate(entry.timestamp), 'MMM d, HH:mm:ss')}</span>
                     </div>
                     
                     {entry.contentLength !== undefined && (
