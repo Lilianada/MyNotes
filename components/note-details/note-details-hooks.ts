@@ -18,6 +18,7 @@ export function useNoteDetailsState(note: Note | null, isOpen: boolean) {
   const [description, setDescription] = useState<string>('');
   const [publishStatus, setPublishStatus] = useState<boolean>(false);
   const [archived, setArchived] = useState<boolean>(false);
+  const [filePath, setFilePath] = useState<string>('');
   
   const { user, isAdmin } = useAuth();
   const { notes } = useNotes();
@@ -41,6 +42,7 @@ export function useNoteDetailsState(note: Note | null, isOpen: boolean) {
       setDescription(note.description || '');
       setPublishStatus(note.publish || false);
       setArchived(note.archived || false);
+      setFilePath(note.filePath || '');
     }
   }, [isOpen, note]);
   
@@ -88,6 +90,8 @@ export function useNoteDetailsState(note: Note | null, isOpen: boolean) {
     setPublishStatus,
     archived,
     setArchived,
+    filePath,
+    setFilePath,
     loadEditHistory, // Expose for manual refresh
   };
 }

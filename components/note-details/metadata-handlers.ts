@@ -10,9 +10,11 @@ export function useMetadataHandlers(
   note: Note | null,
   description: string,
   publishStatus: boolean,
+  archived: boolean,
+  filePath: string,
   setActiveTab: (tab: TabType) => void
 ) {
-  const { updateNote } = useNotes();
+  const { updateNote, updateNoteData } = useNotes();
   
   const handleMetadataSave = useCallback(async () => {
     if (!note) return;
@@ -36,6 +38,8 @@ export function useMetadataHandlers(
         title: note.noteTitle,
         description: description,
         publish: publishStatus,
+        archived: archived,
+        filePath: filePath,
         tags: note.tags || [],
         category: note.category?.name || '',
         // Keep other existing frontmatter data if any
@@ -64,6 +68,15 @@ export function useMetadataHandlers(
       // Update the note
       await updateNote(note.id, content);
       
+      // Also update the note data with metadata
+      await updateNoteData(note.id, {
+        description,
+        publish: publishStatus,
+        archived,
+        filePath,
+        updatedAt: new Date()
+      });
+      
       // Dismiss loading toast
       dismiss();
       
@@ -85,7 +98,7 @@ export function useMetadataHandlers(
         variant: "destructive",
       });
     }
-  }, [note, description, publishStatus, updateNote, setActiveTab]);
+  }, [note, description, publishStatus, archived, filePath, updateNote, setActiveTab]);
   
   return { handleMetadataSave };
 }
