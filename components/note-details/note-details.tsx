@@ -86,8 +86,14 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
     if (!note) return;
     
     try {
-      await updateNoteTags(note.id, pendingTags);
+      const updatedTags = await updateNoteTags(note.id, pendingTags);
       console.log('Tags updated successfully');
+      
+      // Update the note's tags in memory immediately for UI feedback
+      note.tags = updatedTags || pendingTags;
+      
+      // Reset pending tags to match the note's actual tags (clears the Apply/Cancel buttons)
+      setPendingTags(note.tags || []);
     } catch (error) {
       console.error('Failed to update tags:', error);
     }
