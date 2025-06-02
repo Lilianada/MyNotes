@@ -281,7 +281,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Built with ❤️ by the NoteItDown team**
+**Built with ❤️ by Lily-Lilianada**
 
 [Website](https://noteitdown.dev) • [Documentation](https://docs.noteitdown.dev) • [Support](mailto:support@noteitdown.dev)
 
