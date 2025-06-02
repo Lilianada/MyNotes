@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Note, NoteCategory, NoteEditHistory } from "@/types";
 import { useAuth } from "@/contexts/auth-context";
+import { useUserPreferences } from "@/contexts/user-preferences-context";
 import { useNoteState, useNoteOperations } from "./note-hooks";
 import { initializeNotes } from "./note-initialization";
 import { useNoteTags } from "./note-tags";
@@ -68,6 +69,9 @@ export function NoteProvider({ children }: { children: ReactNode }) {
 
   // Get auth loading state to ensure we don't initialize before auth is ready
   const { loading: authLoading } = useAuth();
+  
+  // Get user preferences for note selection
+  const { preferences, setLastSelectedNoteId } = useUserPreferences();
 
   const noteOperations = useNoteOperations(
     notes,
@@ -77,6 +81,26 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     Boolean(isAdmin),
     user
   );
+
+  // Enhanced selectNote that also saves to user preferences
+  const enhancedSelectNote = (id: number | null) => {
+    noteOperations.selectNote(id);
+    setLastSelectedNoteId(id);
+  };
+
+  // Enhanced addNote that also saves to user preferences
+  const enhancedAddNote = async (noteTitle: string): Promise<Note> => {
+    const newNote = await noteOperations.addNote(noteTitle);
+    setLastSelectedNoteId(newNote.id);
+    return newNote;
+  };
+
+  // Save selected note ID to user preferences whenever it changes
+  useEffect(() => {
+    if (selectedNoteId !== null) {
+      setLastSelectedNoteId(selectedNoteId);
+    }
+  }, [selectedNoteId, setLastSelectedNoteId]);
 
   const tagOperations = useNoteTags(
     notes,
@@ -145,7 +169,8 @@ export function NoteProvider({ children }: { children: ReactNode }) {
           setSelectedNoteId,
           setIsLoading,
           hasInitializedRef,
-          initContextRef
+          initContextRef,
+          preferences.lastSelectedNoteId
         )
           .then(() => {
             // We need to check notes.length in a setTimeout to ensure we have the latest state
@@ -209,6 +234,8 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         isLoading,
         setNotes,
         ...noteOperations,
+        addNote: enhancedAddNote, // Override with our enhanced version
+        selectNote: enhancedSelectNote, // Override with our enhanced version
         ...tagOperations,
         ...relationshipOperations,
         ...categoryOperations

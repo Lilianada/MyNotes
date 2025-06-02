@@ -8,6 +8,30 @@ import {
 import { localStorageNotesService } from "@/lib/storage/local-storage-notes";
 import { addUniqueIdsToLocalNotes } from "@/lib/notes/sync-service";
 
+/**
+ * Selects which note to open based on user preferences and available notes
+ * @param notes - Array of available notes
+ * @param lastSelectedNoteId - The last selected note ID from user preferences
+ * @returns The note that should be opened
+ */
+function selectNoteToOpen(notes: Note[], lastSelectedNoteId: number | null | undefined): Note {
+  // If we have a last selected note ID and it exists in the notes, use it
+  if (lastSelectedNoteId !== null && lastSelectedNoteId !== undefined) {
+    const lastSelectedNote = notes.find(note => note.id === lastSelectedNoteId);
+    if (lastSelectedNote) {
+      console.log(`Restoring last selected note: ${lastSelectedNote.id}`);
+      return lastSelectedNote;
+    } else {
+      console.log(`Last selected note ${lastSelectedNoteId} not found, falling back to most recent`);
+    }
+  }
+  
+  // Fall back to the most recent note
+  const mostRecentNote = getMostRecentNote(notes);
+  console.log(`Using most recent note as fallback: ${mostRecentNote.id}`);
+  return mostRecentNote;
+}
+
 export async function initializeNotes(
   isAdmin: boolean,
   user: { uid: string } | null | undefined,
@@ -16,7 +40,8 @@ export async function initializeNotes(
   setSelectedNoteId: (id: number | null) => void,
   setIsLoading: (loading: boolean) => void,
   hasInitializedRef: React.MutableRefObject<boolean>,
-  initContextRef: React.MutableRefObject<string>
+  initContextRef: React.MutableRefObject<string>,
+  lastSelectedNoteId?: number | null
 ) {
   const currentContext = isAdmin ? 'admin' : 'regular';
   console.log(`Starting note initialization in ${currentContext} context for user: ${user?.uid || 'anonymous'}`);
@@ -200,16 +225,11 @@ export async function initializeNotes(
       
       setNotes(loadedNotes);
       
-      // Always select the most recent note when loading
+      // Select the appropriate note based on user preferences
       try {
-        const mostRecentNote = getMostRecentNote(loadedNotes);
-        console.log(`Using most recent note: ${mostRecentNote.id}`);
-        setSelectedNoteId(mostRecentNote.id);
-        
-        // Update localStorage with the selected note
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('lastSelectedNoteId', mostRecentNote.id.toString());
-        }
+        const noteToSelect = selectNoteToOpen(loadedNotes, lastSelectedNoteId);
+        console.log(`Selected note for initialization: ${noteToSelect.id}`);
+        setSelectedNoteId(noteToSelect.id);
         
         // If we had to use a fallback method to load notes, inform the user
         if (attempts > 1 && typeof window !== "undefined" && window.document) {
@@ -289,9 +309,9 @@ export async function initializeNotes(
             
             setNotes(notesToSet);
             
-            // Select the most recent note
-            const mostRecentNote = getMostRecentNote(notesToSet);
-            setSelectedNoteId(mostRecentNote.id);
+            // Select the appropriate note based on user preferences
+            const noteToSelect = selectNoteToOpen(notesToSet, lastSelectedNoteId);
+            setSelectedNoteId(noteToSelect.id);
             
             // Show success toast
             if (typeof window !== "undefined" && window.document) {

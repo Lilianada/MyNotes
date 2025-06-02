@@ -8,14 +8,15 @@ import { GeistMono } from 'geist/font/mono';
 import { useFont } from '@/contexts/font-context';
 import { useMonacoThemes } from '@/hooks/use-monaco-themes';
 import { useNotes } from "@/contexts/notes/note-context";
-import { configureMarkdownLanguage, configureWikiLinkCompletion } from '@/lib/markdown/monaco-markdown';
+import { configureMarkdownLanguage } from '@/lib/markdown/monaco-markdown-completions';
+import { configureWikiLinkCompletion } from '@/lib/markdown/monaco-wiki-links';
 import { MonacoEditorProps, Monaco, EditorInstance } from './types';
 import { 
   configureEditorShortcuts, 
   configureBracketCompletion,  
   configureEditorOptions 
 } from './editor-config';
-import { useEditorCursorState, useEditorFocus } from './editor-hooks';
+import { useEditorCursorState } from './editor-hooks';
 
 // Dynamically import Monaco Editor with no SSR
 const Editor = dynamic(
@@ -30,31 +31,21 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
   const { notes } = useNotes();
   const { defineMonacoThemes } = useMonacoThemes();
   const [editorInstance, setEditorInstance] = React.useState<EditorInstance | null>(null);
-  const [previousContent, setPreviousContent] = React.useState<string | null>(null);
 
   // Get the appropriate font family based on font context
   const fontFamily = React.useMemo(() => {
     return fontType === 'mono' ? GeistMono.style.fontFamily : GeistSans.style.fontFamily;
   }, [fontType]);
 
-  // Manage cursor position
-  useEditorCursorState(editorInstance, note.content, previousContent);
-  
-  // Focus editor when note changes
-  useEditorFocus(editorInstance, note.id);
-
-  // Update previous content when note changes
-  React.useEffect(() => {
-    setPreviousContent(note.content);
-  }, [note.content]);
+  // Manage cursor position and restoration (replaces useEditorFocus and previousContent logic)
+  useEditorCursorState(editorInstance, note.id);
 
   // Update editor font and mobile settings when font type or window size changes
   React.useEffect(() => {
     if (editorInstance) {
       configureEditorOptions(editorInstance, isDarkTheme, fontFamily);
     }
-    
-    // Listen for resize events to reconfigure on orientation change
+
     const handleResize = () => {
       if (editorInstance) {
         setTimeout(() => {
@@ -63,10 +54,10 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
         }, 100);
       }
     };
-    
+
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
@@ -76,12 +67,12 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
   // Handle editor mounting
   const handleEditorDidMount = (editor: EditorInstance, monaco: Monaco) => {
     setEditorInstance(editor);
-    
+
     // Configure Monaco editor
     configureEditorOptions(editor, isDarkTheme, fontFamily);
     configureEditorShortcuts(monaco, editor, onSave);
     configureBracketCompletion(editor);
-    
+
     // Configure markdown language features
     configureMarkdownLanguage(monaco);
     configureWikiLinkCompletion(monaco, notes.map(note => note.noteTitle));
@@ -96,7 +87,6 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
         onChange={(value) => {
           if (value !== undefined) {
             onChange(value);
-            setPreviousContent(value);
           }
         }}
         theme={isDarkTheme ? 'markdown-theme-dark' : 'markdown-theme'}
@@ -111,9 +101,9 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
             verticalScrollbarSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 12 : 8,
             horizontalScrollbarSize: typeof window !== 'undefined' && window.innerWidth < 768 ? 12 : 8,
           },
-          quickSuggestions: true, // Enable autocompletion on all devices
-          parameterHints: { enabled: true }, // Enable parameter hints on all devices  
-          suggestOnTriggerCharacters: true, // Enable trigger character suggestions on all devices
+          quickSuggestions: true,
+          parameterHints: { enabled: true },
+          suggestOnTriggerCharacters: true,
           acceptSuggestionOnEnter: typeof window !== 'undefined' && window.innerWidth < 768 ? 'smart' : 'on',
           suggest: {
             showWords: true,
@@ -127,8 +117,8 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
             insertMode: 'insert'
           }
         }}
-        beforeMount={(monaco) => {
-          defineMonacoThemes(monaco);
+        beforeMount={monaco => {
+          configureMarkdownLanguage(monaco);
         }}
         onMount={handleEditorDidMount}
       />

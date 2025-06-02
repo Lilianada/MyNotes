@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNotes } from '@/contexts/notes/note-context';
+import { useUserPreferences } from '@/contexts/user-preferences-context';
 import { Folder, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +24,7 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({
   onSelectCategory,
 }) => {
   const { notes } = useNotes();
+  const { addRecentCategory } = useUserPreferences();
   const [categoryCounts, setCategoryCounts] = useState<{
     id: string;
     name: string;
@@ -95,7 +97,10 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({
           categoryCounts.map(({ id, name, color, count }) => (
             <DropdownMenuItem
               key={id}
-              onClick={() => onSelectCategory(id)}
+              onClick={() => {
+                onSelectCategory(id);
+                addRecentCategory(name); // Track recent category usage
+              }}
               className={`flex items-center justify-between ${
                 selectedCategory === id ? 'bg-blue-50' : ''
               }`}

@@ -13,6 +13,32 @@ import { Note, NoteCategory, NoteEditHistory } from '@/types';
 import { convertEditHistory } from './firebase-helpers';
 
 /**
+ * Recursively remove undefined values from an object to prevent Firebase errors
+ */
+function sanitizeForFirebase(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirebase(item)).filter(item => item !== undefined);
+  }
+  
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    Object.keys(obj).forEach(key => {
+      const value = sanitizeForFirebase(obj[key]);
+      if (value !== undefined) {
+        cleaned[key] = value;
+      }
+    });
+    return cleaned;
+  }
+  
+  return obj;
+}
+
+/**
  * Data operations for Firebase notes (categories, tags, metadata, history)
  */
 export class FirebaseDataOperations {
@@ -51,16 +77,22 @@ export class FirebaseDataOperations {
       // Note: History is managed by EditHistoryService, not added here
       
       if (category) {
-        await updateDoc(docRef, { 
+        const updateData = { 
           category, 
           updatedAt: serverTimestamp()
-        });
+        };
+        const sanitizedUpdateData = sanitizeForFirebase(updateData);
+        sanitizedUpdateData.updatedAt = serverTimestamp();
+        await updateDoc(docRef, sanitizedUpdateData);
       } else {
         // Remove category if null
-        await updateDoc(docRef, { 
+        const updateData = { 
           category: null,
           updatedAt: serverTimestamp()
-        });
+        };
+        const sanitizedUpdateData = sanitizeForFirebase(updateData);
+        sanitizedUpdateData.updatedAt = serverTimestamp();
+        await updateDoc(docRef, sanitizedUpdateData);
       }
     } catch (error) {
       console.error('Error updating note category:', error);
@@ -147,10 +179,13 @@ export class FirebaseDataOperations {
       const cleanTags = Array.isArray(tags) ? 
         [...tags].filter(Boolean).map(tag => tag.trim().toLowerCase()) : [];
       
-      await updateDoc(docRef, { 
+      const updateData = { 
         tags: cleanTags,
         updatedAt: serverTimestamp()
-      });
+      };
+      const sanitizedUpdateData = sanitizeForFirebase(updateData);
+      sanitizedUpdateData.updatedAt = serverTimestamp();
+      await updateDoc(docRef, sanitizedUpdateData);
       
       // Return the clean tags array so callers have access to the normalized values
       return cleanTags;
@@ -231,7 +266,12 @@ export class FirebaseDataOperations {
         updatePayload.editHistory = updatedNote.editHistory;
       }
       
-      await updateDoc(docRef, updatePayload);
+      // Final sanitization pass to ensure no undefined values slip through
+      const sanitizedUpdatePayload = sanitizeForFirebase(updatePayload);
+      // Re-add serverTimestamp since it gets processed by sanitization
+      sanitizedUpdatePayload.updatedAt = serverTimestamp();
+      
+      await updateDoc(docRef, sanitizedUpdatePayload);
       
       console.log(`[FIREBASE] Note ${id} updated successfully in Firestore`);
     } catch (error) {
