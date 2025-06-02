@@ -31,6 +31,7 @@ export function useSidebarState() {
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedArchive, setSelectedArchive] = useState<boolean | null>(null);
+  const [selectedPublished, setSelectedPublished] = useState<boolean | null>(null);
   
   // Sort state
   const [sortBy, setSortBy] = useState<SortOption>('updated');
@@ -48,7 +49,8 @@ export function useSidebarState() {
   const filterOptions: FilterOptions = {
     selectedTag,
     selectedCategory,
-    selectedArchive
+    selectedArchive,
+    selectedPublished
   };
   
   // Use the custom hook for sorting and filtering
@@ -89,6 +91,8 @@ export function useSidebarState() {
     setSelectedCategory,
     selectedArchive,
     setSelectedArchive,
+    selectedPublished,
+    setSelectedPublished,
     filterOptions,
     filteredNotes,
     

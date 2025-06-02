@@ -44,9 +44,11 @@ export default function Sidebar({
           selectedTag={state.selectedTag}
           selectedCategory={state.selectedCategory}
           selectedArchive={state.selectedArchive}
+          selectedPublished={state.selectedPublished}
           onSelectTag={state.setSelectedTag}
           onSelectCategory={state.setSelectedCategory}
           onSelectArchive={state.setSelectedArchive}
+          onSelectPublished={state.setSelectedPublished}
           sortBy={state.sortBy}
           sortOrder={state.sortOrder}
           onSortChange={state.handleSortChange}

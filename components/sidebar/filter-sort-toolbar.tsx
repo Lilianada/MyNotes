@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Filter, ArrowUpDown, Trash2, X, Tag, Archive, Folder } from 'lucide-react';
+import { Filter, ArrowUpDown, Trash2, X, Tag, Archive, Folder, Globe } from 'lucide-react';
 import TagsDropdown from '../filters/tags-dropdown';
 import CategoriesDropdown from '../filters/categories-dropdown';
 import ArchivesDropdown from '../filters/archives-dropdown';
+import PublishedDropdown from '../filters/published-dropdown';
 
 export type SortOption = 'updated' | 'created' | 'title' | 'wordCount';
 
@@ -13,9 +14,11 @@ interface FilterSortToolbarProps {
   selectedTag: string | null;
   selectedCategory: string | null;
   selectedArchive: boolean | null;
+  selectedPublished: boolean | null;
   onSelectTag: (tag: string | null) => void;
   onSelectCategory: (categoryId: string | null) => void;
   onSelectArchive: (isArchived: boolean | null) => void;
+  onSelectPublished: (isPublished: boolean | null) => void;
   
   // Sort props
   sortBy: SortOption;
@@ -36,9 +39,11 @@ export function FilterSortToolbar({
   selectedTag,
   selectedCategory,
   selectedArchive,
+  selectedPublished,
   onSelectTag,
   onSelectCategory,
   onSelectArchive,
+  onSelectPublished,
   sortBy,
   sortOrder,
   onSortChange,
@@ -53,7 +58,7 @@ export function FilterSortToolbar({
   const [showFilters, setShowFilters] = useState(false);
   const [showSort, setShowSort] = useState(false);
 
-  const hasActiveFilters = selectedTag || selectedCategory || selectedArchive !== null;
+  const hasActiveFilters = selectedTag || selectedCategory || selectedArchive !== null || selectedPublished !== null;
   
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: 'updated', label: 'Last Updated' },
@@ -72,6 +77,7 @@ export function FilterSortToolbar({
     onSelectTag(null);
     onSelectCategory(null);
     onSelectArchive(null);
+    onSelectPublished(null);
     setShowFilters(false);
   };
 
@@ -184,6 +190,16 @@ export function FilterSortToolbar({
                         <ArchivesDropdown
                           selectedArchive={selectedArchive}
                           onSelectArchive={onSelectArchive}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-gray-400" />
+                      <div className="flex-1">
+                        <PublishedDropdown
+                          selectedPublished={selectedPublished}
+                          onSelectPublished={onSelectPublished}
                         />
                       </div>
                     </div>
