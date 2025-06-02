@@ -32,17 +32,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check if user is admin
   const checkIfAdmin = async (user: User) => {
     try {
-      console.log(`🔍 Auth: Checking admin status for email: ${user.email}`);
       const adminRef = doc(db, 'admins', user.email || '');
       const adminDoc = await getDoc(adminRef);
       const isAdminUser = adminDoc.exists();
-      console.log(`🔍 Auth: Admin status result for ${user.email}: ${isAdminUser}`);
       
       // Add temporary admin creation for testing
       if (!isAdminUser && user.email) {
-        console.log(`🔧 Auth: User ${user.email} is not admin. To make them admin, run:`);
-        console.log(`firebase.makeUserAdmin('${user.email}')`);
-        
         // Expose function to browser console for testing
         if (typeof window !== 'undefined') {
           (window as any).firebase = {
@@ -151,15 +146,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setLoading(true);
-      console.log(`🔍 Auth: Auth state changed - user: ${currentUser?.email || 'none'}`);
       try {
         if (currentUser) {
           setUser(currentUser);
           const adminStatus = await checkIfAdmin(currentUser);
-          console.log(`🔍 Auth: Setting admin status to: ${adminStatus} for user: ${currentUser.email}`);
           setIsAdmin(adminStatus);
         } else {
-          console.log(`🔍 Auth: User signed out, clearing admin status`);
           setUser(null);
           setIsAdmin(false);
         }
@@ -167,7 +159,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error('Error handling auth state change:', error);
       } finally {
         setLoading(false);
-        console.log(`🔍 Auth: Auth state processing complete - loading: false`);
       }
     });
 

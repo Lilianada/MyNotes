@@ -44,12 +44,10 @@ export const loadUserNotes = async (
     // Determine which storage method to use
     if (user && firebaseNotesService) {
       // Use Firebase for all authenticated users (both admin and regular)
-      console.log(`Loading notes from Firebase for ${isAdmin ? 'admin' : 'regular'} user`);
       try {
         loadedNotes = await firebaseNotesService.getNotes(user.uid, isAdmin);
         notesLoadedFromStorage = loadedNotes.length > 0;
       } catch (firebaseError) {
-        console.error("Error loading notes from Firebase:", firebaseError);
         error = new Error(`Failed to load notes from Firebase: ${firebaseError instanceof Error ? firebaseError.message : String(firebaseError)}`);
         
         // Try to load from localStorage as fallback
@@ -59,10 +57,9 @@ export const loadUserNotes = async (
             if (localNotes.length > 0) {
               loadedNotes = localNotes;
               notesLoadedFromStorage = true;
-              console.log("Successfully loaded notes from localStorage as fallback");
             }
           } catch (localError) {
-            console.error("Error loading fallback notes from localStorage:", localError);
+            // Silent error handling for fallback
           }
         }
       }

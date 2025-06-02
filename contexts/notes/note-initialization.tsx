@@ -19,16 +19,12 @@ function selectNoteToOpen(notes: Note[], lastSelectedNoteId: number | null | und
   if (lastSelectedNoteId !== null && lastSelectedNoteId !== undefined) {
     const lastSelectedNote = notes.find(note => note.id === lastSelectedNoteId);
     if (lastSelectedNote) {
-      console.log(`Restoring last selected note: ${lastSelectedNote.id}`);
       return lastSelectedNote;
-    } else {
-      console.log(`Last selected note ${lastSelectedNoteId} not found, falling back to most recent`);
     }
   }
   
   // Fall back to the most recent note
   const mostRecentNote = getMostRecentNote(notes);
-  console.log(`Using most recent note as fallback: ${mostRecentNote.id}`);
   return mostRecentNote;
 }
 
@@ -44,20 +40,17 @@ export async function initializeNotes(
   lastSelectedNoteId?: number | null
 ) {
   const currentContext = isAdmin ? 'admin' : 'regular';
-  console.log(`Starting note initialization in ${currentContext} context for user: ${user?.uid || 'anonymous'}`);
   
   setIsLoading(true);
   try {
     // Double-check if another context has already loaded notes while we were waiting
     if (notes.length > 0 && hasInitializedRef.current) {
-      console.log(`[${currentContext}] Notes already loaded by ${initContextRef.current} context during initialization, skipping`);
       setIsLoading(false);
       return;
     }
     
     // If notes are already loaded but initialization flag isn't set, fix the state
     if (notes.length > 0 && !hasInitializedRef.current) {
-      console.log(`[${currentContext}] Found notes but initialization flag not set, repairing state`);
       hasInitializedRef.current = true;
       initContextRef.current = currentContext;
       setIsLoading(false);
@@ -74,8 +67,6 @@ export async function initializeNotes(
     let notesLoadedFromStorage = false;
     let error: Error | undefined;
     let success = false;
-
-    console.log(`[${currentContext}] Starting note loading process with ${MAX_RETRY_ATTEMPTS} max retry attempts`);
     
     // Try to load notes with retries if needed
     while (!success && attempts < MAX_RETRY_ATTEMPTS) {
@@ -83,19 +74,13 @@ export async function initializeNotes(
       
       // Check if another context has loaded notes while we were in the retry loop
       if (notes.length > 0 && hasInitializedRef.current) {
-        console.log(`[${currentContext}] Another context loaded notes during retry attempt ${attempts}, stopping`);
         setIsLoading(false);
         return;
       }
       
       try {
-        console.log(`Attempt ${attempts} to load notes...`);
-        
         // Create a timeout promise with progressively longer timeouts
         const timeout = INITIAL_TIMEOUT * attempts;
-        
-        // Load notes from the appropriate storage with timeout
-        console.log(`[${currentContext}] Attempt ${attempts}: Loading notes from ${isAdmin ? 'admin' : 'user'} storage`);
         const loadNotesPromise = loadUserNotes(isAdmin as boolean, user);
         
         // Create a timeout promise
@@ -109,24 +94,17 @@ export async function initializeNotes(
           if (typeof window !== "undefined") {
             const localStorageService = await import('@/lib/storage/local-storage-notes').then(m => m.localStorageNotesService);
             localNotes = localStorageService.getNotes();
-            if (localNotes.length > 0) {
-              console.log(`[${currentContext}] Found ${localNotes.length} notes in local storage while waiting for Firebase`);
-            }
           }
         } catch (localStorageError) {
-          console.error(`[${currentContext}] Error checking local storage:`, localStorageError);
+          // Silent error handling
         }
         
         // Race between the load operation and the timeout
         const result = await Promise.race([
           loadNotesPromise,
           timeoutPromise.catch(timeoutError => {
-            // Handle timeout gracefully without console errors
-            console.log(`[${currentContext}] Note loading taking longer than expected on attempt ${attempts}, using fallback strategy`);
-            
             // If we found notes in local storage, use them as a fallback
             if (localNotes.length > 0) {
-              console.log(`[${currentContext}] Using ${localNotes.length} notes from local storage as fallback`);
               return { loadedNotes: localNotes, notesLoadedFromStorage: true, error: undefined };
             }
             
@@ -137,7 +115,6 @@ export async function initializeNotes(
         // Process the result from the race
         if (result.error) {
           error = result.error;
-          // console.error(`[${currentContext}] Error loading notes on attempt ${attempts}:`, error);
           
           if (attempts >= MAX_RETRY_ATTEMPTS) {
             // This was our last attempt - show error toast
@@ -146,7 +123,6 @@ export async function initializeNotes(
               
               // Check if we already have notes loaded from another context
               if (notes.length > 0 && hasInitializedRef.current) {
-                console.log(`[${currentContext}] Notes already loaded in ${initContextRef.current} context, showing info toast`);
                 toast({
                   title: "Notes already loaded",
                   description: `Using notes loaded from your ${initContextRef.current} account.`,
@@ -161,8 +137,7 @@ export async function initializeNotes(
               }
             }
           } else {
-            // Log the retry attempt
-            console.log(`[${currentContext}] Retrying note load, attempt ${attempts + 1}/${MAX_RETRY_ATTEMPTS}`);
+            // Prepare for next attempt without logging
             continue; // Try again with next attempt
           }
         } else {
@@ -172,21 +147,16 @@ export async function initializeNotes(
           
           if (loadedNotes.length > 0) {
             success = true;
-            console.log(`[${currentContext}] Successfully loaded ${loadedNotes.length} notes`);
             break; // Exit the retry loop
-          } else {
-            console.log(`[${currentContext}] No notes found in result, continuing to next attempt`);
           }
         }
       } catch (attemptError) {
-        console.error(`Error during note loading attempt ${attempts}:`, attemptError);
         error = attemptError instanceof Error ? attemptError : new Error(String(attemptError));
       }
     }
 
     // After all attempts, check for errors
     if (error && !success) {
-      // console.error("Error loading notes after all attempts:", error);
       // Show error message to user
       if (typeof window !== "undefined" && window.document) {
         const { toast } = await import("@/components/ui/use-toast");
@@ -202,7 +172,6 @@ export async function initializeNotes(
     if (loadedNotes.length > 0) {
       // Ensure all notes have unique IDs (important for sync functionality)
       try {
-        console.log(`[${currentContext}] Ensuring all notes have unique IDs`);
         await addUniqueIdsToLocalNotes();
         
         // Get the updated notes from local storage if they were modified
@@ -210,25 +179,21 @@ export async function initializeNotes(
           const updatedLocalNotes = localStorageNotesService.getNotes();
           if (updatedLocalNotes.length > 0) {
             loadedNotes = updatedLocalNotes;
-            console.log(`[${currentContext}] Updated notes with unique IDs: ${loadedNotes.length} notes`);
           }
         }
       } catch (uniqueIdError) {
-        console.error(`[${currentContext}] Error adding unique IDs to notes:`, uniqueIdError);
         // Continue with original notes if unique ID assignment fails
       }
       
       // Mark initialization as successful
       hasInitializedRef.current = true;
       initContextRef.current = isAdmin ? 'admin' : 'regular';
-      console.log(`Notes successfully loaded by ${initContextRef.current} context`);
       
       setNotes(loadedNotes);
       
       // Select the appropriate note based on user preferences
       try {
         const noteToSelect = selectNoteToOpen(loadedNotes, lastSelectedNoteId);
-        console.log(`Selected note for initialization: ${noteToSelect.id}`);
         setSelectedNoteId(noteToSelect.id);
         
         // If we had to use a fallback method to load notes, inform the user
@@ -248,7 +213,6 @@ export async function initializeNotes(
           });
         }
       } catch (noteSelectionError) {
-        console.error("Error selecting most recent note:", noteSelectionError);
         // Fallback to selecting the first note
         if (loadedNotes[0]) {
           setSelectedNoteId(loadedNotes[0].id);

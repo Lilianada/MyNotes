@@ -125,11 +125,8 @@ export function NoteProvider({ children }: { children: ReactNode }) {
 
   // Initialize notes when the user state changes
   useEffect(() => {
-    console.log(`🔍 Note context effect triggered - user: ${user?.uid || 'none'}, isAdmin: ${isAdmin}, authLoading: ${authLoading}, notes.length: ${notes.length}`);
-    
     // Wait for auth to be fully loaded before initializing
     if (authLoading) {
-      console.log('⏳ Auth still loading, waiting...');
       return;
     }
     
@@ -139,7 +136,6 @@ export function NoteProvider({ children }: { children: ReactNode }) {
       
       // If notes were already successfully loaded, don't reload unless user/admin status changed
       if (hasInitializedRef.current && notes.length > 0 && initContextRef.current === currentContext) {
-        console.log(`Skipping initialization - notes already loaded for ${currentContext} context`);
         return;
       }
       
@@ -157,8 +153,6 @@ export function NoteProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined' && !window[userInitializationKey]) {
         // Set flag to indicate initialization is in progress
         window[userInitializationKey] = true;
-        
-        console.log(`Starting notes initialization for ${currentContext} context`);
 
         // Initialize notes
         initializeNotes(
@@ -178,7 +172,6 @@ export function NoteProvider({ children }: { children: ReactNode }) {
               if (notes.length > 0) {
                 hasInitializedRef.current = true;
                 initContextRef.current = currentContext;
-                console.log(`Notes successfully initialized by ${currentContext} context`);
               }
             }, 0);
           })
@@ -198,9 +191,6 @@ export function NoteProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // If user becomes null (signed out), clear all state
     if (user === null) {
-      console.log('🧹 User signed out, clearing notes state and edit history');
-      console.log('📊 Before cleanup - Notes count:', notes.length, 'Selected note:', selectedNoteId);
-      
       // Clear notes and selection
       setNotes([]);
       setSelectedNoteId(null);
@@ -222,7 +212,6 @@ export function NoteProvider({ children }: { children: ReactNode }) {
       }
       
       setIsLoading(false);
-      console.log('✅ Cleanup complete - state should be cleared');
     }
   }, [user, setNotes, setSelectedNoteId, setIsLoading, hasInitializedRef, initContextRef]);
 

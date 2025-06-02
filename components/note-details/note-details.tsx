@@ -35,6 +35,8 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
     setPublishStatus,
     archived,
     setArchived,
+    filePath,
+    setFilePath,
     updateNote,
     archiveNote,
     loadEditHistory
@@ -114,6 +116,7 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
         description,
         publish: publishStatus,
         archived,
+        filePath,
         updatedAt: new Date()
       };
 
@@ -184,6 +187,8 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
               setPublishStatus={setPublishStatus}
               archived={archived}
               setArchived={setArchived}
+              filePath={filePath}
+              setFilePath={setFilePath}
               onSave={handleMetadataSave}
             />
           )}

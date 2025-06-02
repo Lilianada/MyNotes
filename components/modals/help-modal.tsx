@@ -21,7 +21,7 @@ export default function HelpModal({ isOpen, onClose }: HelpModalProps) {
   };
   
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]" onClick={handleClickOutside} style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0}}>
+    <div className="h-screen fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]" onClick={handleClickOutside} style={{position: 'fixed', top: 0, left: 0, right: 0, bottom: 0}}>
       <div className="bg-white p-4 rounded-lg shadow-lg w-full max-w-[600px] max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="mb-4">
           <h2 className="text-xl font-bold">NoteItDown Help</h2>

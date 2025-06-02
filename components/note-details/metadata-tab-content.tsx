@@ -11,6 +11,8 @@ interface MetadataTabContentProps {
   setPublishStatus: (status: boolean) => void;
   archived: boolean;
   setArchived: (archived: boolean) => void;
+  filePath: string;
+  setFilePath: (filePath: string) => void;
   onSave: () => void;
 }
 
@@ -22,8 +24,18 @@ export function MetadataTabContent({
   setPublishStatus,
   archived,
   setArchived,
+  filePath,
+  setFilePath,
   onSave 
 }: MetadataTabContentProps) {
+  // Validate filePath format
+  const isValidFilePath = (path: string): boolean => {
+    if (!path) return true; // Empty path is valid (optional)
+    return path.endsWith('.md') || path.endsWith('.markdown');
+  };
+
+  const filePathValid = isValidFilePath(filePath);
+
   return (
     <div className="space-y-4">
       <div>
@@ -49,6 +61,33 @@ export function MetadataTabContent({
           rows={3}
           placeholder="Enter a description of this note..."
         />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          File Path
+        </label>
+        <input
+          type="text"
+          value={filePath}
+          onChange={(e) => setFilePath(e.target.value)}
+          className={`w-full p-2 border rounded-md text-sm ${
+            filePathValid 
+              ? 'border-gray-300' 
+              : 'border-red-300 bg-red-50'
+          }`}
+          placeholder="e.g., notes/my-note.md"
+        />
+        <p className={`text-xs mt-1 ${
+          filePathValid 
+            ? 'text-gray-500' 
+            : 'text-red-500'
+        }`}>
+          {filePathValid 
+            ? 'Specify the file path for digital garden integration. Should end with .md'
+            : 'File path must end with .md or .markdown'
+          }
+        </p>
       </div>
       
       <div className="flex items-center">
@@ -115,7 +154,12 @@ export function MetadataTabContent({
       
       <button
         onClick={onSave}
-        className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 w-full"
+        disabled={!filePathValid}
+        className={`px-4 py-2 rounded-md text-sm w-full ${
+          filePathValid
+            ? 'bg-blue-600 text-white hover:bg-blue-700'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        }`}
       >
         Save Metadata
       </button>
