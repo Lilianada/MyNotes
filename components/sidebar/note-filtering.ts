@@ -7,6 +7,7 @@ export interface FilterOptions {
   selectedTag: string | null;
   selectedCategory: string | null;
   selectedArchive: boolean | null;
+  selectedPublished: boolean | null;
 }
 
 export function useSortedAndFilteredNotes(
@@ -34,6 +35,11 @@ export function useSortedAndFilteredNotes(
     
     // Filter by archive status if selected
     if (filterOptions.selectedArchive !== null && note.archived !== filterOptions.selectedArchive) {
+      return false;
+    }
+    
+    // Filter by published status if selected
+    if (filterOptions.selectedPublished !== null && (note.publish || false) !== filterOptions.selectedPublished) {
       return false;
     }
     
@@ -91,7 +97,10 @@ export function generateFilterDescription(
   totalCount: number,
   filterOptions: FilterOptions
 ): string {
-  const hasFilters = filterOptions.selectedTag || filterOptions.selectedCategory || filterOptions.selectedArchive !== null;
+  const hasFilters = filterOptions.selectedTag || 
+                    filterOptions.selectedCategory || 
+                    filterOptions.selectedArchive !== null || 
+                    filterOptions.selectedPublished !== null;
   
   if (!hasFilters) {
     return `You have ${totalCount} saved notes`;
@@ -102,6 +111,8 @@ export function generateFilterDescription(
   if (filterOptions.selectedCategory) filterDesc.push(`${filterOptions.selectedCategory}`);
   if (filterOptions.selectedArchive === true) filterDesc.push('archived');
   if (filterOptions.selectedArchive === false) filterDesc.push('unarchived');
+  if (filterOptions.selectedPublished === true) filterDesc.push('published');
+  if (filterOptions.selectedPublished === false) filterDesc.push('unpublished');
   
   return `${filteredCount} notes ${filterDesc.length > 0 ? `filtered by ${filterDesc.join(', ')}` : ''}`;
 }
