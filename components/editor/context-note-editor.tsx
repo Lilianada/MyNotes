@@ -24,7 +24,7 @@ export const ContextNoteEditor = forwardRef<HTMLTextAreaElement>((props, ref) =>
   const handleSave = () => {
     // We don't need to implement save explicitly since the context is handling state
     // Any actual saving to files would be handled by the context
-    console.log('Note saved')
+    // console.log('Note saved')
   }
   
   return (
@@ -33,7 +33,8 @@ export const ContextNoteEditor = forwardRef<HTMLTextAreaElement>((props, ref) =>
       onChange={handleContentChange}
       onSave={handleSave}
       onUpdateTitle={handleTitleUpdate}
-      ref={ref} // <--- THIS IS THE FIX!
+      ref={ref}
+      // Remove the beforeMount prop or define it in NoteEditor component
     />
   )
 })

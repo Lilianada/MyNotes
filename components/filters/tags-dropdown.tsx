@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNotes } from '@/contexts/notes/note-context';
+import { useUserPreferences } from '@/contexts/user-preferences-context';
 import { Tag, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +24,7 @@ export const TagsDropdown: React.FC<TagsDropdownProps> = ({
   onSelectTag,
 }) => {
   const { notes } = useNotes();
+  const { addRecentTag } = useUserPreferences();
   const [tagCounts, setTagCounts] = useState<{tag: string, count: number}[]>([]);
 
   // Calculate tag counts
@@ -78,7 +80,10 @@ export const TagsDropdown: React.FC<TagsDropdownProps> = ({
           tagCounts.map(({ tag, count }) => (
             <DropdownMenuItem
               key={tag}
-              onClick={() => onSelectTag(tag)}
+              onClick={() => {
+                onSelectTag(tag);
+                addRecentTag(tag); // Track recent tag usage
+              }}
               className={`flex items-center justify-between ${
                 selectedTag === tag ? 'bg-blue-50' : ''
               }`}

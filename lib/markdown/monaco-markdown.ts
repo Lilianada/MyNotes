@@ -1,7 +1,7 @@
 "use client";
 
 import { configureMarkdownTokens } from './monaco-markdown-tokens';
-import { configureMarkdownCompletions } from './monaco-markdown-completions';
+// import { configureMarkdownCompletions } from './monaco-markdown-completions';
 import { configureWikiLinkCompletion } from './monaco-wiki-links';
 import { configureMarkdownTheme } from './monaco-markdown-theme';
 
@@ -17,7 +17,7 @@ export function configureMarkdownLanguage(monaco: any) {
   configureMarkdownTheme(monaco);
   
   // Configure markdown completion providers
-  configureMarkdownCompletions(monaco);
+  // configureMarkdownCompletions(monaco);
 }
 
 // Re-export wiki link configuration for external use

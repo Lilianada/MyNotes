@@ -10,13 +10,17 @@ import { FontProvider } from "@/contexts/font-context"
 import { NoteProvider } from "@/contexts/notes/note-context"
 import { AuthProvider } from "@/contexts/auth-context"
 import { StorageProvider } from "@/contexts/storage-context"
+import { UserPreferencesProvider } from "@/contexts/user-preferences-context"
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
   title: "NoteItDown App",
   description: "A minimalist notes app",
   generator: 'Lily',
-  viewport: {
+}
+
+export function generateViewport() {
+  return {
     width: 'device-width',
     initialScale: 1,
     maximumScale: 1,
@@ -31,12 +35,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={GeistMono.className}>
         <AuthProvider>
           <StorageProvider>
-            <FontProvider>
-              <NoteProvider>
-                {children}
-                <Toaster />
-              </NoteProvider>
-            </FontProvider>
+            <UserPreferencesProvider>
+              <FontProvider>
+                <NoteProvider>
+                  {children}
+                  <Toaster />
+                </NoteProvider>
+              </FontProvider>
+            </UserPreferencesProvider>
           </StorageProvider>
         </AuthProvider>
       </body>

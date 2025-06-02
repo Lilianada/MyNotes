@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Note } from '@/types';
+import { useUserPreferences } from '@/contexts/user-preferences-context';
 import { SelectedTags } from './selected-tags';
 import { TagList } from './tag-list';
 import { CreateTagForm } from './create-tag-form';
@@ -31,6 +32,7 @@ export function TagManagerSystem({
   selectionMode = 'immediate'
 }: TagManagerSystemProps) {
   const { sortedTags } = useTagProcessing(allNotes);
+  const { addRecentTag } = useUserPreferences();
 
   const handleCreateTag = async (tagName: string) => {
     // Normalize to lowercase for case-insensitive comparison
@@ -53,6 +55,9 @@ export function TagManagerSystem({
     // Register the new tag in the system
     await onUpdateTagAcrossNotes('', normalizedTagName);
     console.log(`[TAG UI] Tag registered successfully: "${normalizedTagName}"`);
+    
+    // Track recent tag usage
+    addRecentTag(normalizedTagName);
     
     // If we haven't reached the tag limit, add it to the current note
     if (selectedTags.length < maxTagsAllowed) {

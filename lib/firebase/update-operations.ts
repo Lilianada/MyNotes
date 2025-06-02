@@ -68,7 +68,8 @@ export const updateNoteContent = async (noteId: number, content: string, userId?
       historyEntry.contentSnapshot = content;
     }
     
-    await updateDoc(docRef, {
+    // Prepare update data
+    const updateData = {
       content,
       updatedAt: serverTimestamp(),
       wordCount,
@@ -76,7 +77,14 @@ export const updateNoteContent = async (noteId: number, content: string, userId?
       "editHistory": currentData.editHistory
         ? [...currentData.editHistory, historyEntry]
         : [historyEntry]
-    });
+    };
+    
+    // Sanitize before sending to Firebase
+    const sanitizedUpdateData = sanitizeForFirebase(updateData);
+    // Re-add serverTimestamp since it gets processed by sanitization
+    sanitizedUpdateData.updatedAt = serverTimestamp();
+    
+    await updateDoc(docRef, sanitizedUpdateData);
     
     // Update storage tracking for non-admin users if file size changed significantly
     if (!isAdmin && userId && Math.abs(sizeDifference) > 100) { // Only track if change is > 100 bytes
@@ -126,10 +134,17 @@ export const updateNoteTitle = async (noteId: number, newTitle: string, userId?:
     
     // Note: History is managed by EditHistoryService, not added here
     
-    await updateDoc(docRef, {
+    const updateData = {
       noteTitle: newTitle,
       updatedAt: serverTimestamp()
-    });
+    };
+    
+    // Sanitize before sending to Firebase
+    const sanitizedUpdateData = sanitizeForFirebase(updateData);
+    // Re-add serverTimestamp since it gets processed by sanitization
+    sanitizedUpdateData.updatedAt = serverTimestamp();
+    
+    await updateDoc(docRef, sanitizedUpdateData);
   } catch (error) {
     console.error(`Error updating note title ${noteId}:`, error);
     throw error;
@@ -176,7 +191,12 @@ export const updateNoteCategory = async (noteId: number, category: NoteCategory 
       updateData.category = category;
     }
     
-    await updateDoc(docRef, updateData);
+    // Sanitize before sending to Firebase
+    const sanitizedUpdateData = sanitizeForFirebase(updateData);
+    // Re-add serverTimestamp since it gets processed by sanitization
+    sanitizedUpdateData.updatedAt = serverTimestamp();
+    
+    await updateDoc(docRef, sanitizedUpdateData);
   } catch (error) {
     console.error(`Error updating note category ${noteId}:`, error);
     throw error;
@@ -212,10 +232,17 @@ export const updateNoteTags = async (noteId: number, tags: string[], userId?: st
     
     // Note: History is managed by EditHistoryService, not added here
     
-    await updateDoc(docRef, {
+    const updateData = {
       tags,
       updatedAt: serverTimestamp()
-    });
+    };
+    
+    // Sanitize before sending to Firebase
+    const sanitizedUpdateData = sanitizeForFirebase(updateData);
+    // Re-add serverTimestamp since it gets processed by sanitization
+    sanitizedUpdateData.updatedAt = serverTimestamp();
+    
+    await updateDoc(docRef, sanitizedUpdateData);
     
     return tags;
   } catch (error) {
@@ -223,6 +250,32 @@ export const updateNoteTags = async (noteId: number, tags: string[], userId?: st
     throw error;
   }
 };
+
+/**
+ * Recursively remove undefined values from an object to prevent Firebase errors
+ */
+function sanitizeForFirebase(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirebase(item)).filter(item => item !== undefined);
+  }
+  
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    Object.keys(obj).forEach(key => {
+      const value = sanitizeForFirebase(obj[key]);
+      if (value !== undefined) {
+        cleaned[key] = value;
+      }
+    });
+    return cleaned;
+  }
+  
+  return obj;
+}
 
 /**
  * Update note data with arbitrary fields
@@ -252,7 +305,7 @@ export const updateNoteData = async (noteId: number, updates: Partial<Note>, use
     const docRef = doc(notesRef, snapshot.docs[0].id);
     const currentData = snapshot.docs[0].data();
     
-    // Prepare update object with timestamp, filtering out undefined values
+    // Prepare update object with timestamp
     const updateData: any = {
       updatedAt: serverTimestamp()
     };
@@ -267,16 +320,25 @@ export const updateNoteData = async (noteId: number, updates: Partial<Note>, use
     
     // If content is being updated, calculate word count
     if (updates.content !== undefined) {
-      updateData.wordCount = countWords(updates.content);
+      const wordCount = countWords(updates.content);
+      if (wordCount !== undefined) {
+        updateData.wordCount = wordCount;
+      }
     }
 
     // Handle edit history if provided in updates
     if (updates.editHistory !== undefined) {
-      // Use the provided history (already pruned by the service)
-      updateData.editHistory = updates.editHistory;
+      // Sanitize edit history to remove any undefined values
+      updateData.editHistory = sanitizeForFirebase(updates.editHistory);
     }
     
-    await updateDoc(docRef, updateData);
+    // Final sanitization pass to ensure no undefined values slip through
+    const sanitizedUpdateData = sanitizeForFirebase(updateData);
+    
+    // Re-add serverTimestamp since it gets processed by sanitization
+    sanitizedUpdateData.updatedAt = serverTimestamp();
+    
+    await updateDoc(docRef, sanitizedUpdateData);
   } catch (error) {
     console.error(`Error updating note data ${noteId}:`, error);
     throw error;

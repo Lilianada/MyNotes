@@ -51,7 +51,6 @@ export function TagList({
           onDeleteTag={onDeleteTag}
           canSelectMoreTags={canSelectMoreTags}
           existingTags={existingTags}
-          selectionMode={selectionMode}
         />
       ))}
     </div>
