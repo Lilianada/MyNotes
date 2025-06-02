@@ -1,7 +1,6 @@
 import { Note } from '@/types';
 import { saveAs } from 'file-saver';
 import { jsPDF } from 'jspdf';
-import { format } from 'date-fns';
 import JSZip from 'jszip';
 
 type ExportFormat = 'markdown' | 'txt' | 'pdf';
@@ -22,6 +21,18 @@ function safeDate(date: any): Date {
   }
   // Default to current date if invalid
   return new Date();
+}
+
+/**
+ * Format date to standard string
+ */
+function formatDate(date: any): string {
+  const validDate = safeDate(date);
+  try {
+    return validDate.toLocaleDateString();
+  } catch (error) {
+    return new Date().toLocaleDateString();
+  }
 }
 
 /**
@@ -194,16 +205,9 @@ export async function exportAllNotes(notes: Note[], format: ExportFormat): Promi
           }
           
           // Add readme file with export information
-          const readmeContent = [
-            `# Exported Notes`,
-            ``,
-            `Date: ${new Date().toLocaleDateString()}`,
-            `Number of notes: ${validNotes.length}`,
-            ``,
-            `## Contents`,
-            ``,
-            ...validNotes.map((note, i) => `${i+1}. ${note.noteTitle || 'Untitled Note'} (ID: ${note.id})`)
-          ].join('\n');
+          const readmeContent = `# Exported Notes\n\nDate: ${new Date().toLocaleDateString()}\nNumber of notes: ${validNotes.length}\n\n## Contents\n\n${
+            validNotes.map((note, i) => `${i+1}. ${note.noteTitle || 'Untitled Note'} (ID: ${note.id})`).join('\n')
+          }`;
           
           zip.file("README.md", readmeContent);
           
@@ -219,7 +223,6 @@ export async function exportAllNotes(notes: Note[], format: ExportFormat): Promi
           // Generate the zip file and save it
           zip.generateAsync({ type: "blob" })
             .then(function(content) {
-              // Use "my-notes-collection" instead of timestamp for consistency
               saveAs(content, `my-notes-collection.zip`);
             });
         }
@@ -292,15 +295,7 @@ async function exportToPdf(note: Note): Promise<void> {
     }
     
     if (note.createdAt) {
-      let dateStr;
-      try {
-        dateStr = note.createdAt instanceof Date && !isNaN(note.createdAt.getTime())
-          ? format(note.createdAt, 'PPP') 
-          : format(new Date(), 'PPP');
-      } catch (error) {
-        console.warn('Invalid date in PDF export, using current date');
-        dateStr = format(new Date(), 'PPP');
-      }
+      const dateStr = formatDate(note.createdAt);
       doc.text(`Created: ${dateStr}`, 20, y);
       y += 6;
     }
@@ -371,88 +366,80 @@ async function exportMultipleToPdf(notes: Note[]): Promise<void> {
       doc.text(`${note.noteTitle || 'Untitled Note'} (${i+1}/${notes.length})`, 20, y);
       y += 10;
     
-    // Add metadata
-    doc.setFontSize(10);
+      // Add metadata
+      doc.setFontSize(10);
     
-    if (note.category) {
-      doc.text(`Category: ${note.category.name}`, 20, y);
-      y += 6;
-    }
-    
-    if (note.tags && note.tags.length > 0) {
-      doc.text(`Tags: ${note.tags.join(', ')}`, 20, y);
-      y += 6;
-    }
-    
-    if (note.createdAt) {
-      let dateStr;
-      try {
-        dateStr = note.createdAt instanceof Date && !isNaN(note.createdAt.getTime())
-          ? format(note.createdAt, 'PPP') 
-          : format(new Date(), 'PPP');
-      } catch (error) {
-        console.warn('Invalid date in PDF export, using current date');
-        dateStr = format(new Date(), 'PPP');
-      }
-      doc.text(`Created: ${dateStr}`, 20, y);
-      y += 6;
-    }
-    
-    // Add relationship info
-    if (note.parentId) {
-      const parentNote = notes.find(n => n.id === note.parentId);
-      if (parentNote) {
-        doc.text(`Parent Note: ${parentNote.noteTitle}`, 20, y);
+      if (note.category) {
+        doc.text(`Category: ${note.category.name}`, 20, y);
         y += 6;
       }
-    }
     
-    if (note.linkedNoteIds && note.linkedNoteIds.length > 0) {
-      const linkedTitles = note.linkedNoteIds
-        .map(id => {
-          const linkedNote = notes.find(n => n.id === id);
-          return linkedNote ? linkedNote.noteTitle : `Note #${id}`;
-        })
-        .join(', ');
-      
-      doc.text(`Linked Notes: ${linkedTitles}`, 20, y);
-      y += 6;
-    }
-    
-    // Add content
-    doc.setFontSize(12);
-    doc.text('Content:', 20, y);
-    y += 8;
-    
-    // Handle empty content
-    const content = note.content || '(No content)';
-    
-    // Split content into lines that fit the page width
-    const lines = doc.splitTextToSize(content, 170);
-    
-    // Check if we need to add a new page for long content
-    if (y + lines.length * 7 > 280) {
-      const linesPerPage = Math.floor((280 - y) / 7);
-      const firstPageLines = lines.slice(0, linesPerPage);
-      doc.text(firstPageLines, 20, y);
-      
-      // Continue on new pages as needed
-      const remainingLines = lines.slice(linesPerPage);
-      let currentLine = 0;
-      
-      while (currentLine < remainingLines.length) {
-        doc.addPage();
-        const pageLines = remainingLines.slice(currentLine, currentLine + 35); // ~35 lines per page
-        doc.text(pageLines, 20, 20);
-        currentLine += 35;
+      if (note.tags && note.tags.length > 0) {
+        doc.text(`Tags: ${note.tags.join(', ')}`, 20, y);
+        y += 6;
       }
-    } else {
-      doc.text(lines, 20, y);
+    
+      if (note.createdAt) {
+        const dateStr = formatDate(note.createdAt);
+        doc.text(`Created: ${dateStr}`, 20, y);
+        y += 6;
+      }
+    
+      // Add relationship info
+      if (note.parentId) {
+        const parentNote = notes.find(n => n.id === note.parentId);
+        if (parentNote) {
+          doc.text(`Parent Note: ${parentNote.noteTitle}`, 20, y);
+          y += 6;
+        }
+      }
+    
+      if (note.linkedNoteIds && note.linkedNoteIds.length > 0) {
+        const linkedTitles = note.linkedNoteIds
+          .map(id => {
+            const linkedNote = notes.find(n => n.id === id);
+            return linkedNote ? linkedNote.noteTitle : `Note #${id}`;
+          })
+          .join(', ');
+      
+        doc.text(`Linked Notes: ${linkedTitles}`, 20, y);
+        y += 6;
+      }
+    
+      // Add content
+      doc.setFontSize(12);
+      doc.text('Content:', 20, y);
+      y += 8;
+    
+      // Handle empty content
+      const content = note.content || '(No content)';
+    
+      // Split content into lines that fit the page width
+      const lines = doc.splitTextToSize(content, 170);
+    
+      // Check if we need to add a new page for long content
+      if (y + lines.length * 7 > 280) {
+        const linesPerPage = Math.floor((280 - y) / 7);
+        const firstPageLines = lines.slice(0, linesPerPage);
+        doc.text(firstPageLines, 20, y);
+      
+        // Continue on new pages as needed
+        const remainingLines = lines.slice(linesPerPage);
+        let currentLine = 0;
+      
+        while (currentLine < remainingLines.length) {
+          doc.addPage();
+          const pageLines = remainingLines.slice(currentLine, currentLine + 35); // ~35 lines per page
+          doc.text(pageLines, 20, 20);
+          currentLine += 35;
+        }
+      } else {
+        doc.text(lines, 20, y);
+      }
     }
-  }
   
-  // Save the PDF
-  doc.save(`my-notes-collection.pdf`);
+    // Save the PDF
+    doc.save(`my-notes-collection.pdf`);
   } catch (error) {
     console.error("Error exporting multiple notes to PDF:", error);
     throw new Error(`Failed to export notes to PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
