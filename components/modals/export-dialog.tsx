@@ -57,9 +57,23 @@ export function ExportDialog({ isOpen, onClose, currentNote, allNotes }: ExportD
         // Pass all notes to enable proper relationship sections
         await exportNote(currentNote, selectedFormat, allNotes);
       } else {
+        // For bulk export
+        if (allNotes.length === 0) {
+          throw new Error("No notes to export");
+        }
+        
+        // Add delay for better user feedback on larger exports
+        if (allNotes.length > 20) {
+          setError(`Preparing ${allNotes.length} notes for export... Please wait`);
+        }
+        
         await exportAllNotes(allNotes, selectedFormat);
       }
-      onClose();
+      
+      // Show success message briefly before closing
+      const itemsText = exportType === 'current' ? 'Note' : `${allNotes.length} notes`;
+      setError(`✅ ${itemsText} exported successfully as ${selectedFormat.toUpperCase()}!`);
+      setTimeout(() => onClose(), 1500);
     } catch (error) {
       console.error('Export failed:', error);
       setError(`Export failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -162,8 +176,20 @@ export function ExportDialog({ isOpen, onClose, currentNote, allNotes }: ExportD
           )}
           
           {error && (
-            <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-md flex items-start">
-              <AlertCircle size={18} className="flex-shrink-0 mt-0.5 mr-2" />
+            <div className={`mb-4 p-3 ${
+              error.includes('Preparing') 
+                ? 'bg-blue-50 text-blue-700' 
+                : error.includes('✅')
+                  ? 'bg-green-50 text-green-700'
+                  : 'bg-red-50 text-red-700'
+              } rounded-md flex items-start`}
+            >
+              {error.includes('Preparing') 
+                ? <FileDown size={18} className="flex-shrink-0 mt-0.5 mr-2 animate-pulse" />
+                : error.includes('✅')
+                  ? <FileDown size={18} className="flex-shrink-0 mt-0.5 mr-2" />
+                  : <AlertCircle size={18} className="flex-shrink-0 mt-0.5 mr-2" />
+              }
               <span className="text-sm">{error}</span>
             </div>
           )}

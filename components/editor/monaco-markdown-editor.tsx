@@ -31,6 +31,8 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
   const { notes } = useNotes();
   const { defineMonacoThemes } = useMonacoThemes();
   const [editorInstance, setEditorInstance] = React.useState<EditorInstance | null>(null);
+  // Reference to track the current note ID
+  const prevNoteIdRef = React.useRef<number | null>(null);
 
   // Get the appropriate font family based on font context
   const fontFamily = React.useMemo(() => {
@@ -39,6 +41,32 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
 
   // Manage cursor position and restoration (replaces useEditorFocus and previousContent logic)
   useEditorCursorState(editorInstance, note.id);
+
+  // Reset undo/redo stack when switching to a different note
+  React.useEffect(() => {
+    if (editorInstance && prevNoteIdRef.current !== note.id) {
+      // Create a new model with the current content to reset undo stack
+      const monaco = (window as any).monaco;
+      if (monaco) {
+        const model = editorInstance.getModel();
+        if (model) {
+          // Save the current content
+          const content = model.getValue();
+          
+          // Create a new model with the same content (resets undo history)
+          const newModel = monaco.editor.createModel(content, 'markdown');
+          
+          // Set the new model on the editor
+          editorInstance.setModel(newModel);
+          
+          // Dispose of the old model to prevent memory leaks
+          model.dispose();
+        }
+      }
+      
+      prevNoteIdRef.current = note.id;
+    }
+  }, [editorInstance, note.id]);
 
   // Update editor font and mobile settings when font type or window size changes
   React.useEffect(() => {
@@ -81,6 +109,7 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
   return (
     <div className="h-full w-full">
       <Editor
+        key={note.id} // Add key prop to force recreation of the editor instance when note.id changes
         height="100%"
         language="markdown"
         value={note.content}

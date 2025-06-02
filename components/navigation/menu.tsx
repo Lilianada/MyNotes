@@ -82,7 +82,7 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
             <div className="py-1 px-4">
               <p className="text-xs text-gray-500">Tools</p>
             </div>
-            <div className="p-2">
+            <div className="p-2 space-y-1">
               <button
                 onClick={() => {
                   setIsExportModalOpen(true);
@@ -94,6 +94,15 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
                 <Download className="w-4 h-4 mr-2" />
                 <span>Export</span>
               </button>
+              
+              <a
+                href="/recovery"
+                className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50 text-blue-600"
+                onClick={() => setIsOpen(false)}
+              >
+                <span className="mr-2 text-lg">🔄</span>
+                <span>Recover Content</span>
+              </a>
             </div>
           </div>
 
