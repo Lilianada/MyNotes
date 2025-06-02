@@ -162,3 +162,57 @@ export async function decrementStorage(userId: string, noteSize: number): Promis
     throw error;
   }
 }
+
+/**
+ * Get admin storage statistics for all users
+ * This function is only available to admin users
+ */
+export async function getAdminStorageStats(): Promise<{
+  adminStorage: number,
+  totalStorage: number,
+  userStorageList: UserStorage[]
+}> {
+  try {
+    // Get admin notes storage size
+    const adminNotes = await firebaseNotesService.getAllAdminNotes();
+    const adminStorage = calculateTotalStorage(adminNotes);
+    
+    // Get all user storage records
+    const userStorageList: UserStorage[] = [];
+    const usersRef = collection(db, 'users');
+    const usersSnapshot = await getDocs(usersRef);
+    
+    // Process each user
+    for (const userDoc of usersSnapshot.docs) {
+      const userId = userDoc.id;
+      const storageRef = doc(db, 'users', userId, 'storage', 'info');
+      const storageDoc = await getDoc(storageRef);
+      
+      if (storageDoc.exists()) {
+        const data = storageDoc.data();
+        userStorageList.push({
+          userId: userId,
+          totalStorage: data.totalStorage || 0,
+          maxStorage: data.maxStorage || 10 * 1024 * 1024,
+          noteCount: data.noteCount || 0,
+          lastUpdated: data.lastUpdated?.toDate() || new Date(),
+          isAdmin: data.isAdmin || false,
+          displayName: data.displayName || userId.substring(0, 8) + '...'
+        });
+      }
+    }
+    
+    // Calculate total storage (admin + all users)
+    const userStorage = userStorageList.reduce((total: number, user: UserStorage) => total + user.totalStorage, 0);
+    const totalStorage = adminStorage + userStorage;
+    
+    return {
+      adminStorage,
+      totalStorage,
+      userStorageList
+    };
+  } catch (error) {
+    console.error('Error getting admin storage stats:', error);
+    throw error;
+  }
+}
