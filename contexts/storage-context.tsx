@@ -3,9 +3,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserStorage, StorageAlert } from '@/types';
 import { useAuth } from '@/contexts/auth-context';
-import { getUserStorage, recalculateUserStorage } from '@/lib/firebase/firebase-storage';
+import { getUserStorage, recalculateUserStorage, getAdminStorageStats } from '@/lib/firebase/firebase-storage';
 import { checkStorageAlerts, getStoragePercentage } from '@/lib/storage/storage-utils';
 import { useToast } from '@/hooks/use-toast';
+
+interface AdminStorageStats {
+  adminStorage: number;
+  totalStorage: number;
+  userStorageList: UserStorage[];
+}
 
 interface StorageContextType {
   userStorage: UserStorage | null;
@@ -14,6 +20,8 @@ interface StorageContextType {
   isLoading: boolean;
   refreshStorage: () => Promise<void>;
   checkStorageLimit: (noteSize: number) => boolean;
+  adminStats: AdminStorageStats | null;
+  loadAdminStorageStats: () => Promise<void>;
 }
 
 const StorageContext = createContext<StorageContextType | undefined>(undefined);
@@ -24,6 +32,7 @@ export function StorageProvider({ children }: { children: ReactNode }) {
   const [storagePercentage, setStoragePercentage] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(false);
   const [lastAlertShown, setLastAlertShown] = useState<number>(0);
+  const [adminStats, setAdminStats] = useState<AdminStorageStats | null>(null);
   
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
@@ -32,10 +41,16 @@ export function StorageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (user) {
       loadUserStorage();
+      
+      // Load admin stats if user is admin
+      if (isAdmin) {
+        loadAdminStorageStats();
+      }
     } else {
       setUserStorage(null);
       setStorageAlert(null);
       setStoragePercentage(0);
+      setAdminStats(null);
     }
   }, [user, isAdmin]);
 
@@ -79,11 +94,35 @@ export function StorageProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       const storage = await recalculateUserStorage(user.uid, isAdmin);
       setUserStorage(storage);
+      
+      // Refresh admin stats if user is admin
+      if (isAdmin) {
+        await loadAdminStorageStats();
+      }
     } catch (error) {
       console.error('Error refreshing user storage:', error);
       toast({
         title: "Error",
         description: "Failed to refresh storage information.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadAdminStorageStats = async () => {
+    if (!user || !isAdmin) return;
+    
+    try {
+      setIsLoading(true);
+      const stats = await getAdminStorageStats();
+      setAdminStats(stats);
+    } catch (error) {
+      console.error('Error loading admin storage stats:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load admin storage statistics.",
         variant: "destructive",
       });
     } finally {
@@ -105,6 +144,8 @@ export function StorageProvider({ children }: { children: ReactNode }) {
         isLoading,
         refreshStorage,
         checkStorageLimit,
+        adminStats,
+        loadAdminStorageStats
       }}
     >
       {children}

@@ -97,8 +97,8 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
             </div>
           </div>
 
-              {/* Storage Info - only for authenticated non-admin users */}
-              {user && !isAdmin && (
+              {/* Storage Info - for all authenticated users */}
+              {user && (
           <div className="border-t border-gray-100 mt-2 pt-2">
             <div className="py-1 px-4">
               <p className="text-xs text-gray-500">Storage</p>
@@ -113,7 +113,7 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
                   className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50 mt-1"
                 >
                   <HardDrive className="w-4 h-4 mr-2" />
-                  <span>Storage Info</span>
+                  <span>{isAdmin ? "Storage Dashboard" : "Storage Info"}</span>
                 </button>
             </div>
           </div>

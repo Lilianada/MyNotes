@@ -43,6 +43,7 @@ export interface UserStorage {
   noteCount: number;
   lastUpdated: Date;
   isAdmin: boolean;
+  displayName?: string; // Optional user display name
 }
 
 // Storage alert interface

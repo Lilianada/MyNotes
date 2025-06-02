@@ -6,6 +6,7 @@ import { updateNoteContent, updateNoteTitle, updateNoteCategory, updateNoteTags,
 import { deleteNote, deleteMultipleNotes, bulkDeleteNotes, deleteCategory, deleteTagFromAllNotes } from './delete-operations';
 import { updateCategory, updateTagAcrossNotes } from './category-operations';
 import { getNoteHistory } from './history-operations';
+import { getAllAdminNotes, getAllUsersWithNotes } from './admin-operations';
 
 // Re-export helpers for use elsewhere
 export * from './helpers';
@@ -37,5 +38,9 @@ export const firebaseNotesService = {
   updateTagAcrossNotes: (oldTag: string, newTag: string, userId: string, isAdmin?: boolean) => updateTagAcrossNotes(oldTag, newTag, userId, isAdmin),
   
   // History operations
-  getNoteHistory: (noteId: number, userId: string, isAdmin?: boolean) => getNoteHistory(noteId, userId, isAdmin)
+  getNoteHistory: (noteId: number, userId: string, isAdmin?: boolean) => getNoteHistory(noteId, userId, isAdmin),
+  
+  // Admin operations
+  getAllAdminNotes: () => getAllAdminNotes(),
+  getAllUsersWithNotes: () => getAllUsersWithNotes()
 };
