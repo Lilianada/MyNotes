@@ -41,8 +41,6 @@ export const FilterBar: React.FC<FilterBarProps> = ({
         <ArchivesDropdown
           selectedArchive={selectedArchive}
           onSelectArchive={onSelectArchive}
-        />
-        <PublishedDropdown
           selectedPublished={selectedPublished}
           onSelectPublished={onSelectPublished}
         />

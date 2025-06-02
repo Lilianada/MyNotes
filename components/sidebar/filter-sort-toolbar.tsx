@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Filter, ArrowUpDown, Trash2, X, Tag, Archive, Folder, Globe } from 'lucide-react';
+import { Filter, ArrowUpDown, Trash2, X, Tag, Archive, Folder } from 'lucide-react';
 import TagsDropdown from '../filters/tags-dropdown';
 import CategoriesDropdown from '../filters/categories-dropdown';
 import ArchivesDropdown from '../filters/archives-dropdown';
-import PublishedDropdown from '../filters/published-dropdown';
 
 export type SortOption = 'updated' | 'created' | 'title' | 'wordCount';
 
@@ -190,14 +189,6 @@ export function FilterSortToolbar({
                         <ArchivesDropdown
                           selectedArchive={selectedArchive}
                           onSelectArchive={onSelectArchive}
-                        />
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-gray-400" />
-                      <div className="flex-1">
-                        <PublishedDropdown
                           selectedPublished={selectedPublished}
                           onSelectPublished={onSelectPublished}
                         />
