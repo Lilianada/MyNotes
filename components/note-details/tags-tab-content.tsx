@@ -60,10 +60,7 @@ export function TagsTabContent({
     }
 
     try {
-      // Create the tag in the system
-      await updateTagAcrossNotes('', trimmedTagName);
-      
-      // Add it to current selection if we have room
+      // Add the new tag to current selection if we have room
       if (currentTags.length < maxTagsAllowed) {
         onSelectTag(trimmedTagName);
       }
@@ -72,6 +69,9 @@ export function TagsTabContent({
       setNewTagName('');
       setNameError(null);
       setIsCreatingTag(false);
+      
+      // Note: The tag will be persisted when the user clicks "Apply Changes"
+      // and will then appear in the Available Tags section
     } catch (error: any) {
       setNameError(error.message || 'Failed to create tag');
     }
