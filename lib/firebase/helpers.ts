@@ -48,27 +48,28 @@ export const getUniqueSlug = async (baseSlug: string, notesRef: any): Promise<st
 };
 
 /**
- * Convert Firebase Timestamp to JavaScript Date
+ * Convert any timestamp format to JavaScript Date
+ * Simplified to handle the most common cases
  */
 export const convertTimestamp = (timestamp: any): Date => {
   if (!timestamp) return new Date();
   
-  // Check if it's a Firebase Timestamp object
-  if (timestamp && typeof timestamp.toDate === 'function') {
+  // Firebase Timestamp object with toDate method
+  if (typeof timestamp.toDate === 'function') {
     return timestamp.toDate();
   }
   
-  // Check if it's a server timestamp object (has seconds and nanoseconds)
-  if (timestamp && timestamp.seconds !== undefined && timestamp.nanoseconds !== undefined) {
+  // Object with seconds and nanoseconds (Firebase serialized timestamp)
+  if (timestamp.seconds !== undefined) {
     return new Date(timestamp.seconds * 1000);
   }
   
-  // If it's a Date object already
+  // Already a Date object
   if (timestamp instanceof Date) {
     return timestamp;
   }
   
-  // Otherwise try to convert from ISO string or timestamp
+  // String or number timestamp
   return new Date(timestamp);
 };
 

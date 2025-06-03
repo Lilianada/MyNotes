@@ -7,28 +7,13 @@ import { formatDistanceToNow, format, isValid } from 'date-fns';
 import { TabType } from './note-details-hooks';
 import { formatBytes } from '@/lib/storage/storage-utils';
 
+// Import the centralized timestamp converter
+import { convertTimestamp } from '@/lib/firebase/helpers';
+
 // Helper function to safely convert and validate dates
 const safeDate = (dateValue: any): Date => {
-  if (!dateValue) return new Date();
-  
-  let date: Date;
-  
-  // Handle Firebase Timestamp objects
-  if (dateValue && typeof dateValue.toDate === 'function') {
-    date = dateValue.toDate();
-  } 
-  // Handle server timestamp objects (has seconds and nanoseconds)
-  else if (dateValue && dateValue.seconds !== undefined && dateValue.nanoseconds !== undefined) {
-    date = new Date(dateValue.seconds * 1000);
-  }
-  // Handle Date objects
-  else if (dateValue instanceof Date) {
-    date = dateValue;
-  } 
-  // Handle string/number timestamps
-  else {
-    date = new Date(dateValue);
-  }
+  // Use the centralized converter function
+  const date = convertTimestamp(dateValue);
   
   // If the date is invalid, return current date as fallback
   return isValid(date) ? date : new Date();

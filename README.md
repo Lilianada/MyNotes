@@ -29,6 +29,20 @@ NoteItDown is a distraction-free Markdown-based writing app that supports focuse
 - **🎨 Customizable**: Themes, categories, and color-coded organization
 - **💾 Flexible Storage**: File system or cloud storage options
 
+## ⚡ Simplification Project (June 2025)
+
+We're currently undertaking a simplification project to make NoteItDown more maintainable and easier to work with:
+
+- **More Focused**: Reducing complexity while maintaining core features
+- **Better Architecture**: Consolidating fragmented components and utility functions
+- **Simpler Development**: Making it easier for contributors to understand and enhance
+
+See our simplification plans:
+- [Main Simplification Plan](./simplification-plan.md)
+- [Implementation Roadmap](./simplification-implementation-roadmap.md)
+- [Editor Component Simplification](./editor-simplification-plan.md)
+- [Note Details Simplification](./note-details-simplification-plan.md)
+
 ---
 
 ## ✨ Features

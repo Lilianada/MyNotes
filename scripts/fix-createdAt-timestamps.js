@@ -103,7 +103,7 @@ async function fixUserCreatedAtFields() {
       const notesSnapshot = await userNotesRef.get();
       
       let userFixed = 0;
-      const batch = db.batch();
+      let batch = db.batch();  // Changed to let instead of const
       let batchCount = 0;
       
       for (const noteDoc of notesSnapshot.docs) {
