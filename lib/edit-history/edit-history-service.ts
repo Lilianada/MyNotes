@@ -74,6 +74,7 @@ export class EditHistoryService {
 
   /**
    * Perform autosave - always save current state when leaving note
+   * This function saves content frequently without always creating history entries
    */
   private async performAutosave(
     noteId: number,
@@ -114,19 +115,36 @@ export class EditHistoryService {
       }
 
       console.log(`[EditHistory] Performing autosave for note ${noteId}`);
-
-      // Create history entry
-      const historyEntry = createHistoryEntry(lastContent, newContent, 'autosave');
       
-      // Save to storage with history
-      await this.saveWithHistory(noteId, newContent, historyEntry, isAdmin, user);
+      // Calculate change metrics for logging regardless of whether we create a history entry
+      const diff = calculateTextDifference(lastContent, newContent);
+      
+      // Check if the change is significant enough to create a history entry
+      const shouldAddToHistory = shouldCreateHistoryEntry(lastContent, newContent);
+      
+      if (shouldAddToHistory) {
+        console.log(`[EditHistory] Change is significant, adding to history for note ${noteId}`);
+        // Create history entry for significant changes
+        const historyEntry = createHistoryEntry(lastContent, newContent, 'autosave');
+        await this.saveWithHistory(noteId, newContent, historyEntry, isAdmin, user);
+      } else {
+        console.log(`[EditHistory] Change is minor, updating content without history entry for note ${noteId}`);
+        // For minor changes, just update content without adding to history
+        if (user && typeof firebaseNotesService?.updateNoteContent === 'function') {
+          await firebaseNotesService.updateNoteContent(noteId, newContent, user.uid, isAdmin);
+        } else if (typeof localStorageNotesService?.updateNoteContent === 'function') {
+          await localStorageNotesService.updateNoteContent(noteId, newContent);
+        }
+        // Update last saved content regardless
+        this.lastSavedContent.set(noteId, newContent);
+      }
 
       // Update tracking
       this.lastSavedContent.set(noteId, newContent);
       this.pendingChanges.delete(noteId);
       this.autosaveTimers.delete(noteId);
 
-      console.log(`[EditHistory] Autosaved note ${noteId} with ${historyEntry.changePercentage?.toFixed(1)}% changes`);
+      console.log(`[EditHistory] Autosaved note ${noteId} with ${diff.changePercentage.toFixed(1)}% changes`);
     } catch (error) {
       console.error(`[EditHistory] Failed to autosave note ${noteId}:`, error);
     }
