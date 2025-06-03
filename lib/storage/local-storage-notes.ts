@@ -87,8 +87,8 @@ export const localStorageNotesService = {
       
       const updatedHistory = [newEntry, ...history];
       
-      // Prune history to keep only the most recent 10 entries
-      const prunedHistory = updatedHistory.slice(0, 10);
+      // Prune history to keep only the most recent 20 entries (match DEFAULT_EDIT_HISTORY_CONFIG)
+      const prunedHistory = updatedHistory.slice(0, 20);
       
       window.localStorage.setItem(`note_history_${id}`, JSON.stringify(prunedHistory));
     } catch (error) {
@@ -103,8 +103,8 @@ export const localStorageNotesService = {
     }
     
     try {
-      // Prune history to keep only the most recent 10 entries
-      const prunedHistory = history.slice(0, 10);
+      // Prune history to keep only the most recent 20 entries (match DEFAULT_EDIT_HISTORY_CONFIG)
+      const prunedHistory = history.slice(0, 20);
       window.localStorage.setItem(`note_history_${id}`, JSON.stringify(prunedHistory));
     } catch (error) {
       console.error('Failed to update edit history:', error);
@@ -143,12 +143,34 @@ export const localStorageNotesService = {
   
   // Update a note's content
   updateNoteContent(id: number, content: string): void {
+    if (!id) {
+      console.error('[LocalStorage] Invalid note ID in updateNoteContent:', id);
+      return;
+    }
+    
+    if (content === undefined || content === null) {
+      console.error(`[LocalStorage] Invalid content in updateNoteContent for note ${id}`);
+      return;
+    }
+    
     const notes = this.getNotes();
+    const note = notes.find(n => n.id === id);
+    
+    if (!note) {
+      console.error(`[LocalStorage] Cannot update content: Note ${id} not found`);
+      return;
+    }
+    
     const wordCount = countWords(content);
     
     const updatedNotes = notes.map(note => {
       if (note.id === id) {
-        const updatedNote = { ...note, content, wordCount };
+        const updatedNote = { 
+          ...note, 
+          content, 
+          wordCount,
+          updatedAt: new Date() // Always update the timestamp
+        };
         updatedNote.fileSize = calculateNoteSize(updatedNote);
         return updatedNote;
       }
