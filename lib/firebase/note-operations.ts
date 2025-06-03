@@ -100,12 +100,15 @@ export const addNote = async (userId: string, noteTitle: string, isAdmin: boolea
       editType: 'create'
     }];
 
+    // Create a current timestamp to ensure consistency between Firebase and client
+    const currentTimestamp = new Date();
+    
     const noteData = {
       id: numericId,
       uniqueId,
       content: "",
       noteTitle,
-      createdAt: serverTimestamp(),
+      createdAt: serverTimestamp(), // Use serverTimestamp for database
       userId,
       slug,
       filePath: `notes/${slug}.md`,
@@ -121,12 +124,12 @@ export const addNote = async (userId: string, noteTitle: string, isAdmin: boolea
       uniqueId,
       content: "",
       noteTitle,
-      createdAt: new Date(),
+      createdAt: currentTimestamp, // Use consistent timestamp
       slug,
       wordCount: 0,
       tags: [],
       editHistory: [{
-        timestamp: new Date(),
+        timestamp: currentTimestamp, // Use consistent timestamp
         editType: 'create'
       }] as NoteEditHistory[],
       archived: false

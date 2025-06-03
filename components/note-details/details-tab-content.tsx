@@ -12,9 +12,21 @@ const safeDate = (dateValue: any): Date => {
   if (!dateValue) return new Date();
   
   let date: Date;
-  if (dateValue instanceof Date) {
+  
+  // Handle Firebase Timestamp objects
+  if (dateValue && typeof dateValue.toDate === 'function') {
+    date = dateValue.toDate();
+  } 
+  // Handle server timestamp objects (has seconds and nanoseconds)
+  else if (dateValue && dateValue.seconds !== undefined && dateValue.nanoseconds !== undefined) {
+    date = new Date(dateValue.seconds * 1000);
+  }
+  // Handle Date objects
+  else if (dateValue instanceof Date) {
     date = dateValue;
-  } else {
+  } 
+  // Handle string/number timestamps
+  else {
     date = new Date(dateValue);
   }
   

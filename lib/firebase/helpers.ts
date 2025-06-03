@@ -53,10 +53,22 @@ export const getUniqueSlug = async (baseSlug: string, notesRef: any): Promise<st
 export const convertTimestamp = (timestamp: any): Date => {
   if (!timestamp) return new Date();
   
-  if (timestamp instanceof Timestamp) {
+  // Check if it's a Firebase Timestamp object
+  if (timestamp && typeof timestamp.toDate === 'function') {
     return timestamp.toDate();
   }
   
+  // Check if it's a server timestamp object (has seconds and nanoseconds)
+  if (timestamp && timestamp.seconds !== undefined && timestamp.nanoseconds !== undefined) {
+    return new Date(timestamp.seconds * 1000);
+  }
+  
+  // If it's a Date object already
+  if (timestamp instanceof Date) {
+    return timestamp;
+  }
+  
+  // Otherwise try to convert from ISO string or timestamp
   return new Date(timestamp);
 };
 

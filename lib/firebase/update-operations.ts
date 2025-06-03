@@ -311,10 +311,13 @@ export const updateNoteData = async (noteId: number, updates: Partial<Note>, use
     };
     
     // Only add defined values from updates to avoid undefined values in Firestore
+    // Explicitly exclude createdAt to prevent it from being modified during updates
     Object.keys(updates).forEach(key => {
-      const value = (updates as any)[key];
-      if (value !== undefined) {
-        updateData[key] = value;
+      if (key !== 'createdAt') { // Protect createdAt from being modified
+        const value = (updates as any)[key];
+        if (value !== undefined) {
+          updateData[key] = value;
+        }
       }
     });
     
