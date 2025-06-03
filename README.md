@@ -17,7 +17,7 @@
 
 ## 🚀 Overview
 
-NoteItDown is a modern, feature-rich note-taking application that combines the simplicity of markdown with powerful organizational tools. Built with Next.js 15 and TypeScript, it offers a clean interface for creating, organizing, and connecting your thoughts.
+NoteItDown is a distraction-free Markdown-based writing app that supports focused note-taking and rich formatting. Built with Next.js 15 and TypeScript, it offers a clean interface for creating, organizing, and connecting your thoughts.
 
 ### Why NoteItDown?
 
