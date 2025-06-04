@@ -1,6 +1,6 @@
 "use client";
 
-import React, { forwardRef, useState } from "react";
+import React, { forwardRef } from "react";
 import dynamic from 'next/dynamic';
 import type { Note } from "@/types";
 import { useAppState } from "@/lib/state/app-state";
@@ -12,14 +12,13 @@ import { configureMarkdownLanguage } from '@/lib/markdown/monaco-markdown-comple
 import { configureWikiLinkCompletion } from '@/lib/markdown/monaco-wiki-links';
 import { Monaco, EditorInstance } from './types';
 import { Button } from '@/components/ui/button';
-import { Eye, EyeOff, Code, FileText, Copy, MoreVertical } from "lucide-react";
+import { Eye, Code, Copy, MoreVertical } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -79,48 +78,34 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
 
     return (
       <div className="flex flex-col h-full overflow-hidden">
-        {/* Note title editor */}
-        <NoteTitleEditor 
-          noteTitle={note.noteTitle} 
-          onUpdateTitle={onUpdateTitle}
-          noteId={note.id}
-        />
-        
-        {/* Editor toolbar */}
-        <div className="flex gap-2 py-2 px-1 border-b border-gray-200 dark:border-gray-800">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={togglePreview}
-            title={renderHTML ? "Show editor" : "Show preview"}
-          >
-            {renderHTML ? <Code size={16} /> : <Eye size={16} />}
-          </Button>
-          
-          {/* Copy button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              navigator.clipboard.writeText(note.content || "");
-              toast({
-                title: "Copied to clipboard",
-                description: "Note content copied to clipboard",
-                duration: 2000,
-              });
-            }}
-            title="Copy note content"
-          >
-            <Copy size={16} />
-          </Button>
-          
-          {/* Word count */}
-          <div className="flex items-center mx-2">
-            <WordCount content={note.content || ""} />
+        {/* Combined title and toolbar */}
+        <div className="flex items-center justify-between py-2 px-3 border-b border-gray-200 dark:border-gray-800">
+          {/* Title editor on the left */}
+          <div className="flex-grow mr-4">
+            <NoteTitleEditor 
+              noteTitle={note.noteTitle} 
+              onUpdateTitle={onUpdateTitle}
+              noteId={note.id}
+            />
           </div>
           
-          {/* Dropdown menu for additional options */}
-          <div className="ml-auto">
+          {/* Editor tools on the right */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={togglePreview}
+              title={renderHTML ? "Show editor" : "Show preview"}
+            >
+              {renderHTML ? <Code size={16} /> : <Eye size={16} />}
+            </Button>
+            
+            {/* Word count */}
+            <div className="flex items-center mx-2">
+              <WordCount content={note.content || ""} />
+            </div>
+            
+            {/* Dropdown menu for additional options */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm">

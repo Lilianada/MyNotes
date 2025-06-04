@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { formatWordCount, countWords } from '@/lib/data-processing/word-count';
 import { Copy, Check } from 'lucide-react';
+import { Button } from '../ui/button';
 
 interface WordCountProps {
   content: string;
@@ -52,7 +53,9 @@ export function WordCount({ content }: WordCountProps) {
   
   return (
     <div className="flex items-center space-x-2">
-      <button
+      <Button 
+              variant="outline"
+              size="sm"
         onClick={handleCopy}
         className="text-gray-500 hover:text-blue-500 focus:outline-none p-1 rounded-md hover:bg-gray-100 transition-colors"
         title="Copy markdown content"
@@ -62,7 +65,7 @@ export function WordCount({ content }: WordCountProps) {
         ) : (
           <Copy size={16} />
         )}
-      </button>
+      </Button>
       <div className="text-xs text-gray-500 px-2 py-1 inline-flex items-center rounded bg-gray-100">
         {formatWordCount(displayedCount)}
       </div>

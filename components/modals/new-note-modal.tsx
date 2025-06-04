@@ -42,7 +42,7 @@ const NoteTitleEditor: React.FC<NoteTitleEditorProps> = ({
   };
 
   return (
-    <div className="flex-1">
+    <div className="h-auto">
       {isEditingTitle ? (
         <input
           type="text"
