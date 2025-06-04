@@ -11,6 +11,7 @@ import { Header } from "@/components/navigation/header"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { TitleModal } from "@/components/modals/title-modal"
 import ExportDialog from "@/components/modals/export-dialog"
+import { logger } from "@/lib/utils/logger"
 import { 
   NoteErrorBoundary,
   SidebarErrorBoundary,
@@ -50,9 +51,9 @@ export default function Home() {
         const suggestedTitle = generateUniqueTitle(notes.map((note: any) => note.noteTitle))
         setTitleInput(suggestedTitle)
         setShowTitleModal(true)
-        console.log('Opening title modal with suggested title:', suggestedTitle)
+        logger.debug('Opening title modal with suggested title:', suggestedTitle)
       } catch (error) {
-        console.error('Error preparing note creation:', error)
+        logger.error('Error preparing note creation:', error)
         toast({
           title: 'Error',
           description: 'Failed to prepare note creation. Please try again.',
@@ -65,7 +66,7 @@ export default function Home() {
   
   // Define event handler outside useEffect to avoid hooks rule violations
   const handleToggleExportDialog = (event: Event) => {
-    console.log('Export dialog toggle event received')
+    logger.debug('Export dialog toggle event received')
     setIsExportModalOpen(prev => !prev)
   }
   
@@ -81,15 +82,25 @@ export default function Home() {
   // Create a new note with the given title
   const createNewNote = async (title: string) => {
     try {
-      await addNote(title)
+      const newNote = await addNote(title)
       toast({
         title: "Note created",
         description: `"${title}" has been created successfully.`,
       })
+      
+      // Clear the title input field
+      setTitleInput('')
+      
+      // Close the modal
       setShowTitleModal(false)
       setCreatingNote(false)
+      
+      // Select the new note to open the editor immediately
+      if (newNote && newNote.id) {
+        selectNote(newNote.id)
+      }
     } catch (error) {
-      console.error("Error creating note:", error)
+      logger.error("Error creating note:", error)
       toast({
         title: "Error creating note",
         description: "There was a problem creating your note. Please try again.",
@@ -139,7 +150,19 @@ export default function Home() {
           isCreatingNote={isCreatingNote}
         />
         
-        <main className="flex-1 grid gap-0 sm:gap-3 md:grid-cols-[300px_1fr] lg:grid-cols-[24%_75%] overflow-hidden relative main-content h-[calc(100vh-70px)]">
+        {/* Use CSS variables for header height to ensure consistent calculations */}
+        <style jsx global>{`
+          :root {
+            --header-height: 60px;
+          }
+          @media (max-width: 640px) {
+            :root {
+              --header-height: 56px;
+            }
+          }
+        `}</style>
+        
+        <main className="flex-1 grid gap-0 sm:gap-3 md:grid-cols-[300px_1fr] lg:grid-cols-[24%_75%] overflow-hidden relative main-content h-[calc(100vh-var(--header-height))]">
           {/* Mobile overlay to close sidebar when clicking outside */}
           {isSidebarOpen && (
             <div 
@@ -149,10 +172,12 @@ export default function Home() {
             />
           )}
           <SidebarErrorBoundary>
-            <List 
-              isSidebarOpen={isSidebarOpen}
-              onSelectNote={(note) => selectNote(note.id)}
-            />
+            <div className="h-[calc(100vh-var(--header-height))] overflow-y-auto">
+              <List 
+                isSidebarOpen={isSidebarOpen}
+                onSelectNote={(note) => selectNote(note.id)}
+              />
+            </div>
           </SidebarErrorBoundary>
           <div className="p-2 overflow-hidden editor-container mx-2 my-2 border border-gray-200 dark:border-gray-700 rounded-md">
             <EditorErrorBoundary>

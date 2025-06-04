@@ -127,39 +127,66 @@ export function useUnifiedEditorState(
     
     // Reset undo/redo stack when switching to a different note
     if (prevNoteIdRef.current !== note.id) {
-      const monaco = (window as any).monaco;
-      if (monaco) {
-        // Optimize model creation and disposal
-        const model = editorInstance.getModel();
-        if (model) {
-          // Store the current model in a cache for faster retrieval if we return to this note
-          const modelCache = (window as any).__noteModelsCache = (window as any).__noteModelsCache || {};
-          
-          // Save the current model to cache if it's not already there
-          if (prevNoteIdRef.current) {
-            modelCache[prevNoteIdRef.current] = model;
-          }
-          
-          // Check if we already have a model for this note
-          if (modelCache[note.id]) {
-            // Use the cached model
-            editorInstance.setModel(modelCache[note.id]);
-            // Focus the editor immediately for better UX
-            setTimeout(() => editorInstance.focus(), 0);
-          } else {
-            // Create a new model with the note content
-            const language = model.getLanguageId();
-            const content = note.content || '';
-            const newModel = monaco.editor.createModel(content, language);
-            editorInstance.setModel(newModel);
+      try {
+        const monaco = (window as any).monaco;
+        if (monaco) {
+          // Optimize model creation and disposal
+          const model = editorInstance.getModel();
+          if (model) {
+            // Store the current model in a cache for faster retrieval if we return to this note
+            const modelCache = (window as any).__noteModelsCache = (window as any).__noteModelsCache || {};
             
-            // Store in cache
-            modelCache[note.id] = newModel;
+            // Save the current model to cache if it's not already there
+            if (prevNoteIdRef.current) {
+              modelCache[prevNoteIdRef.current] = model;
+            }
             
-            // Focus the editor immediately
-            setTimeout(() => editorInstance.focus(), 0);
+            // Check if we already have a model for this note
+            if (modelCache[note.id]) {
+              try {
+                // Use the cached model
+                editorInstance.setModel(modelCache[note.id]);
+                // Focus the editor after a short delay to ensure the DOM is ready
+                setTimeout(() => {
+                  try {
+                    if (editorInstance && document.contains(editorInstance.getDomNode())) {
+                      editorInstance.focus();
+                    }
+                  } catch (focusError) {
+                    // Suppress focus errors
+                  }
+                }, 50);
+              } catch (modelError) {
+                // Handle model errors silently
+                delete modelCache[note.id]; // Remove invalid model from cache
+                try {
+                  // Create a new model as fallback
+                  const content = note.content || '';
+                  const newModel = monaco.editor.createModel(content, 'markdown');
+                  editorInstance.setModel(newModel);
+                  modelCache[note.id] = newModel;
+                } catch (fallbackError) {
+                  // Last resort - just log and continue
+                }
+              }
+            } else {
+              // Create a new model with the note content
+              try {
+                const language = model.getLanguageId();
+                const content = note.content || '';
+                const newModel = monaco.editor.createModel(content, language);
+                editorInstance.setModel(newModel);
+                
+                // Store in cache
+                modelCache[note.id] = newModel;
+              } catch (createError) {
+                // Suppress model creation errors
+              }
+            }
           }
         }
+      } catch (error) {
+        // Catch all errors to prevent console spam
       }
     }
     

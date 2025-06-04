@@ -12,7 +12,16 @@ import { configureMarkdownLanguage } from '@/lib/markdown/monaco-markdown-comple
 import { configureWikiLinkCompletion } from '@/lib/markdown/monaco-wiki-links';
 import { Monaco, EditorInstance } from './types';
 import { Button } from '@/components/ui/button';
-import { Eye, EyeOff, Code, FileText } from "lucide-react";
+import { Eye, EyeOff, Code, FileText, Copy, MoreVertical } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Dynamically import Monaco Editor with no SSR
 const MonacoEditor = dynamic(
@@ -30,6 +39,7 @@ interface UnifiedEditorProps {
 export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>(
   function UnifiedEditor({ note, onChange, onSave, onUpdateTitle }, ref) {
     const { notes } = useAppState();
+    const { toast } = useToast();
     
     // Use our consolidated hook for state management
     const {
@@ -81,23 +91,65 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={toggleEditorMode}
-            title={useMonacoEditor ? "Switch to plain text editor" : "Switch to Monaco editor"}
-          >
-            {useMonacoEditor ? <FileText size={16} /> : <Code size={16} />}
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            size="sm" 
             onClick={togglePreview}
             title={renderHTML ? "Show editor" : "Show preview"}
           >
             {renderHTML ? <Code size={16} /> : <Eye size={16} />}
           </Button>
           
-          <div className="ml-auto">
+          {/* Copy button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              navigator.clipboard.writeText(note.content || "");
+              toast({
+                title: "Copied to clipboard",
+                description: "Note content copied to clipboard",
+                duration: 2000,
+              });
+            }}
+            title="Copy note content"
+          >
+            <Copy size={16} />
+          </Button>
+          
+          {/* Word count */}
+          <div className="flex items-center mx-2">
             <WordCount content={note.content || ""} />
+          </div>
+          
+          {/* Dropdown menu for additional options */}
+          <div className="ml-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm">
+                  <MoreVertical size={16} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Editor Options</DropdownMenuLabel>
+                <DropdownMenuItem onClick={toggleEditorMode}>
+                  {useMonacoEditor ? "Switch to plain text editor" : "Switch to Monaco editor"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Keyboard Shortcuts</DropdownMenuLabel>
+                <div className="p-2 text-xs text-gray-500">
+                  <div className="flex justify-between mb-1">
+                    <span>Save</span>
+                    <span className="font-mono">Ctrl+S</span>
+                  </div>
+                  <div className="flex justify-between mb-1">
+                    <span>Bold</span>
+                    <span className="font-mono">Ctrl+B</span>
+                  </div>
+                  <div className="flex justify-between mb-1">
+                    <span>Italic</span>
+                    <span className="font-mono">Ctrl+I</span>
+                  </div>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         

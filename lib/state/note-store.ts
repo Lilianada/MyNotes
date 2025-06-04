@@ -76,8 +76,22 @@ interface NoteState {
   updateNoteData: (id: number, updatedNote: Partial<Note>, user: { uid: string } | null | undefined, isAdmin: boolean) => Promise<void>
 }
 
+// Function to initialize notes from local storage
+const initializeNotesFromStorage = () => {
+  try {
+    if (typeof window !== 'undefined') {
+      // Load notes from local storage
+      const localNotes = localStorageNotesService.getNotes();
+      return localNotes;
+    }
+  } catch (error) {
+    console.error('Failed to initialize notes from local storage:', error);
+  }
+  return [];
+};
+
 export const useNoteStore = create<NoteState>((set, get) => ({
-  notes: [],
+  notes: initializeNotesFromStorage(),
   setNotes: (notes) => set({ notes }),
   
   // Initialize required properties
@@ -93,16 +107,39 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       let newNote: Note;
       
       if (user) {
+        // For authenticated users, save to Firebase
         newNote = await firebaseNotesService.addNote(user.uid, noteTitle, isAdmin);
+        
+        // Also save to local storage as a backup/cache
+        try {
+          // Just save the note data directly to local storage as a cache
+          const localNotes = localStorageNotesService.getNotes();
+          localNotes.push(newNote);
+          window.localStorage.setItem('notes', JSON.stringify(localNotes));
+        } catch (localError) {
+          console.warn("Failed to cache note in local storage:", localError);
+        }
       } else {
+        // For offline users, save to local storage
         newNote = localStorageNotesService.addNote(noteTitle);
+        
+        // Verify the note was actually saved to local storage
+        const savedNotes = localStorageNotesService.getNotes();
+        const savedNote = savedNotes.find(note => note.id === newNote.id);
+        
+        if (!savedNote) {
+          console.error("Note was not properly saved to local storage");
+          // Force save again
+          localStorageNotesService.updateNoteData(newNote.id, newNote);
+        }
       }
       
+      // Update the state with the new note
       set((state) => ({ notes: [...state.notes, newNote] }));
       return newNote;
     } catch (error) {
       console.error("Failed to add note:", error);
-      throw new Error("Failed to create note");
+      throw error;
     }
   },
   

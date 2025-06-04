@@ -113,6 +113,10 @@ export const localStorageNotesService = {
   
   // Add a new note
   addNote(noteTitle: string): Note {
+    if (typeof window === 'undefined') {
+      throw new Error('Cannot add note: localStorage not available');
+    }
+    
     const notes = this.getNotes();
     
     // Generate a numeric ID and unique ID
@@ -128,15 +132,43 @@ export const localStorageNotesService = {
       content: "",
       noteTitle,
       createdAt: new Date(),
+      updatedAt: new Date(), // Add updatedAt field
       slug,
       wordCount: 0,
-      fileSize: calculateNoteSize({ content: "", noteTitle } as Note)
+      fileSize: calculateNoteSize({ content: "", noteTitle } as Note),
+      tags: [], // Initialize tags array
+      isLocalOnly: true // Mark as local-only for sync purposes
     };
     
+    // Add to beginning of notes array
     const updatedNotes = [newNote, ...notes];
-    window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
     
-    // Note: Creation history is managed by EditHistoryService, not added here
+    // Save to localStorage with error handling
+    try {
+      window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
+      
+      // Verify the note was saved
+      const savedNotesStr = window.localStorage.getItem('notes');
+      if (!savedNotesStr) {
+        console.error('Failed to save note: localStorage.getItem returned null');
+      }
+      
+      // Add creation history entry
+      this.addHistoryEntry(numericId, 'create');
+      
+      console.log(`Note created and saved to localStorage: ${noteTitle} (ID: ${numericId})`);
+    } catch (error) {
+      console.error('Failed to save note to localStorage:', error);
+      // Try with a smaller payload if storage quota might be exceeded
+      try {
+        const minimalNote = { ...newNote, content: "" };
+        const minimalNotes = [minimalNote, ...notes.map(n => ({ ...n, content: n.content?.substring(0, 100) || "" }))]; 
+        window.localStorage.setItem('notes', JSON.stringify(minimalNotes));
+        console.warn('Saved minimal version of notes due to storage constraints');
+      } catch (fallbackError) {
+        console.error('Critical: Failed to save even minimal notes:', fallbackError);
+      }
+    }
     
     return newNote;
   },
