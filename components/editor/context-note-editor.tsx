@@ -1,7 +1,7 @@
 "use client"
 
 import { forwardRef, useEffect, useRef } from "react"
-import { NoteEditor } from "./note-editor"
+import { UnifiedEditor } from "./unified-editor"
 import { editHistoryService } from "@/lib/edit-history/edit-history-service"
 import { useAppState } from "@/lib/state/app-state"
 import { Note } from "@/types"
@@ -67,7 +67,7 @@ export const ContextNoteEditor = forwardRef<HTMLTextAreaElement, ContextNoteEdit
   }
   
   return (
-    <NoteEditor
+    <UnifiedEditor
       note={note}
       onChange={handleContentChange}
       onSave={handleSave}

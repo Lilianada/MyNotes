@@ -153,7 +153,7 @@ export default function Home() {
         {/* Use CSS variables for header height to ensure consistent calculations */}
         <style jsx global>{`
           :root {
-            --header-height: 60px;
+            --header-height: 56px;
           }
           @media (max-width: 640px) {
             :root {
@@ -172,7 +172,7 @@ export default function Home() {
             />
           )}
           <SidebarErrorBoundary>
-            <div className="h-[calc(100vh-var(--header-height))] overflow-y-auto">
+            <div className="h-[calc(100vh-var(--header-height))] ">
               <List 
                 isSidebarOpen={isSidebarOpen}
                 onSelectNote={(note) => selectNote(note.id)}
@@ -207,6 +207,8 @@ export default function Home() {
           currentNote={currentNote}
           allNotes={notes}
         />
+        
+        {/* No shortcuts modal needed */}
       </div>
     </FontSwitcher>
   )

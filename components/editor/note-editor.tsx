@@ -253,9 +253,6 @@ export const NoteEditor = forwardRef<HTMLTextAreaElement, NoteEditorProps>(
           />
           <div className="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
             <WordCount content={note.content} />
-            <div className="hidden sm:block">
-              <EditorShortcuts />
-            </div>
             {!renderHTML && (
               <button
                 onClick={() => setUseMonacoEditor(prev => !prev)}

@@ -40,11 +40,11 @@ export function Notes() {
   
   return (
     <div className="w-full mx-auto max-h-[calc(100vh_-_70px)] h-full flex flex-col">
-      <div className="border border-gray-200 rounded-lg px-4 pt-4 bg-white dark:bg-gray-800 dark:border-gray-700 flex-1 flex flex-col overflow-auto">
+      {/* <div className="border border-gray-200 rounded-lg px-4 pt-4 bg-white dark:bg-gray-800 dark:border-gray-700 flex-1 flex flex-col overflow-auto">
+      </div> */}
         <div className="flex-1 overflow-hidden">
           <ContextNoteEditor key={selectedNote.id} note={selectedNote} />
         </div>
-      </div>
     </div>
   )
 }

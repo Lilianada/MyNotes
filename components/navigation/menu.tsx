@@ -9,6 +9,7 @@ import { StorageModal } from "@/components/modals/storage-modal"
 import { HelpCircle, Download, HardDrive } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useAppState } from "@/lib/state/app-state"
+import { useTheme } from "next-themes"
 
 interface MenuProps {
   isOpen: boolean
@@ -17,10 +18,18 @@ interface MenuProps {
 
 export function Menu({isOpen, setIsOpen }: MenuProps) {
   const { fontType, toggleFont } = useFont();
+  const { setTheme } = useTheme()
+  const { isAdmin, signOut } = useAuth()
+  const { toggleSidebar } = useAppState()
+  
+  // Toggle theme function
+  const toggleTheme = () => {
+    setTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark')
+  }
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
   const { notes } = useAppState();
-  const { user, isAdmin } = useAuth();
+  const { user } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
   
   const toggleMenu = () => {
@@ -89,9 +98,11 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
                 className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50"
                 disabled={notes.length === 0}
               >
-                <Download className="w-4 h-4 mr-2" />
+                {/* <Download className="w-4 h-4 mr-2" /> */}
                 <span>Export</span>
               </button>
+              
+              {/* Shortcuts button removed */}
             </div>
           </div>
 

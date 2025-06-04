@@ -1,6 +1,6 @@
 "use client";
 
-import React, { forwardRef } from "react";
+import React, { forwardRef, useState } from "react";
 import dynamic from 'next/dynamic';
 import type { Note } from "@/types";
 import { useAppState } from "@/lib/state/app-state";
@@ -132,22 +132,6 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                 <DropdownMenuItem onClick={toggleEditorMode}>
                   {useMonacoEditor ? "Switch to plain text editor" : "Switch to Monaco editor"}
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Keyboard Shortcuts</DropdownMenuLabel>
-                <div className="p-2 text-xs text-gray-500">
-                  <div className="flex justify-between mb-1">
-                    <span>Save</span>
-                    <span className="font-mono">Ctrl+S</span>
-                  </div>
-                  <div className="flex justify-between mb-1">
-                    <span>Bold</span>
-                    <span className="font-mono">Ctrl+B</span>
-                  </div>
-                  <div className="flex justify-between mb-1">
-                    <span>Italic</span>
-                    <span className="font-mono">Ctrl+I</span>
-                  </div>
-                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

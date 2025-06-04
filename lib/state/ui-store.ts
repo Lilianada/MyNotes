@@ -14,6 +14,8 @@ interface UIState {
   isCreatingNote: boolean
   setCreatingNote: (isCreating: boolean) => void
   
+  // No shortcuts modal state needed
+  
   // Note selection state
   selectedNoteId: number | null
   selectNote: (id: number | null) => void
@@ -28,6 +30,8 @@ export const useUIStore = create<UIState>((set) => ({
   // Note creation modal state
   isCreatingNote: false,
   setCreatingNote: (isCreating) => set({ isCreatingNote: isCreating }),
+  
+  // No shortcuts modal state needed
   
   // Note selection state
   selectedNoteId: null,

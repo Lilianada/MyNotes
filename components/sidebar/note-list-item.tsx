@@ -38,9 +38,9 @@ export default function NoteListItem({
   return (
     <li
       key={note.id}
-      className={`p-2 text-sm hover:bg-gray-50 rounded cursor-pointer flex items-center justify-between ${
+      className={`p-2 text-sm hover:bg-gray-50 rounded cursor-pointer flex items-center justify-between hover:bg-blue-50 transition-colors ${
         selectedNoteId === note.id ? "bg-blue-50" : ""
-      } ${isSelected ? "bg-blue-100" : ""}`}
+      } ${isSelected ? "bg-blue-50" : ""}`}
     >
       {/* Checkbox for selection mode */}
       {isSelectionMode && (

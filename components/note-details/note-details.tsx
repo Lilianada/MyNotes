@@ -3,14 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Note } from '@/types';
 import NoteRelationships from '@/components/relationships/note-relationships';
-import { NoteDetailsTabs } from './note-details-tabs';
-import { DetailsTabContent } from './details-tab-content';
-import { MetadataTabContent } from './metadata-tab-content';
-import { TagsTabContent } from './tags-tab-content';
-import { CategoryTabContent } from './category-tab-content';
-import { useNoteDetailsHooks } from './note-details-hooks';
-import { useCategoryHandlers } from './category-handlers';
-import { useNotes } from '@/contexts/notes/note-context';
+import { UnifiedNoteDetailsTabs, UnifiedTabContent } from './unified-note-details-tabs';
+import { useUnifiedNoteDetails } from './unified-note-details-hooks';
+import { useAppState } from '@/lib/state/app-state';
+import { logger } from '@/lib/utils/logger';
 
 interface NoteDetailsProps {
   note: Note;
@@ -19,116 +15,9 @@ interface NoteDetailsProps {
 }
 
 export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
-  const { updateNoteData } = useNotes();
-  const { notes, updateNoteTags, updateTagAcrossNotes, deleteTagFromAllNotes } = useNotes();
+  // The useUnifiedNoteDetails hook only needs note and isOpen
+  const hooks = useUnifiedNoteDetails(note, isOpen);
   
-  const {
-    activeTab,
-    setActiveTab,
-    editHistory,
-    isLoading,
-    categories,
-    setCategories,
-    description,
-    setDescription,
-    publishStatus,
-    setPublishStatus,
-    archived,
-    setArchived,
-    filePath,
-    setFilePath,
-    updateNote,
-    archiveNote,
-    loadEditHistory
-  } = useNoteDetailsHooks(note, isOpen);
-
-  const {
-    categories: categoryList,
-    setCategories: setCategoryList,
-    handleCategorySave,
-    handleUpdateCategory,
-    handleDeleteCategory
-  } = useCategoryHandlers(note, setActiveTab);
-
-  // Local state for tag selection management
-  const [pendingTags, setPendingTags] = useState<string[]>([]);
-
-  // Initialize pending tags when note changes or when entering tag selection mode
-  useEffect(() => {
-    if (note && activeTab === 'tags') {
-      setPendingTags(note.tags || []);
-    }
-  }, [note, activeTab]);
-
-  // Handle tag selection for multi-select mode
-  const handleTagSelection = (tag: string) => {
-    console.log(`Tag selected: ${tag}`);
-    
-    if (!note) return;
-    
-    // Always use multi-select behavior - update pending tags only
-    setPendingTags(prev => {
-      if (prev.includes(tag)) {
-        // Remove tag if it already exists
-        return prev.filter(t => t !== tag);
-      } else {
-        // Add tag if we're under the limit
-        if (prev.length < 5) {
-          return [...prev, tag];
-        } else {
-          console.log('Tag limit reached (5), cannot add more tags');
-          return prev;
-        }
-      }
-    });
-  };
-
-  // Apply pending tag changes
-  const handleApplyTagChanges = async () => {
-    if (!note) return;
-    
-    try {
-      const updatedTags = await updateNoteTags(note.id, pendingTags);
-      console.log('Tags updated successfully');
-      
-      // Update the note's tags in memory immediately for UI feedback
-      note.tags = updatedTags || pendingTags;
-      
-      // Reset pending tags to match the note's actual tags (clears the Apply/Cancel buttons)
-      setPendingTags(note.tags || []);
-    } catch (error) {
-      console.error('Failed to update tags:', error);
-    }
-  };
-
-  // Cancel tag selection mode
-  const handleCancelTagSelection = () => {
-    setPendingTags(note?.tags || []);
-  };
-
-  // Handle metadata save
-  const handleMetadataSave = async () => {
-    if (!note) return;
-
-    try {
-      // Create the updated note object with all metadata changes
-      const updatedNoteData = {
-        description,
-        publish: publishStatus,
-        archived,
-        filePath,
-        updatedAt: new Date()
-      };
-
-      // Update the note data using the general updateNoteData method
-      await updateNoteData(note.id, updatedNoteData);
-      
-      setActiveTab('details');
-    } catch (error) {
-      console.error('Failed to update metadata:', error);
-    }
-  };
-
   if (!isOpen) return null;
   
   return (
@@ -151,60 +40,11 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
           </button>
         </div>
         
-        <NoteDetailsTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+        <UnifiedNoteDetailsTabs activeTab={hooks.activeTab} setActiveTab={hooks.setActiveTab} />
         
         <div className="p-4">
-          {activeTab === 'details' && (
-            <DetailsTabContent 
-              note={note} 
-              editHistory={editHistory} 
-              isLoading={isLoading}
-              onTabChange={setActiveTab}
-              onRefreshHistory={loadEditHistory}
-            />
-          )}
-          
-          {activeTab === 'category' && (
-            <CategoryTabContent
-              note={note}
-              categories={categoryList || categories}
-              handleCategorySave={handleCategorySave}
-              handleUpdateCategory={handleUpdateCategory}
-              handleDeleteCategory={handleDeleteCategory}
-            />
-          )}
-          
-          {activeTab === 'relationships' && (
-            <NoteRelationships note={note} />
-          )}
-          
-          {activeTab === 'metadata' && (
-            <MetadataTabContent
-              note={note}
-              description={description}
-              setDescription={setDescription}
-              publishStatus={publishStatus}
-              setPublishStatus={setPublishStatus}
-              archived={archived}
-              setArchived={setArchived}
-              filePath={filePath}
-              setFilePath={setFilePath}
-              onSave={handleMetadataSave}
-            />
-          )}
-          
-          {activeTab === 'tags' && (
-            <TagsTabContent
-              note={note}
-              notes={notes}
-              updateTagAcrossNotes={updateTagAcrossNotes}
-              deleteTagFromAllNotes={deleteTagFromAllNotes}
-              onSelectTag={handleTagSelection}
-              pendingTags={pendingTags}
-              onApplyTagChanges={handleApplyTagChanges}
-              onCancelTagSelection={handleCancelTagSelection}
-            />
-          )}
+          {/* The UnifiedTabContent component handles all tab content rendering */}
+          {note && <UnifiedTabContent tab={hooks.activeTab} note={note} hooks={hooks} />}
         </div>
       </div>
     </div>
