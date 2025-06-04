@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { Note } from "@/types";
-import { useNotes } from "@/contexts/notes/note-context";
 import { useToast } from "@/hooks/use-toast";
 import { useSortedAndFilteredNotes, type FilterOptions } from "./note-filtering";
 import type { SortOption } from "./filter-sort-toolbar";
+import { useAppState } from "@/lib/state/app-state";
 
 /**
  * Custom hook for managing sidebar state
  */
 export function useSidebarState() {
-  // Note state from context
+  // Note state from app state
   const { 
     notes, 
     selectNote, 
@@ -18,7 +18,7 @@ export function useSidebarState() {
     bulkDeleteNotes,
     getChildNotes,
     getLinkedNotes
-  } = useNotes();
+  } = useAppState();
 
   // Local state
   const [isDeleting, setIsDeleting] = useState<number | null>(null);

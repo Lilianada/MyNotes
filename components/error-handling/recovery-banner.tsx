@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { useNotes } from "@/contexts/notes/note-context";
-import { useToast } from "@/hooks/use-toast";
+import { useAppState } from "@/lib/state/app-state";
+import { useToast } from "@/components/ui/use-toast";
 
 /**
  * A banner component that appears when the app detects potential issues
@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
  */
 export function RecoveryBanner() {
   const [showBanner, setShowBanner] = useState(false);
-  const { notes, isLoading, setNotes } = useNotes();
+  const { notes, isLoading, setNotes } = useAppState();
   const { toast } = useToast();
   
   // Check for potential recovery scenarios

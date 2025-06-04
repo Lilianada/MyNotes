@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import { RefreshCw } from "lucide-react";
-import { useNotes } from "@/contexts/notes/note-context";
+import { useAppState } from "@/lib/state/app-state";
 
 export function NoteErrorDetector() {
   const [showBanner, setShowBanner] = useState(false);
-  const { notes, isLoading } = useNotes();
+  const { notes, isLoading } = useAppState();
 
   // Check if we have the "feature disabled" state
   useEffect(() => {

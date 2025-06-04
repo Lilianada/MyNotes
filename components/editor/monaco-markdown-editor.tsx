@@ -7,7 +7,7 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { useFont } from '@/contexts/font-context';
 import { useMonacoThemes } from '@/hooks/use-monaco-themes';
-import { useNotes } from "@/contexts/notes/note-context";
+import { useAppState } from "@/lib/state/app-state";
 import { configureMarkdownLanguage } from '@/lib/markdown/monaco-markdown-completions';
 import { configureWikiLinkCompletion } from '@/lib/markdown/monaco-wiki-links';
 import { MonacoEditorProps, Monaco, EditorInstance } from './types';
@@ -28,7 +28,7 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
   const { theme } = useTheme();
   const { fontType } = useFont();
   const isDarkTheme = theme === 'dark';
-  const { notes } = useNotes();
+  const { notes } = useAppState();
   const { defineMonacoThemes } = useMonacoThemes();
   const [editorInstance, setEditorInstance] = React.useState<EditorInstance | null>(null);
   // Reference to track the current note ID
@@ -103,7 +103,7 @@ export function MonacoMarkdownEditor({ note, onChange, onSave }: MonacoEditorPro
 
     // Configure markdown language features
     configureMarkdownLanguage(monaco);
-    configureWikiLinkCompletion(monaco, notes.map(note => note.noteTitle));
+    configureWikiLinkCompletion(monaco, notes.map((note: any) => note.noteTitle));
   };
 
   return (

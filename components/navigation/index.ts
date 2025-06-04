@@ -1,3 +1,3 @@
 "use client";
 
-export { default as NoteTitleEditor } from './note-title-editor';
+export { default as NoteTitleEditor } from '../modals/new-note-modal';

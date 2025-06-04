@@ -1,7 +1,7 @@
 import React from "react";
 import { Note } from "@/types";
 import DeleteConfirmation from "../modals/delete-confirmation";
-import NoteDetails from "@/components/note-details/note-details";
+import { UnifiedNoteDetails } from "@/components/note-details";
 
 interface SidebarDialogsProps {
   // Delete dialog
@@ -62,7 +62,7 @@ export function SidebarDialogs({
 
       {/* Note Details Dialog */}
       {activeNote && isDetailsOpen && (
-        <NoteDetails
+        <UnifiedNoteDetails
           isOpen={isDetailsOpen}
           onClose={onCloseDetails}
           note={activeNote}

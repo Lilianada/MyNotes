@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useNotes } from '@/contexts/notes/note-context';
+import { useAppState } from '@/lib/state/app-state';
 import { useUserPreferences } from '@/contexts/user-preferences-context';
 import { Tag, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ export const TagsDropdown: React.FC<TagsDropdownProps> = ({
   selectedTag,
   onSelectTag,
 }) => {
-  const { notes } = useNotes();
+  const { notes } = useAppState();
   const { addRecentTag } = useUserPreferences();
   const [tagCounts, setTagCounts] = useState<{tag: string, count: number}[]>([]);
 
@@ -31,9 +31,9 @@ export const TagsDropdown: React.FC<TagsDropdownProps> = ({
   useEffect(() => {
     const tagsMap = new Map<string, number>();
     
-    notes.forEach(note => {
+    notes.forEach((note: { tags?: string[] }) => {
       if (note.tags && note.tags.length > 0) {
-        note.tags.forEach(tag => {
+        note.tags.forEach((tag: string) => {
           tagsMap.set(tag, (tagsMap.get(tag) || 0) + 1);
         });
       }

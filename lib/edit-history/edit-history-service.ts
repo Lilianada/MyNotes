@@ -8,7 +8,8 @@ import {
   DEFAULT_EDIT_HISTORY_CONFIG, 
   shouldCreateHistoryEntry, 
   createHistoryEntry, 
-  pruneHistoryEntries 
+  pruneHistoryEntries,
+  calculateTextDifference 
 } from './index';
 
 /**
@@ -19,6 +20,7 @@ export class EditHistoryService {
   private pendingChanges: Map<number, string> = new Map(); // Track pending content changes
   private lastSavedContent: Map<number, string> = new Map(); // Track last saved content
   private autosaveTimers: Map<number, NodeJS.Timeout> = new Map(); // Track autosave timers
+  private activeNoteIds: Set<number> = new Set(); // Track active notes to prevent memory leaks
 
   constructor(config?: EditHistoryConfig) {
     this.config = config || DEFAULT_EDIT_HISTORY_CONFIG;
@@ -46,9 +48,11 @@ export class EditHistoryService {
       return;
     }
     
+    // Add to active notes set
+    this.activeNoteIds.add(noteId);
+    
     // Initialize tracking if this is the first change for this note
     if (!this.lastSavedContent.has(noteId)) {
-      console.log(`[EditHistory] Initializing tracking for note ${noteId} in trackContentChange`);
       this.initializeTracking(noteId, newContent);
       return; // No need to schedule autosave on first change
     }
@@ -60,6 +64,7 @@ export class EditHistoryService {
     const existingTimer = this.autosaveTimers.get(noteId);
     if (existingTimer) {
       clearTimeout(existingTimer);
+      this.autosaveTimers.delete(noteId); // Ensure we clean up the map entry
     }
 
     // Set new timer for autosave
@@ -68,8 +73,6 @@ export class EditHistoryService {
     }, this.config.autosaveInterval);
 
     this.autosaveTimers.set(noteId, timer);
-    
-    console.log(`[EditHistory] Tracking change for note ${noteId}, scheduled autosave in ${this.config.autosaveInterval/1000}s`);
   }
 
   /**
@@ -320,6 +323,9 @@ export class EditHistoryService {
    * Initialize tracking for a note
    */
   initializeTracking(noteId: number, initialContent: string): void {
+    // Add to active notes set
+    this.activeNoteIds.add(noteId);
+    
     this.lastSavedContent.set(noteId, initialContent);
     this.pendingChanges.delete(noteId);
     
@@ -345,11 +351,9 @@ export class EditHistoryService {
     // We'll try to save the content if there are pending changes that are different
     // from the last saved content
     if (pendingContent && lastContent && pendingContent !== lastContent) {
-      console.log(`[EditHistory] Saving pending changes before cleanup for note ${noteId}`);
-      
       // Skip the save if we're running in test environment
       if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
-        console.log(`[EditHistory] Skipping save during cleanup - running in test environment`);
+        // Skip save in test environment
       } else {
         // In production, try to check if the note exists first
         try {
@@ -362,11 +366,7 @@ export class EditHistoryService {
               // No need to await, we're just ensuring the change gets queued
               this.forceSave(noteId, pendingContent, 'autosave', false, null)
                 .catch(error => console.error(`[EditHistory] Error saving before cleanup: ${error}`));
-            } else {
-              console.log(`[EditHistory] Skipping save during cleanup - note ${noteId} does not exist in storage`);
             }
-          } else {
-            console.log(`[EditHistory] Skipping save during cleanup - storage service unavailable`);
           }
         } catch (error) {
           // Just log the error without stopping cleanup
@@ -375,7 +375,8 @@ export class EditHistoryService {
       }
     }
     
-    console.log(`[EditHistory] Cleaning up tracking for note ${noteId}`);
+    // Remove from active notes set
+    this.activeNoteIds.delete(noteId);
     
     // Clear tracking maps
     this.lastSavedContent.delete(noteId);
@@ -393,10 +394,27 @@ export class EditHistoryService {
    * Cleanup all tracking (call on app unmount)
    */
   cleanup(): void {
+    // Save any pending changes before cleanup
+    this.activeNoteIds.forEach(noteId => {
+      const pendingContent = this.pendingChanges.get(noteId);
+      const lastContent = this.lastSavedContent.get(noteId);
+      
+      if (pendingContent && lastContent && pendingContent !== lastContent) {
+        try {
+          // Try to save pending changes without awaiting
+          this.forceSave(noteId, pendingContent, 'autosave', false, null)
+            .catch(() => {}); // Silently catch errors during cleanup
+        } catch (error) {
+          // Ignore errors during cleanup
+        }
+      }
+    });
+    
     // Clear all timers
     this.autosaveTimers.forEach(timer => clearTimeout(timer));
     
     // Clear all tracking
+    this.activeNoteIds.clear();
     this.lastSavedContent.clear();
     this.pendingChanges.clear();
     this.autosaveTimers.clear();

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { User } from "firebase/auth";
@@ -36,13 +36,25 @@ export function AuthDialog({
 }: AuthDialogProps) {
   const [open, setOpen] = useState(!!showDialog);
   const { user, isAdmin, loading, signInWithGoogle, signOut } = useAuth();
-
+  
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (onOpenChange) {
       onOpenChange(newOpen);
     }
   };
+  
+  // Listen for toggle event
+  useEffect(() => {
+    const handleToggleDialog = () => {
+      handleOpenChange(!open);
+    };
+    
+    window.addEventListener('toggle-auth-dialog', handleToggleDialog);
+    return () => {
+      window.removeEventListener('toggle-auth-dialog', handleToggleDialog);
+    };
+  }, [open, handleOpenChange]);
 
   // Handle clicking outside to close
   const handleClickOutside = (e: React.MouseEvent) => {
@@ -63,7 +75,7 @@ export function AuthDialog({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]"
       onClick={handleClickOutside}
       style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0 }}
     >

@@ -28,7 +28,15 @@ export function useEditHistory(
   // Initialize tracking when note changes
   useEffect(() => {
     // Only proceed if we have a note
-    if (!note) return;
+    if (!note) {
+      // If we had a previous note and now we don't, clean it up
+      if (previousNoteIdRef.current !== null) {
+        editHistoryService.cleanupTracking(previousNoteIdRef.current);
+        isInitializedRef.current.delete(previousNoteIdRef.current);
+        previousNoteIdRef.current = null;
+      }
+      return;
+    }
     
     // If the note ID has changed, clean up the previous note
     if (previousNoteIdRef.current !== null && 
@@ -46,29 +54,29 @@ export function useEditHistory(
     
     // Update previous note ID reference
     previousNoteIdRef.current = note.id;
-  }, [note]);
-
-  // Cleanup on unmount
-  useEffect(() => {
+    
+    // Cleanup function for when component unmounts or note changes
     return () => {
-      if (note && note.id) {
-        try {
-          // Clean up specifically for the current note
-          editHistoryService.cleanupTracking(note.id);
-          isInitializedRef.current.delete(note.id);
-        } catch (error) {
-          console.error(`Error during cleanup for note ${note.id}:`, error);
-        }
-      } else {
-        // Fallback to full cleanup when no note exists
-        try {
-          editHistoryService.cleanup();
-        } catch (error) {
-          console.error('Error during general cleanup:', error);
-        }
+      if (previousNoteIdRef.current !== null) {
+        editHistoryService.cleanupTracking(previousNoteIdRef.current);
       }
     };
   }, [note]);
+
+  // Global cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Clean up all tracked notes to prevent memory leaks
+      try {
+        // Use the cleanup method which handles all active notes
+        editHistoryService.cleanup();
+        // Clear our initialization tracking set
+        isInitializedRef.current.clear();
+      } catch (error) {
+        console.error('Error during history cleanup:', error);
+      }
+    };
+  }, []);
 
   /**
    * Track content changes and trigger autosave
@@ -191,32 +199,38 @@ export function useEditorWithHistory(
 
   // Handle page unload to force save pending changes
   useEffect(() => {
-    const handleBeforeUnload = async (e: BeforeUnloadEvent) => {
-      if (!note) return;
+    // Create a stable reference to the handler function
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Skip if there's no note
+      if (!note || !note.id) return;
       
       // Check if there are unsaved changes
       const hasUnsavedChanges = lastContentRef.current && lastContentRef.current !== note.content;
       
-      if (note && hasUnsavedChanges) {
+      if (hasUnsavedChanges) {
+        // Standard way to show confirmation dialog on page unload
         e.preventDefault();
         e.returnValue = '';
         
+        // Try to save without awaiting (we can't await during beforeunload)
         try {
-          // Make sure we're saving with the correct note ID
-          console.log(`[EditHistory] Saving note ${note.id} before unload`);
-          await forceSave(lastContentRef.current, 'update');
+          // Use forceSave without awaiting
+          forceSave(lastContentRef.current, 'update');
         } catch (error) {
-          console.error('Failed to save on page unload:', error);
+          // Just log the error - we can't do much else during unload
+          console.error('Error during unload save:', error);
         }
       }
     };
 
+    // Add the event listener
     window.addEventListener('beforeunload', handleBeforeUnload);
     
+    // Clean up the event listener on unmount
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [note, forceSave]);
+  }, [note, forceSave]); // Only re-attach when note or forceSave changes
 
   return {
     handleContentChange,

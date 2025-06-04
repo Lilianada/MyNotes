@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useNotes } from '@/contexts/notes/note-context';
+import { useAppState } from '@/lib/state/app-state';
 import { useUserPreferences } from '@/contexts/user-preferences-context';
 import { Folder, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,7 +23,7 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({
   selectedCategory,
   onSelectCategory,
 }) => {
-  const { notes } = useNotes();
+  const { notes } = useAppState();
   const { addRecentCategory } = useUserPreferences();
   const [categoryCounts, setCategoryCounts] = useState<{
     id: string;
@@ -41,7 +41,7 @@ export const CategoriesDropdown: React.FC<CategoriesDropdownProps> = ({
       count: number;
     }>();
     
-    notes.forEach(note => {
+    notes.forEach((note: any) => {
       if (note.category) {
         const existing = categoriesMap.get(note.category.id);
         if (existing) {

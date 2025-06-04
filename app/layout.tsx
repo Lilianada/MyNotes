@@ -7,11 +7,12 @@ import "../styles/markdown.css"
 import "../styles/editor-preview.css"
 import "../styles/monaco-editor.css"
 import { FontProvider } from "@/contexts/font-context"
-import { NoteProvider } from "@/contexts/notes/note-context"
-import { AuthProvider } from "@/contexts/auth-context"
 import { StorageProvider } from "@/contexts/storage-context"
 import { UserPreferencesProvider } from "@/contexts/user-preferences-context"
 import { Toaster } from "@/components/ui/toaster"
+import { AppErrorBoundary } from "@/components/error-handling"
+import { AutoHistoryCleanup } from "@/components/utils/auto-history-cleanup"
+import { AuthProvider } from "@/contexts/auth-context"
 
 export const metadata: Metadata = {
   title: "NoteItDown App",
@@ -29,22 +30,23 @@ export function generateViewport() {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  // Use GeistSans as the default font for better editing experience
+  // Use GeistMono as the default font for better editing experience
   return (
     <html lang="en">
       <body className={GeistMono.className}>
-        <AuthProvider>
-          <StorageProvider>
-            <UserPreferencesProvider>
-              <FontProvider>
-                <NoteProvider>
+        <AppErrorBoundary>
+          <AuthProvider>
+            <StorageProvider>
+              <UserPreferencesProvider>
+                <FontProvider>
                   {children}
+                  <AutoHistoryCleanup />
                   <Toaster />
-                </NoteProvider>
-              </FontProvider>
-            </UserPreferencesProvider>
-          </StorageProvider>
-        </AuthProvider>
+                </FontProvider>
+              </UserPreferencesProvider>
+            </StorageProvider>
+          </AuthProvider>
+        </AppErrorBoundary>
       </body>
     </html>
   )

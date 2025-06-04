@@ -3,13 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Menu } from "./menu";
 import { Menu as MenuIcon, X, Plus, Search, UserCircle } from "lucide-react";
-import { useNotes } from "@/contexts/notes/note-context";
 import SearchNotes from "@/components/notes/search-notes";
-import { AuthDialog } from "@/components/auth/auth-dialog";
 import { useAuth } from "@/contexts/auth-context";
 import { useStorage } from "@/contexts/storage-context";
 import { StorageProgress } from "@/components/ui/storage-progress";
 import { Note } from "@/types";
+import { useAppState } from "@/lib/state/app-state";
 
 interface HeaderProps {
   onNewNote: () => void;
@@ -27,7 +26,8 @@ export function Header({
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  const { notes, selectNote } = useNotes();
+  const [showAuthDialog, setShowAuthDialog] = useState(false);
+  const { notes, selectNote, setCreatingNote } = useAppState();
   const searchRef = useRef<HTMLDivElement>(null);
   const { user, isAdmin } = useAuth();
   const { userStorage, storagePercentage } = useStorage();
@@ -106,7 +106,15 @@ export function Header({
       {/* We've replaced the mobile overlay with a universal dropdown approach */}
       <div className="flex items-center gap-4">
         <button
-          onClick={onNewNote}
+          onClick={() => {
+            // Directly set the creating note state in Zustand
+            if (!isCreatingNote) {
+              console.log('Setting creating note state to true');
+              setCreatingNote(true);
+              // Also call the prop method for backward compatibility
+              if (onNewNote) onNewNote();
+            }
+          }}
           disabled={isCreatingNote}
           className={`p-1.5 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 
             ${
@@ -120,23 +128,20 @@ export function Header({
           <Plus size={18} className={isCreatingNote ? "animate-pulse" : ""} />
         </button>
         <Menu isOpen={menuOpen} setIsOpen={setMenuOpen} />
-        <AuthDialog
-          trigger={
-            <button
-              className="p-1.5 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-              aria-label="Account"
-              title="Account"
-            >
-              <div className="flex items-center">
-                {isAdmin || user ? (
-                  <UserCircle size={18} className="text-green-500" />
-                ) : (
-                  <UserCircle size={18} className="text-gray-500" />
-                )}
-              </div>
-            </button>
-          }
-        />
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('toggle-auth-dialog'))}
+          className="p-1.5 hover:bg-gray-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+          aria-label="Account"
+          title="Account"
+        >
+          <div className="flex items-center">
+            {isAdmin || user ? (
+              <UserCircle size={18} className="text-green-500" />
+            ) : (
+              <UserCircle size={18} className="text-gray-500" />
+            )}
+          </div>
+        </button>
       </div>
     </header>
   );

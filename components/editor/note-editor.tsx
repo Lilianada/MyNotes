@@ -7,7 +7,7 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import { useFont } from '@/contexts/font-context';
 import MarkdownRenderer from "@/components/markdown/markdown-renderer";
-import NoteTitleEditor from "@/components/navigation/note-title-editor";
+import NoteTitleEditor from "@/components/modals/new-note-modal";
 import WordCount from "@/components/utils/word-count";
 import EditorShortcuts from "./editor-shortcuts";
 import MonacoMarkdownEditor from "./monaco-markdown-editor";

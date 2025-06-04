@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserStorage, StorageAlert } from '@/types';
-import { useAuth } from '@/contexts/auth-context';
+// Remove dependency on auth context
 import { getUserStorage, recalculateUserStorage, getAdminStorageStats } from '@/lib/firebase/firebase-storage';
 import { checkStorageAlerts, getStoragePercentage } from '@/lib/storage/storage-utils';
 import { useToast } from '@/hooks/use-toast';
@@ -34,25 +34,93 @@ export function StorageProvider({ children }: { children: ReactNode }) {
   const [lastAlertShown, setLastAlertShown] = useState<number>(0);
   const [adminStats, setAdminStats] = useState<AdminStorageStats | null>(null);
   
-  const { user, isAdmin } = useAuth();
+  // Use local state instead of auth context
+  const [user, setUser] = useState<{ uid: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const { toast } = useToast();
-
-  // Initialize storage when user changes
-  useEffect(() => {
-    if (user) {
-      loadUserStorage();
+  
+  // Simplified version that works with local storage only
+  const loadUserStorage = async () => {
+    try {
+      setIsLoading(true);
       
-      // Load admin stats if user is admin
-      if (isAdmin) {
-        loadAdminStorageStats();
+      // Calculate storage used from localStorage
+      let totalSize = 0;
+      let noteCount = 0;
+      
+      // Get notes from localStorage
+      const notesString = localStorage.getItem('notes');
+      if (notesString) {
+        try {
+          const notes = JSON.parse(notesString);
+          noteCount = notes.length;
+          
+          // Calculate total size
+          totalSize = notesString.length * 2; // Approximate size in bytes (UTF-16)
+          
+          // Add size of note histories
+          notes.forEach((note: any) => {
+            const historyKey = `note_history_${note.id}`;
+            const historyString = localStorage.getItem(historyKey);
+            if (historyString) {
+              totalSize += historyString.length * 2; // Approximate size in bytes
+            }
+          });
+        } catch (e) {
+          console.error('Error parsing notes from localStorage:', e);
+        }
       }
-    } else {
-      setUserStorage(null);
-      setStorageAlert(null);
-      setStoragePercentage(0);
-      setAdminStats(null);
+      
+      // Update storage info
+      const updatedStorage: UserStorage = {
+        userId: 'local-user',
+        totalStorage: totalSize,
+        maxStorage: 10 * 1024 * 1024, // 10MB default
+        noteCount: noteCount,
+        lastUpdated: new Date(),
+        isAdmin: false
+      };
+      
+      setUserStorage(updatedStorage);
+    } catch (error) {
+      console.error('Error calculating local storage:', error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [user, isAdmin]);
+  };
+  
+  // Simplified refresh function
+  const refreshStorage = async () => {
+    try {
+      setIsLoading(true);
+      await loadUserStorage();
+    } catch (error) {
+      console.error('Error refreshing storage:', error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh storage information.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initialize with local storage values
+  useEffect(() => {
+    // Load storage info on mount
+    loadUserStorage();
+    
+    // Set up periodic refresh (every 5 minutes)
+    const refreshInterval = setInterval(() => {
+      refreshStorage();
+    }, 5 * 60 * 1000);
+    
+    // Clean up interval on unmount
+    return () => {
+      clearInterval(refreshInterval);
+    };
+  }, []);
 
   // Check for storage alerts when storage changes
   useEffect(() => {
@@ -73,65 +141,14 @@ export function StorageProvider({ children }: { children: ReactNode }) {
     }
   }, [userStorage, toast, lastAlertShown]);
 
-  const loadUserStorage = async () => {
-    if (!user) return;
-    
-    try {
-      setIsLoading(true);
-      const storage = await getUserStorage(user.uid, isAdmin);
-      setUserStorage(storage);
-    } catch (error) {
-      console.error('Error loading user storage:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const refreshStorage = async () => {
-    if (!user) return;
-    
-    try {
-      setIsLoading(true);
-      const storage = await recalculateUserStorage(user.uid, isAdmin);
-      setUserStorage(storage);
-      
-      // Refresh admin stats if user is admin
-      if (isAdmin) {
-        await loadAdminStorageStats();
-      }
-    } catch (error) {
-      console.error('Error refreshing user storage:', error);
-      toast({
-        title: "Error",
-        description: "Failed to refresh storage information.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // Simplified admin stats function (no-op in local mode)
   const loadAdminStorageStats = async () => {
-    if (!user || !isAdmin) return;
-    
-    try {
-      setIsLoading(true);
-      const stats = await getAdminStorageStats();
-      setAdminStats(stats);
-    } catch (error) {
-      console.error('Error loading admin storage stats:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load admin storage statistics.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    // No admin stats in local mode
+    return;
   };
 
   const checkStorageLimit = (noteSize: number): boolean => {
-    if (!userStorage || isAdmin) return true; // Admins have no limits
+    if (!userStorage) return true; // No storage info yet, allow it
     return (userStorage.totalStorage + noteSize) <= userStorage.maxStorage;
   };
 

@@ -5,11 +5,10 @@ import { useFont } from "@/contexts/font-context"
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import HelpModal from "@/components/modals/help-modal"
-import ExportDialog from "@/components/modals/export-dialog"
 import { StorageModal } from "@/components/modals/storage-modal"
 import { HelpCircle, Download, HardDrive } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { useNotes } from "@/contexts/notes/note-context"
+import { useAppState } from "@/lib/state/app-state"
 
 interface MenuProps {
   isOpen: boolean
@@ -19,13 +18,10 @@ interface MenuProps {
 export function Menu({isOpen, setIsOpen }: MenuProps) {
   const { fontType, toggleFont } = useFont();
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
-  const { notes, selectedNoteId } = useNotes();
+  const { notes } = useAppState();
   const { user, isAdmin } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
-  
-  const currentNote = selectedNoteId ? notes.find(note => note.id === selectedNoteId) : null;
   
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -85,7 +81,9 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
             <div className="p-2 space-y-1">
               <button
                 onClick={() => {
-                  setIsExportModalOpen(true);
+                  // Dispatch custom event for export dialog
+                  console.log('Dispatching toggle-export-dialog event');
+                  window.dispatchEvent(new CustomEvent('toggle-export-dialog'));
                   setIsOpen(false);
                 }}
                 className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50"
@@ -94,15 +92,6 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
                 <Download className="w-4 h-4 mr-2" />
                 <span>Export</span>
               </button>
-              
-              <a
-                href="/recovery"
-                className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50 text-blue-600"
-                onClick={() => setIsOpen(false)}
-              >
-                <span className="mr-2 text-lg">🔄</span>
-                <span>Recover Content</span>
-              </a>
             </div>
           </div>
 
@@ -152,14 +141,6 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
       <HelpModal 
         isOpen={isHelpModalOpen} 
         onClose={() => setIsHelpModalOpen(false)} 
-      />
-      
-      {/* Export Dialog */}
-      <ExportDialog
-        isOpen={isExportModalOpen}
-        onClose={() => setIsExportModalOpen(false)}
-        currentNote={currentNote}
-        allNotes={notes}
       />
       
       {/* Storage Modal */}

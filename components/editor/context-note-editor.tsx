@@ -1,18 +1,20 @@
 "use client"
 
 import { forwardRef, useEffect, useRef } from "react"
-import NoteEditor from "./note-editor"
-import { useNotes } from "@/contexts/notes/note-context"
+import { NoteEditor } from "./note-editor"
 import { editHistoryService } from "@/lib/edit-history/edit-history-service"
+import { useAppState } from "@/lib/state/app-state"
+import { Note } from "@/types"
 
-export const ContextNoteEditor = forwardRef<HTMLTextAreaElement>((props, ref) => {
-  const { notes, selectedNoteId, updateNote, updateNoteTitle } = useNotes()
+interface ContextNoteEditorProps {
+  note: Note
+}
+
+export const ContextNoteEditor = forwardRef<HTMLTextAreaElement, ContextNoteEditorProps>(({ note }, ref) => {
+  const { updateNote, updateNoteTitle, selectedNoteId } = useAppState()
   
   // Track previous note ID to detect note changes
   const prevNoteIdRef = useRef<number | null>(null)
-  
-  // Get the currently selected note
-  const activeNote = selectedNoteId ? notes.find(note => note.id === selectedNoteId) || null : null
   
   // Handle note switching to ensure proper cleanup
   useEffect(() => {
@@ -51,35 +53,28 @@ export const ContextNoteEditor = forwardRef<HTMLTextAreaElement>((props, ref) =>
     }
   }, [selectedNoteId])
   
-  // If no note is selected, return null
-  if (!activeNote) return null
-  
   const handleContentChange = (content: string) => {
-    updateNote(activeNote.id, content)
+    updateNote(note.id, content)
   }
   
   const handleTitleUpdate = (newTitle: string) => {
-    updateNoteTitle(activeNote.id, newTitle)
+    updateNoteTitle(note.id, newTitle)
   }
   
   const handleSave = () => {
-    // We don't need to implement save explicitly since the context is handling state
-    // Any actual saving to files would be handled by the context
-    console.log(`Saving note ${activeNote.id}`)
+    // We don't need to implement save explicitly since the state store is handling persistence
+    console.log(`Saving note ${note.id}`)
   }
   
   return (
     <NoteEditor
-      note={activeNote}
+      note={note}
       onChange={handleContentChange}
       onSave={handleSave}
       onUpdateTitle={handleTitleUpdate}
       ref={ref}
-      // Remove the beforeMount prop or define it in NoteEditor component
     />
   )
 })
 
 ContextNoteEditor.displayName = "ContextNoteEditor"
-
-export default ContextNoteEditor

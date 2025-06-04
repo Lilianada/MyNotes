@@ -6,23 +6,87 @@ import { useSidebarHandlers } from "./sidebar-handlers";
 import { SidebarHeader } from "./sidebar-header";
 import { NotesList } from "./notes-list";
 import { SidebarDialogs } from "./sidebar-dialogs";
+import { useAppState } from "@/lib/state/app-state";
+import { FilterOptions } from "@/lib/state/app-state";
 
 interface SidebarProps {
   isSidebarOpen: boolean;
   onSelectNote: (note: Note) => void;
-  onUpdateNoteTitle?: (id: number, newTitle: string) => string;
 }
 
 export default function Sidebar({
   isSidebarOpen,
   onSelectNote,
-  onUpdateNoteTitle,
 }: SidebarProps) {
+  // Use our consolidated app state
+  const { 
+    notes, 
+    selectedNoteId, 
+    deleteNote, 
+    selectNote,
+    filterNotes,
+    sortNotes,
+    getChildNotes,
+    getLinkedNotes,
+    user
+  } = useAppState();
   
   // Use custom hooks for state and handlers
+  // We'll keep using these hooks for now but integrate with our new state management
   const state = useSidebarState();
-  const handlers = useSidebarHandlers(state);
+  const handlers = useSidebarHandlers({
+    ...state,
+    notes,
+    selectedNoteId,
+    selectNote: (id: number) => {
+      selectNote(id);
+      state.selectNote(id);
+    },
+    deleteNote: (id: number) => {
+      deleteNote(id, user, !!user?.isAdmin);
+      state.setNoteToDelete(null);
+      state.setIsDeleteDialogOpen(false);
+    }
+  });
 
+  // Apply filters and sorting from the sidebar state to our notes
+  const filteredNotes = React.useMemo(() => {
+    let result = [...notes];
+    
+    // Combine all filters into a single FilterOptions object
+    const filterOptions: FilterOptions = {};
+    
+    if (state.selectedTag) {
+      filterOptions.tag = state.selectedTag;
+    }
+    
+    if (state.selectedCategory) {
+      filterOptions.category = state.selectedCategory;
+    }
+    
+    if (state.selectedArchive !== null) {
+      filterOptions.archived = state.selectedArchive;
+    }
+    
+    if (state.selectedPublished !== null) {
+      filterOptions.published = state.selectedPublished;
+    }
+    
+    // Apply filters if any are set
+    if (Object.keys(filterOptions).length > 0) {
+      result = filterNotes(result, filterOptions);
+    }
+    
+    // Apply sorting - map the sidebar's sort options to our store's sort fields
+    const sortField = state.sortBy === 'updated' ? 'updatedAt' :
+                     state.sortBy === 'created' ? 'createdAt' :
+                     state.sortBy === 'title' ? 'noteTitle' : 
+                     state.sortBy || 'updatedAt';
+    
+    result = sortNotes(result, sortField, state.sortOrder || 'desc');
+    
+    return result;
+  }, [notes, state.selectedTag, state.selectedCategory, state.selectedArchive, state.selectedPublished, state.sortBy, state.sortOrder, filterNotes, sortNotes]);
   
   return (
     <>
@@ -34,8 +98,8 @@ export default function Sidebar({
       >
         {/* Header */}
         <SidebarHeader 
-          filteredNotesLength={state.filteredNotes.length}
-          totalNotesLength={state.notes.length}
+          filteredNotesLength={filteredNotes.length}
+          totalNotesLength={notes.length}
           filterOptions={state.filterOptions}
         />
 
@@ -54,7 +118,7 @@ export default function Sidebar({
           onSortChange={state.handleSortChange}
           isSelectionMode={state.isSelectionMode}
           selectedNoteIds={state.selectedNoteIds}
-          filteredNotesLength={state.filteredNotes.length}
+          filteredNotesLength={filteredNotes.length}
           isBulkDeleting={state.isBulkDeleting}
           onToggleSelectionMode={handlers.handleToggleSelectionMode}
           onSelectAll={handlers.handleSelectAll}
@@ -63,18 +127,18 @@ export default function Sidebar({
 
         {/* Notes List */}
         <NotesList
-          filteredNotes={state.filteredNotes}
-          selectedNoteId={state.selectedNoteId}
+          filteredNotes={filteredNotes}
+          selectedNoteId={selectedNoteId}
           isDeleting={state.isDeleting}
           isSelectionMode={state.isSelectionMode}
           selectedNoteIds={state.selectedNoteIds}
-          getChildNotes={state.getChildNotes}
-          getLinkedNotes={state.getLinkedNotes}
+          getChildNotes={getChildNotes}
+          getLinkedNotes={getLinkedNotes}
           onSelectNote={onSelectNote}
           onOpenDetails={handlers.handleOpenDetails}
           onDeleteNote={handlers.handleDeleteNote}
           onToggleSelection={handlers.handleSelectNote}
-          selectNote={state.selectNote}
+          selectNote={(noteId) => selectNote(noteId)}
         />
         
       </aside>
@@ -87,13 +151,31 @@ export default function Sidebar({
           state.setIsDeleteDialogOpen(false);
           state.setNoteToDelete(null);
         }}
-        onConfirmDelete={handlers.confirmDelete}
+        onConfirmDelete={() => {
+          if (state.noteToDelete) {
+            // Ensure we're using the numeric ID
+            const noteId = typeof state.noteToDelete === 'object' ? 
+              state.noteToDelete.id : state.noteToDelete;
+            deleteNote(noteId, user, !!user?.isAdmin);
+            state.setIsDeleteDialogOpen(false);
+            state.setNoteToDelete(null);
+          }
+        }}
         isBulkDeleteDialogOpen={state.isBulkDeleteDialogOpen}
         selectedCount={state.selectedNoteIds.size}
         onCloseBulkDeleteDialog={() => {
           state.setIsBulkDeleteDialogOpen(false);
         }}
-        onConfirmBulkDelete={handlers.confirmBulkDelete}
+        onConfirmBulkDelete={() => {
+          // Delete all selected notes
+          Array.from(state.selectedNoteIds).forEach(id => {
+            // Ensure we're using the numeric ID
+            deleteNote(id, user, !!user?.isAdmin);
+          });
+          state.setIsBulkDeleteDialogOpen(false);
+          state.setSelectedNoteIds(new Set());
+          state.setIsSelectionMode(false);
+        }}
         activeNote={state.activeNote}
         isDetailsOpen={state.isDetailsOpen}
         onCloseDetails={() => state.setIsDetailsOpen(false)}
