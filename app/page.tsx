@@ -154,15 +154,17 @@ export default function Home() {
         <style jsx global>{`
           :root {
             --header-height: 56px;
+            --sidebar-width: 300px;
           }
-          @media (max-width: 640px) {
+          @media (max-width: 768px) {
             :root {
               --header-height: 56px;
+              --sidebar-width: 100%;
             }
           }
         `}</style>
         
-        <main className="flex-1 grid gap-0 sm:gap-3 md:grid-cols-[300px_1fr] lg:grid-cols-[24%_75%] overflow-hidden relative main-content h-[calc(100vh-var(--header-height))]">
+        <main className="flex-1 grid gap-0 sm:gap-3 md:grid-cols-[var(--sidebar-width)_1fr] lg:grid-cols-[24%_75%] overflow-hidden relative main-content h-[calc(100vh-var(--header-height))]">
           {/* Mobile overlay to close sidebar when clicking outside */}
           {isSidebarOpen && (
             <div 

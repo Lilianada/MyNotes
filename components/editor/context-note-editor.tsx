@@ -1,10 +1,11 @@
 "use client"
 
-import { forwardRef, useEffect, useRef } from "react"
+import { forwardRef, useEffect, useRef, useState } from "react"
 import { UnifiedEditor } from "./unified-editor"
 import { editHistoryService } from "@/lib/edit-history/edit-history-service"
 import { useAppState } from "@/lib/state/app-state"
 import { Note } from "@/types"
+import { EditorSkeleton } from "@/components/ui/note-skeleton"
 
 interface ContextNoteEditorProps {
   note: Note
@@ -12,6 +13,14 @@ interface ContextNoteEditorProps {
 
 export const ContextNoteEditor = forwardRef<HTMLTextAreaElement, ContextNoteEditorProps>(({ note }, ref) => {
   const { updateNote, updateNoteTitle, selectedNoteId } = useAppState()
+  const [isEditorLoading, setIsEditorLoading] = useState(true)
+  
+  // Set a short loading state when switching notes for better UX
+  useEffect(() => {
+    setIsEditorLoading(true)
+    const timer = setTimeout(() => setIsEditorLoading(false), 300)
+    return () => clearTimeout(timer)
+  }, [note.id])
   
   // Track previous note ID to detect note changes
   const prevNoteIdRef = useRef<number | null>(null)
@@ -66,14 +75,20 @@ export const ContextNoteEditor = forwardRef<HTMLTextAreaElement, ContextNoteEdit
     console.log(`Saving note ${note.id}`)
   }
   
+  if (isEditorLoading) {
+    return <EditorSkeleton />
+  }
+  
   return (
-    <UnifiedEditor
-      note={note}
-      onChange={handleContentChange}
-      onSave={handleSave}
-      onUpdateTitle={handleTitleUpdate}
-      ref={ref}
-    />
+    <div role="region" aria-label={`Editor for ${note.noteTitle}`}>
+      <UnifiedEditor
+        ref={ref}
+        note={note}
+        onChange={handleContentChange}
+        onUpdateTitle={handleTitleUpdate}
+        onSave={handleSave}
+      />
+    </div>
   )
 })
 

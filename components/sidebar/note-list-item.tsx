@@ -41,6 +41,7 @@ export default function NoteListItem({
       className={`p-2 text-sm hover:bg-gray-50 rounded cursor-pointer flex items-center justify-between hover:bg-blue-50 transition-colors ${
         selectedNoteId === note.id ? "bg-blue-50" : ""
       } ${isSelected ? "bg-blue-50" : ""}`}
+      aria-selected={selectedNoteId === note.id}
     >
       {/* Checkbox for selection mode */}
       {isSelectionMode && (
@@ -52,6 +53,7 @@ export default function NoteListItem({
             onToggleSelection?.(note.id, e.target.checked);
           }}
           className="mr-2 w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+          aria-label={`Select ${note.noteTitle}`}
         />
       )}
       
@@ -64,6 +66,8 @@ export default function NoteListItem({
           }
         }}
         className="flex-1 text-left truncate flex items-center"
+        aria-label={`Open note: ${note.noteTitle}`}
+        aria-current={selectedNoteId === note.id ? 'true' : 'false'}
       >
         <div className="flex items-center mr-2">
           {note.category && (
@@ -71,6 +75,8 @@ export default function NoteListItem({
               className="w-2 h-2 rounded-full mr-1 inline-block"
               style={{ backgroundColor: note.category.color }}
               title={note.category.name}
+              aria-label={`Category: ${note.category.name}`}
+              role="presentation"
             />
           )}
           {relationshipInfo.isParent && (

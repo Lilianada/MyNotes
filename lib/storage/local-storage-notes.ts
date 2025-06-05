@@ -404,4 +404,60 @@ export const localStorageNotesService = {
       return { successful, failed };
     }
   },
+  
+  // Update a category across all notes
+  updateCategory(category: NoteCategory): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
+    try {
+      const notes = this.getNotes();
+      
+      // Update the category in all notes that use it
+      const updatedNotes = notes.map(note => {
+        if (note.category?.id === category.id) {
+          return { 
+            ...note, 
+            category, 
+            updatedAt: new Date() 
+          };
+        }
+        return note;
+      });
+      
+      // Save to localStorage
+      window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
+    } catch (error) {
+      console.error('Failed to update category in local storage:', error);
+    }
+  },
+  
+  // Delete a category from all notes
+  deleteCategory(categoryId: string): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
+    try {
+      const notes = this.getNotes();
+      
+      // Remove the category from all notes that use it
+      const updatedNotes = notes.map(note => {
+        if (note.category?.id === categoryId) {
+          return { 
+            ...note, 
+            category: null, 
+            updatedAt: new Date() 
+          };
+        }
+        return note;
+      });
+      
+      // Save to localStorage
+      window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
+    } catch (error) {
+      console.error('Failed to delete category from local storage:', error);
+    }
+  },
 };

@@ -50,7 +50,7 @@ export function Header({
   }, []);
 
   return (
-    <header className="sticky top-0 flex items-center py-3 px-4 sm:px-8 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200 shadow-sm z-40">
+    <header className="sticky top-0 flex items-center py-3 px-3 sm:px-8 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200 shadow-sm z-40" role="banner">
       <div>
         <button
           onClick={toggleSidebar}
@@ -65,7 +65,7 @@ export function Header({
 
       {/* Title is visible on all screens, centered on mobile */}
       <div className="flex-grow text-center md:text-left md:flex-grow-0 md:ml-4 text-lg font-medium text-gray-800">
-        NoteIt-Down
+        <h1 className="text-lg font-medium m-0">NoteIt-Down</h1>
       </div>
 
       {/* Search icon and dialog for all screen sizes */}
@@ -89,8 +89,8 @@ export function Header({
 
         {/* Search dropdown */}
         {mobileSearchOpen && (
-          <div className="absolute top-full mt-1 w-80 right-0 z-50">
-            <div className="bg-white rounded-md border border-gray-200 shadow-lg p-2">
+          <div className="absolute top-full mt-1 w-[calc(100vw-2rem)] sm:w-80 right-0 z-50">
+            <div className="bg-white rounded-md border border-gray-200 shadow-lg p-2" role="search">
               <SearchNotes
                 notes={notes}
                 onSelectNote={(note: Note) => {

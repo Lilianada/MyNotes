@@ -145,32 +145,41 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   
   updateNote: async (id, content, user, isAdmin) => {
     try {
+      // Update note in state first for immediate UI feedback
       const { notes } = get();
-      const noteToUpdate = notes.find(note => note.id === id);
       
+      // Find the note to update
+      const noteToUpdate = notes.find(note => note.id === id);
       if (!noteToUpdate) {
-        throw new Error(`Note with ID ${id} not found`);
+        throw new Error(`Note with id ${id} not found`);
       }
       
-      // Calculate word count
-      const wordCount = countWords(content);
+      // Create updated note with new timestamp
+      const updatedNote = { 
+        ...noteToUpdate, 
+        content, 
+        updatedAt: new Date() 
+      };
       
-      if (user) {
+      // Remove the note from the array and add it to the beginning
+      const filteredNotes = notes.filter(note => note.id !== id);
+      const updatedNotes = [updatedNote, ...filteredNotes];
+      
+      set({ notes: updatedNotes });
+      
+      // Then persist to storage
+      if (user?.uid) {
+        // User is authenticated, save to Firebase
         await firebaseNotesService.updateNoteContent(id, content, user.uid, isAdmin);
       } else {
+        // User is not authenticated, save to local storage
         localStorageNotesService.updateNoteContent(id, content);
       }
-      
-      // Update local state
-      set({
-        notes: notes.map(note => 
-          note.id === id 
-            ? { ...note, content, wordCount, updatedAt: new Date() } 
-            : note
-        )
-      });
     } catch (error) {
-      console.error("Failed to update note content:", error);
+      console.error('Failed to update note:', error);
+      // Revert state on error
+      const { notes } = get();
+      set({ notes: [...notes] });
       throw error;
     }
   },
@@ -369,11 +378,120 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   },
   
   // Placeholder implementations for remaining methods
-  // These would be implemented following the same pattern as above
-  updateNoteCategory: async () => { throw new Error("Not implemented") },
-  updateCategory: async () => { throw new Error("Not implemented") },
-  deleteCategory: async () => { throw new Error("Not implemented") },
-  archiveNote: async () => { throw new Error("Not implemented") },
+  // Category operations
+  updateNoteCategory: async (id, category, user, isAdmin = false) => {
+    try {
+      // Update note in state first for immediate UI feedback
+      const { notes } = get();
+      const updatedNotes = notes.map(note => {
+        if (note.id === id) {
+          return { ...note, category, updatedAt: new Date() };
+        }
+        return note;
+      });
+      
+      // Move the updated note to the top
+      const updatedNote = updatedNotes.find(note => note.id === id);
+      if (updatedNote) {
+        const filteredNotes = updatedNotes.filter(note => note.id !== id);
+        set({ notes: [updatedNote, ...filteredNotes] });
+      } else {
+        set({ notes: updatedNotes });
+      }
+      
+      // Then persist to storage
+      if (user?.uid) {
+        // User is authenticated, save to Firebase
+        await firebaseNotesService.updateNoteCategory(id, category, user.uid, isAdmin);
+      } else {
+        // User is not authenticated, save to local storage
+        localStorageNotesService.updateNoteCategory(id, category);
+      }
+    } catch (error) {
+      console.error('Failed to update note category:', error);
+      throw error;
+    }
+  },
+  
+  updateCategory: async (category, user, isAdmin = false) => {
+    try {
+      // Update category in all notes that use it
+      const { notes } = get();
+      const updatedNotes = notes.map(note => {
+        if (note.category?.id === category.id) {
+          return { ...note, category, updatedAt: new Date() };
+        }
+        return note;
+      });
+      
+      set({ notes: updatedNotes });
+      
+      // Then persist to storage
+      if (user?.uid) {
+        // User is authenticated, save to Firebase
+        await firebaseNotesService.updateCategory(category, user.uid, isAdmin);
+      } else {
+        // User is not authenticated, save to local storage
+        localStorageNotesService.updateCategory(category);
+      }
+    } catch (error) {
+      console.error('Failed to update category:', error);
+      throw error;
+    }
+  },
+  
+  deleteCategory: async (categoryId, user, isAdmin = false) => {
+    try {
+      // Remove category from all notes that use it
+      const { notes } = get();
+      const updatedNotes = notes.map(note => {
+        if (note.category?.id === categoryId) {
+          return { ...note, category: null, updatedAt: new Date() };
+        }
+        return note;
+      });
+      
+      set({ notes: updatedNotes });
+      
+      // Then delete the category from storage
+      if (user?.uid) {
+        // User is authenticated, delete from Firebase
+        await firebaseNotesService.deleteCategory(categoryId, user.uid, isAdmin);
+      } else {
+        // User is not authenticated, delete from local storage
+        localStorageNotesService.deleteCategory(categoryId);
+      }
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+      throw error;
+    }
+  },
+  archiveNote: async (id, archived = true, user, isAdmin = false) => {
+    try {
+      // Update note in state first for immediate UI feedback
+      const { notes } = get();
+      const updatedNotes = notes.map(note => {
+        if (note.id === id) {
+          return { ...note, archived, updatedAt: new Date() };
+        }
+        return note;
+      });
+      
+      set({ notes: updatedNotes });
+      
+      // Then persist to storage
+      if (user?.uid) {
+        // User is authenticated, save to Firebase
+        await firebaseNotesService.updateNoteData(id, { archived }, user.uid, isAdmin);
+      } else {
+        // User is not authenticated, save to local storage
+        localStorageNotesService.updateNoteData(id, { archived });
+      }
+    } catch (error) {
+      console.error('Failed to archive note:', error);
+      throw error;
+    }
+  },
   bulkDeleteNotes: async () => ({ successful: [], failed: [] }),
   getNoteHistory: async () => [],
   syncLocalNotesToFirebase: async (user, isAdmin) => {

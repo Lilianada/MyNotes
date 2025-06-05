@@ -4,8 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { Note, NoteCategory, NoteEditHistory } from '@/types';
 import { editHistoryService } from '@/lib/edit-history/edit-history-service';
 import { useAuth } from '@/contexts/auth-context';
-import { useNotes } from '@/contexts/notes/note-context';
-import { toast } from '@/components/ui/use-toast';
+import { useAppState } from '@/lib/state/app-state';
+import { useToast } from '@/components/ui/use-toast';
 
 export type TabType = 'details' | 'category' | 'relationships' | 'tags' | 'metadata';
 
@@ -19,7 +19,7 @@ export type TabType = 'details' | 'category' | 'relationships' | 'tags' | 'metad
  * - useCategoryHandlers
  * - useMetadataHandlers
  */
-export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean) {
+export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean, onClose?: () => void) {
   // Tab state
   const [activeTab, setActiveTab] = useState<TabType>('details');
   
@@ -52,7 +52,7 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean) {
     deleteCategory,
     archiveNote,
     updateNoteData
-  } = useNotes();
+  } = useAppState();
   
   // Initialize categories when note details are opened
   useEffect(() => {
@@ -107,32 +107,43 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean) {
     if (!note) return;
     
     try {
-      await updateNoteCategory(note.id, category);
+      await updateNoteCategory(note.id, category, user, isAdmin || false);
       setActiveTab('details');
     } catch (error) {
       console.error('Failed to update category:', error);
     }
-  }, [note, updateNoteCategory, setActiveTab]);
+  }, [note, updateNoteCategory, setActiveTab, user, isAdmin]);
 
   const handleUpdateCategory = useCallback(async (category: NoteCategory) => {
     try {
-      await updateCategory(category);
+      await updateCategory(category, user, isAdmin || false);
       setCategories(prev => 
         prev.map(c => c.id === category.id ? category : c)
       );
     } catch (error) {
       console.error("Failed to update category:", error);
     }
-  }, [updateCategory]);
+  }, [updateCategory, user, isAdmin]);
 
   const handleDeleteCategory = useCallback(async (categoryId: string) => {
     try {
-      await deleteCategory(categoryId);
+      await deleteCategory(categoryId, user, isAdmin || false);
       setCategories(prev => prev.filter(c => c.id !== categoryId));
     } catch (error) {
       console.error("Failed to delete category:", error);
     }
-  }, [deleteCategory]);
+  }, [deleteCategory, user, isAdmin]);
+
+  const handleArchiveNote = useCallback(async () => {
+    if (!note) return;
+    
+    try {
+      await archiveNote(note.id, true, user, isAdmin || false);
+      if (onClose) onClose();
+    } catch (error) {
+      console.error('Failed to archive note:', error);
+    }
+  }, [note, archiveNote, onClose, user, isAdmin]);
 
   // Tags Handlers
   const handleTagSelection = useCallback((tag: string) => {
@@ -158,7 +169,7 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean) {
     if (!note) return;
     
     try {
-      const updatedTags = await updateNoteTags(note.id, pendingTags);
+      const updatedTags = await updateNoteTags(note.id, pendingTags, user, isAdmin || false);
       console.log('Tags updated successfully');
       
       // Reset pending tags to match the note's actual tags
@@ -166,7 +177,7 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean) {
     } catch (error) {
       console.error('Failed to update tags:', error);
     }
-  }, [note, pendingTags, updateNoteTags]);
+  }, [note, pendingTags, updateNoteTags, user, isAdmin]);
 
   const handleCancelTagChanges = useCallback(() => {
     if (note) {
@@ -175,6 +186,7 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean) {
   }, [note]);
 
   // Metadata Handlers
+  const { toast } = useToast();
   const handleMetadataSave = useCallback(async () => {
     if (!note) return;
     
@@ -190,7 +202,7 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean) {
         publish: publishStatus,
         archived,
         filePath
-      });
+      }, user, isAdmin || false);
 
       dismiss();
       toast({
@@ -207,7 +219,7 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean) {
         variant: "destructive"
       });
     }
-  }, [note, description, publishStatus, archived, filePath, updateNoteData, setActiveTab]);
+  }, [note, description, publishStatus, archived, filePath, updateNoteData, setActiveTab, toast]);
 
   return {
     // State

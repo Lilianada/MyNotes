@@ -92,9 +92,11 @@ export default function Sidebar({
     <>
       <aside 
         id="sidebar"
-        className={`fixed top-16 sm:top-0 left-0 z-30 w-[80%] sm:w-72 md:w-full bg-white dark:bg-gray-800 border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg h-full max-h-[calc(100vh_-_54px)] sm:max-h-[calc(100vh_-_64px)] overflow-y-auto overflow-x-hidden scrollbar-hide sm:overflow-hidden sm:border${
-          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-[var(--header-height)] sm:top-0 left-0 z-30 w-[85%] sm:w-72 md:w-full bg-white dark:bg-gray-800 border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg h-full max-h-[calc(100vh_-_var(--header-height))] overflow-y-auto overflow-x-hidden scrollbar-hide sm:overflow-y-auto sm:border${
+          isSidebarOpen ? ' translate-x-0' : ' -translate-x-full'
         } md:translate-x-0 md:relative md:w-full md:m-2 md:border md:rounded-md md:shadow-sm md:transition-shadow`}
+        aria-label="Sidebar navigation"
+        aria-hidden={!isSidebarOpen && window.innerWidth < 768}
       >
         {/* Header */}
         <SidebarHeader 
