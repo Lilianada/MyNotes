@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useEditorWithHistory } from "@/lib/edit-history/edit-history-hooks";
 import { editor } from 'monaco-editor';
 import { Monaco, EditorInstance } from "./types";
+import { useUIStore } from "@/lib/state/ui-store";
 
 // Storage key for cursor positions
 const CURSOR_POSITIONS_KEY = "noteEditorCursorPositions";
@@ -37,9 +38,12 @@ export function useUnifiedEditorState(
   const isDarkTheme = theme === 'dark';
   const { isAdmin, user } = useAuth();
   
+  // Get editor preferences from UI store
+  const useMonacoEditor = useUIStore(state => state.useMonacoEditor);
+  const setUseMonacoEditor = useUIStore(state => state.setUseMonacoEditor);
+  
   // Editor states
   const [renderHTML, setRenderHTML] = useState(false);
-  const [useMonacoEditor, setUseMonacoEditor] = useState(true);
   const [editorInstance, setEditorInstance] = useState<EditorInstance | null>(null);
   
   // References

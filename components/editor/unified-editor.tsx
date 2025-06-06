@@ -39,7 +39,7 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
   function UnifiedEditor({ note, onChange, onSave, onUpdateTitle }, ref) {
     const { notes } = useAppState();
     const { toast } = useToast();
-    
+
     // Use our consolidated hook for state management
     const {
       renderHTML,
@@ -54,7 +54,7 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
       handleContentChange,
       handleSave
     } = useUnifiedEditorState(note, onChange, onSave);
-    
+
     // Use Monaco configuration hook
     const { handleEditorDidMount } = useMonacoConfig(
       editorInstance,
@@ -62,16 +62,16 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
       isDarkTheme,
       fontFamily
     );
-    
+
     // Handle editor mounting
     const onEditorDidMount = (editor: EditorInstance, monaco: Monaco) => {
       setEditorInstance(editor);
-      
-      
+
+
       // Configure Monaco for markdown editing
       configureMarkdownLanguage(monaco);
       configureWikiLinkCompletion(monaco, notes.map((note: any) => note.noteTitle));
-      
+
       // Set up keyboard shortcuts and other editor configuration
       handleEditorDidMount(monaco, editor);
     };
@@ -82,29 +82,29 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
         <div className="flex items-center justify-between px-3 border-b border-gray-200 dark:border-gray-800">
           {/* Title editor on the left */}
           <div className="flex-grow mr-4">
-            <NoteTitleEditor 
-              noteTitle={note.noteTitle} 
+            <NoteTitleEditor
+              noteTitle={note.noteTitle}
               onUpdateTitle={onUpdateTitle}
               noteId={note.id}
             />
           </div>
-          
+
           {/* Editor tools on the right */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={togglePreview}
               title={renderHTML ? "Show editor" : "Show preview"}
             >
               {renderHTML ? <Code size={16} /> : <Eye size={16} />}
             </Button>
-            
+
             {/* Word count */}
             <div className="flex items-center mx-2">
               <WordCount content={note.content || ""} />
             </div>
-            
+
             {/* Dropdown menu for additional options */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -121,9 +121,9 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
             </DropdownMenu>
           </div>
         </div>
-        
+
         {/* Editor content */}
-        <div className="flex-grow relative overflow-hidden">
+        <div className="flex-grow relative">
           {renderHTML ? (
             // Render markdown preview
             <div className={`h-full overflow-auto p-4 ${fontFamilyClass}`}>
@@ -131,10 +131,10 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
             </div>
           ) : (
             // Render active editor
-            <>
+            <div className="flex flex-col h-full max-h-[calc(100vh_-_7rem)] md:max-h-[calc(100vh_-_7rem)]">
               {useMonacoEditor ? (
                 // Monaco editor
-                <div className="h-screen w-full overflow-hidden" aria-live="polite" aria-label="Monaco code editor">
+                <div className="h-full w-full" aria-live="polite" aria-label="Monaco code editor">
                   <MonacoEditor
                     height="100%"
                     language="markdown"
@@ -169,15 +169,17 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                 </div>
               ) : (
                 // Plain text editor
-                <textarea
-                  ref={ref}
-                  className={`w-full h-full min-h-screen p-4 resize-none outline-none bg-white dark:bg-gray-900 ${fontFamilyClass}`}
-                  value={note.content || ""}
-                  onChange={(e) => handleContentChange(e.target.value)}
-                  placeholder="Start writing..."
-                />
+                <div className="h-full w-full relative flex flex-col" aria-label="Simple text editor">
+                  <textarea
+                    ref={ref}
+                    className={`w-full flex-1 min-h-0 p-4 resize-none outline-none bg-white dark:bg-gray-900 overflow-auto text-[15px] ${fontFamilyClass}`}
+                    value={note.content || ""}
+                    onChange={(e) => handleContentChange(e.target.value)}
+                    placeholder="Start writing..."
+                  />
+                </div>
               )}
-            </>
+            </div>
           )}
         </div>
       </div>

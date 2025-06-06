@@ -14,6 +14,10 @@ interface UIState {
   isCreatingNote: boolean
   setCreatingNote: (isCreating: boolean) => void
   
+  // Editor preferences
+  useMonacoEditor: boolean
+  setUseMonacoEditor: (useMonaco: boolean) => void
+  
   // No shortcuts modal state needed
   
   // Note selection state
@@ -26,6 +30,10 @@ export const useUIStore = create<UIState>((set) => ({
   isSidebarOpen: false,
   setSidebarOpen: (isOpen) => set({ isSidebarOpen: isOpen }),
   toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+  
+  // Editor preferences - default to Monaco editor
+  useMonacoEditor: true,
+  setUseMonacoEditor: (useMonaco) => set({ useMonacoEditor: useMonaco }),
   
   // Note creation modal state
   isCreatingNote: false,

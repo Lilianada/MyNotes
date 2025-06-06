@@ -1,7 +1,7 @@
 "use client"
 
 import { useRef } from "react"
-import { ContextNoteEditor } from "@/components/editor/context-note-editor"
+import { UnifiedContextNoteEditor } from "@/components/editor/unified-context-note-editor"
 import { useAppState } from "@/lib/state/app-state"
 
 export function Notes() {
@@ -45,7 +45,7 @@ export function Notes() {
       {/* <div className="border border-gray-200 rounded-lg px-4 pt-4 bg-white dark:bg-gray-800 dark:border-gray-700 flex-1 flex flex-col overflow-auto">
       </div> */}
         <div className="flex-1 overflow-hidden">
-          <ContextNoteEditor key={selectedNote.id} note={selectedNote} />
+          <UnifiedContextNoteEditor key={selectedNote.id} note={selectedNote} />
         </div>
     </div>
   )

@@ -80,7 +80,7 @@ export const UnifiedContextNoteEditor = forwardRef<HTMLTextAreaElement, UnifiedC
   }
   
   return (
-    <div role="region" aria-label={`Editor for ${note.noteTitle}`}>
+    <div role="region" aria-label={`Editor for ${note.noteTitle}`} className="h-screen">
       <UnifiedEditor
         ref={ref}
         note={note}
