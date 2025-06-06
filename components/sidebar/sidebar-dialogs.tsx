@@ -1,7 +1,14 @@
+"use client";
+
 import React from "react";
 import { Note } from "@/types";
 import DeleteConfirmation from "../modals/delete-confirmation";
 import { UnifiedNoteDetails } from "@/components/note-details";
+import {
+  Sheet,
+  SheetContent,
+  SheetOverlay
+} from "@/components/ui/sheet";
 
 interface SidebarDialogsProps {
   // Delete dialog
@@ -60,14 +67,21 @@ export function SidebarDialogs({
         description={`Are you sure you want to delete ${selectedCount} note(s)? This action cannot be undone.`}
       />
 
-      {/* Note Details Dialog */}
-      {activeNote && isDetailsOpen && (
-        <UnifiedNoteDetails
-          isOpen={isDetailsOpen}
-          onClose={onCloseDetails}
-          note={activeNote}
-        />
-      )}
+      {/* Note Details Sheet */}
+      <Sheet open={isDetailsOpen && !!activeNote} onOpenChange={(open) => {
+        if (!open) onCloseDetails();
+      }}>
+        <SheetOverlay className="bg-black/50" />
+        <SheetContent side="right" className="w-full sm:max-w-md md:max-w-lg p-0 border-l border-gray-200 dark:border-gray-700">
+          {activeNote && (
+            <UnifiedNoteDetails
+              isOpen={isDetailsOpen}
+              onClose={onCloseDetails}
+              note={activeNote}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

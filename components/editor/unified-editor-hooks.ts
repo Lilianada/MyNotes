@@ -259,9 +259,9 @@ export function useMonacoConfig(
     // Configure Monaco options
     editorInstance.updateOptions({
       fontFamily: fontFamily || 'var(--font-mono)',
-      fontSize: window.innerWidth < 768 ? 16 : 14,
+      fontSize: 14,
       lineHeight: 1.6,
-      minimap: { enabled: window.innerWidth >= 768 },
+      minimap: { enabled: false },
       padding: { top: 16 },
       folding: true,
       wordWrap: 'on',
@@ -273,7 +273,7 @@ export function useMonacoConfig(
       autoIndent: 'full',
       cursorBlinking: 'smooth',
       cursorSmoothCaretAnimation: 'on',
-      scrollBeyondLastLine: false,
+      scrollBeyondLastLine: true,
       smoothScrolling: true,
       theme: isDarkTheme ? 'vs-dark' : 'vs'
     });

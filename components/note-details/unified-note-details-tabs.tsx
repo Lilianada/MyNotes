@@ -1,13 +1,15 @@
 "use client";
 
 import React from 'react';
-import { Hash, Link, Edit, Calendar, Tag, History, RefreshCw, HardDrive } from 'lucide-react';
+import { Hash, Link, Edit, Calendar, Tag, History, RefreshCw, HardDrive, Clock, FileText, X } from 'lucide-react';
 import { Note, NoteCategory } from '@/types';
 import { formatDistanceToNow, format, isValid } from 'date-fns';
-import { TabType } from './unified-note-details-hooks';
 import { formatBytes } from '@/lib/storage/storage-utils';
 import { convertTimestamp } from '@/lib/firebase/helpers';
 import NoteRelationships from '@/components/relationships/note-relationships';
+import { CategoryTabContent } from './category-tab-content';
+import { MetadataTabContent } from './metadata-tab-content';
+import { TabType } from './unified-note-details-hooks';
 
 // Helper function to safely convert and validate dates
 const safeDate = (dateValue: any): Date => {
@@ -161,7 +163,10 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
                     {(entry.editType === 'update' || entry.editType === 'autosave') && (
                       <p className="text-xs text-gray-500">
                         {entry.contentLength && `${formatBytes(entry.contentLength)} • `}
-                        {entry.wordCount && `${entry.wordCount} words`}
+                        {/* Display word count if available in the entry object */}
+                        {entry.hasOwnProperty('wordCount') && typeof (entry as any).wordCount === 'number' && 
+                          `${(entry as any).wordCount} words`
+                        }
                       </p>
                     )}
                   </div>
@@ -177,42 +182,13 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
     
     // Category Tab
     'category': (
-      <div className="space-y-4">
-        <h3 className="text-sm font-medium">Choose a category</h3>
-        
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            className={`p-3 border text-left rounded-md 
-              ${!note.category ? 'border-blue-500 ring-2 ring-blue-500 ring-opacity-50' : 'border-gray-200 dark:border-gray-700'}
-              hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
-            onClick={() => handleCategorySave(null)}
-          >
-            <div className="font-medium">None</div>
-            <p className="text-xs text-gray-500 mt-1">Remove category</p>
-          </button>
-          
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              className={`p-3 border text-left rounded-md 
-                ${note.category?.id === category.id ? 'border-blue-500 ring-2 ring-blue-500 ring-opacity-50' : 'border-gray-200 dark:border-gray-700'}
-                hover:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50`}
-              onClick={() => handleCategorySave(category)}
-            >
-              <div className="flex items-center">
-                <span 
-                  className="w-3 h-3 rounded-full mr-2"
-                  style={{ backgroundColor: category.color }}
-                />
-                <span className="font-medium">{category.name}</span>
-              </div>
-              {category.name && (
-                <p className="text-xs text-gray-500 mt-1">{category.name}</p>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+      <CategoryTabContent
+        note={note}
+        categories={categories}
+        handleCategorySave={handleCategorySave}
+        handleUpdateCategory={handleUpdateCategory}
+        handleDeleteCategory={handleDeleteCategory}
+      />
     ),
     
     // Tags Tab
@@ -220,38 +196,59 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
       <div className="space-y-4">
         <h3 className="text-sm font-medium">Manage tags</h3>
         
-        <div className="flex flex-wrap gap-2">
-          {/* Render available tags here */}
-          {/* This is a simplified representation */}
-          {note.tags?.map(tag => (
-            <button
-              key={tag}
-              onClick={() => handleTagSelection(tag)}
-              className={`px-3 py-1.5 rounded-full text-sm 
-                ${pendingTags.includes(tag) 
-                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
-                  : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'}
-              `}
-            >
-              {tag}
-            </button>
-          ))}
+        {/* Display current tags */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {pendingTags.length > 0 ? (
+            pendingTags.map(tag => (
+              <div 
+                key={tag}
+                className="flex items-center bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-3 py-1 rounded-full text-sm"
+              >
+                <span className="mr-1">#{tag}</span>
+                <button 
+                  onClick={() => {
+                    const updatedTags = pendingTags.filter(t => t !== tag);
+                    handleTagSelection(tag); // Use existing handler instead of direct state update
+                  }}
+                  className="ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100"
+                  aria-label={`Remove tag ${tag}`}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="text-sm text-gray-500">No tags added yet</p>
+          )}
         </div>
         
-        {/* Tag actions */}
-        <div className="flex justify-end space-x-2">
-          <button
-            onClick={handleCancelTagChanges}
-            className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleApplyTagChanges}
-            className="px-3 py-1 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600"
-          >
-            Apply Changes
-          </button>
+        {/* Add tag input */}
+        <div className="w-full">
+          <div className="flex">
+            <input
+              type="text"
+              placeholder="Add a tag..."
+              className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && e.currentTarget.value) {
+                  const newTag = e.currentTarget.value.trim();
+                  if (newTag && !pendingTags.includes(newTag)) {
+                    // Add the tag to pendingTags using the existing handler
+                    if (!note.tags?.includes(newTag)) {
+                      handleTagSelection(newTag);
+                    }
+                    e.currentTarget.value = '';
+                  }
+                }
+              }}
+            />
+            <button 
+              className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
+              onClick={handleApplyTagChanges}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     ),
@@ -263,70 +260,18 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
     
     // Metadata Tab
     'metadata': (
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <label htmlFor="description" className="text-sm font-medium">
-            Description
-          </label>
-          <textarea
-            id="description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            rows={3}
-            placeholder="Add a description for this note"
-          />
-        </div>
-        
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="publish"
-            checked={publishStatus}
-            onChange={(e) => setPublishStatus(e.target.checked)}
-            className="mr-2"
-          />
-          <label htmlFor="publish" className="text-sm font-medium">
-            Publish this note
-          </label>
-        </div>
-        
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="archived"
-            checked={archived}
-            onChange={(e) => setArchived(e.target.checked)}
-            className="mr-2"
-          />
-          <label htmlFor="archived" className="text-sm font-medium">
-            Archive this note
-          </label>
-        </div>
-        
-        <div className="space-y-2">
-          <label htmlFor="filePath" className="text-sm font-medium">
-            File Path
-          </label>
-          <input
-            type="text"
-            id="filePath"
-            value={filePath}
-            onChange={(e) => setFilePath(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Path to file (optional)"
-          />
-        </div>
-        
-        <div className="flex justify-end">
-          <button
-            onClick={handleMetadataSave}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-          >
-            Save Changes
-          </button>
-        </div>
-      </div>
+      <MetadataTabContent
+        note={note}
+        description={description}
+        setDescription={setDescription}
+        publishStatus={publishStatus}
+        setPublishStatus={setPublishStatus}
+        archived={archived}
+        setArchived={setArchived}
+        filePath={filePath}
+        setFilePath={setFilePath}
+        onSave={handleMetadataSave}
+      />
     ),
   };
 

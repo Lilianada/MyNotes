@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useNotes } from '@/contexts/notes/note-context';
 import { Note } from '@/types';
+import { useAppState } from '@/lib/state/app-state';
 import { 
   HigherDialog as Dialog, 
   HigherDialogContent as DialogContent, 
@@ -33,7 +33,7 @@ const NoteLinkingDialog: React.FC<NoteLinkingDialogProps> = ({
   onSave,
   initialSelectedIds = []
 }) => {
-  const { notes } = useNotes();
+  const { notes } = useAppState();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedNoteIds, setSelectedNoteIds] = useState<number[]>(initialSelectedIds);
   

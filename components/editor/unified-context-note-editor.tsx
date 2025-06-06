@@ -7,11 +7,11 @@ import { useAppState } from "@/lib/state/app-state"
 import { Note } from "@/types"
 import { EditorSkeleton } from "@/components/ui/note-skeleton"
 
-interface ContextNoteEditorProps {
+interface UnifiedContextNoteEditorProps {
   note: Note
 }
 
-export const ContextNoteEditor = forwardRef<HTMLTextAreaElement, ContextNoteEditorProps>(({ note }, ref) => {
+export const UnifiedContextNoteEditor = forwardRef<HTMLTextAreaElement, UnifiedContextNoteEditorProps>(({ note }, ref) => {
   const { updateNote, updateNoteTitle, selectedNoteId } = useAppState()
   const [isEditorLoading, setIsEditorLoading] = useState(true)
   
@@ -32,7 +32,6 @@ export const ContextNoteEditor = forwardRef<HTMLTextAreaElement, ContextNoteEdit
     if (prevNoteIdRef.current !== null && 
         prevNoteIdRef.current !== selectedNoteId && 
         prevNoteIdRef.current > 0) {
-      console.log(`Note switched from ${prevNoteIdRef.current} to ${selectedNoteId}, cleaning up previous note tracking`)
       try {
         // Always clean up the previous note's tracking to prevent memory leaks
         // even if the note no longer exists in the array
@@ -93,4 +92,4 @@ export const ContextNoteEditor = forwardRef<HTMLTextAreaElement, ContextNoteEdit
   )
 })
 
-ContextNoteEditor.displayName = "ContextNoteEditor"
+UnifiedContextNoteEditor.displayName = "UnifiedContextNoteEditor"

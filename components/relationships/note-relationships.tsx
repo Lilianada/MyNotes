@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useNotes } from '@/contexts/notes/note-context';
 import { Note } from '@/types';
+import { useAppState } from '@/lib/state/app-state';
+import { useAuth } from '@/contexts/auth-context';
 import { 
   Card, 
   CardContent, 
@@ -20,6 +21,7 @@ interface NoteRelationshipsProps {
 }
 
 const NoteRelationships: React.FC<NoteRelationshipsProps> = ({ note }) => {
+  const { user, isAdmin } = useAuth();
   const { 
     notes, 
     selectNote, 
@@ -27,7 +29,7 @@ const NoteRelationships: React.FC<NoteRelationshipsProps> = ({ note }) => {
     updateNoteLinks, 
     getChildNotes, 
     getLinkedNotes 
-  } = useNotes();
+  } = useAppState();
   
   const [isParentDialogOpen, setIsParentDialogOpen] = useState(false);
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false);
@@ -46,17 +48,17 @@ const NoteRelationships: React.FC<NoteRelationshipsProps> = ({ note }) => {
   // Handle setting parent note
   const handleSetParent = async (selectedIds: number[]) => {
     const parentId = selectedIds.length > 0 ? selectedIds[0] : null;
-    await updateNoteParent(note.id, parentId);
+    await updateNoteParent(note.id, parentId, user, !!isAdmin);
   };
   
-  // Handle setting linked notes
-  const handleSetLinks = async (selectedIds: number[]) => {
-    await updateNoteLinks(note.id, selectedIds);
+  // Handle linking notes
+  const handleLinkNotes = async (selectedIds: number[]) => {
+    await updateNoteLinks(note.id, selectedIds, user, !!isAdmin);
   };
   
   // Remove parent relationship
   const handleRemoveParent = async () => {
-    await updateNoteParent(note.id, null);
+    await updateNoteParent(note.id, null, user, !!isAdmin);
   };
   
   // Helper to navigate to a note
@@ -203,7 +205,7 @@ const NoteRelationships: React.FC<NoteRelationshipsProps> = ({ note }) => {
         onClose={() => setIsLinkDialogOpen(false)}
         currentNoteId={note.id}
         mode="links"
-        onSave={handleSetLinks}
+        onSave={handleLinkNotes}
         initialSelectedIds={note.linkedNoteIds || []}
       />
     </div>

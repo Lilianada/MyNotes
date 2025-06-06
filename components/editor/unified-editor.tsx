@@ -79,7 +79,7 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
     return (
       <div className="flex flex-col h-full overflow-hidden">
         {/* Combined title and toolbar */}
-        <div className="flex items-center justify-between py-2 px-3 border-b border-gray-200 dark:border-gray-800">
+        <div className="flex items-center justify-between px-3 border-b border-gray-200 dark:border-gray-800">
           {/* Title editor on the left */}
           <div className="flex-grow mr-4">
             <NoteTitleEditor 
@@ -134,11 +134,12 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
             <>
               {useMonacoEditor ? (
                 // Monaco editor
-                <div className="h-full w-full overflow-hidden">
+                <div className="h-screen w-full overflow-hidden" aria-live="polite" aria-label="Monaco code editor">
                   <MonacoEditor
                     height="100%"
                     language="markdown"
                     theme={isDarkTheme ? "vs-dark" : "vs"}
+                    defaultValue={note.content || ""}
                     value={note.content || ""}
                     onChange={(value) => value !== undefined && handleContentChange(value)}
                     onMount={onEditorDidMount}
@@ -146,14 +147,23 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                       automaticLayout: true,
                       wordWrap: 'on',
                       minimap: { enabled: false },
-                      scrollBeyondLastLine: false,
+                      scrollBeyondLastLine: true,
                       fontSize: 14,
-                      lineHeight: 1.5,
+                      lineHeight: 1.6,
                       quickSuggestions: true,
+                      padding: { top: 16 },
+                      folding: true,
+                      accessibilitySupport: 'on',
+                      ariaLabel: 'Markdown Editor',
                       scrollbar: {
                         verticalScrollbarSize: 10,
-                        horizontalScrollbarSize: 10
-                      }
+                        horizontalScrollbarSize: 5,
+                        alwaysConsumeMouseWheel: false
+                      },
+                      renderLineHighlight: 'all',
+                      cursorBlinking: 'smooth',
+                      cursorSmoothCaretAnimation: 'on',
+                      smoothScrolling: true
                     }}
                   />
                 </div>
@@ -161,7 +171,7 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                 // Plain text editor
                 <textarea
                   ref={ref}
-                  className={`w-full h-full p-4 resize-none outline-none bg-white dark:bg-gray-900 ${fontFamilyClass}`}
+                  className={`w-full h-full min-h-screen p-4 resize-none outline-none bg-white dark:bg-gray-900 ${fontFamilyClass}`}
                   value={note.content || ""}
                   onChange={(e) => handleContentChange(e.target.value)}
                   placeholder="Start writing..."

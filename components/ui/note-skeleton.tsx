@@ -29,19 +29,10 @@ export function NoteListSkeleton({ count = 5 }: { count?: number }) {
 
 export function EditorSkeleton() {
   return (
-    <div className="w-full h-full p-4 animate-pulse" role="status" aria-label="Loading editor">
-      <Skeleton className="h-8 w-3/4 mb-6" />
-      <Skeleton className="h-4 w-full mb-3" />
-      <Skeleton className="h-4 w-5/6 mb-3" />
-      <Skeleton className="h-4 w-4/6 mb-6" />
-      
-      <Skeleton className="h-4 w-full mb-3" />
-      <Skeleton className="h-4 w-full mb-3" />
-      <Skeleton className="h-4 w-3/4 mb-6" />
-      
-      <Skeleton className="h-4 w-5/6 mb-3" />
-      <Skeleton className="h-4 w-full mb-3" />
-      <span className="sr-only">Loading editor...</span>
+    <div className="w-full h-full flex flex-col items-center justify-center" role="status" aria-label="Loading editor">
+      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-gray-900 dark:border-gray-100 mb-3"></div>
+      <p className="text-sm text-gray-600 dark:text-gray-300">Preparing editor...</p>
+      <span className="sr-only">Loading editor</span>
     </div>
   );
 }
