@@ -32,23 +32,26 @@ export const SyncManager: React.FC = () => {
       // Only check if user is logged in and auth state is stable
       if (user && !authLoading) {
         try {
-          // Check if we've already synced for this user session
-          const syncStatus = localStorage.getItem(SYNC_STATUS_KEY);
-          const lastSyncTime = syncStatus ? JSON.parse(syncStatus)[user.uid] : null;
-          const currentSession = sessionStorage.getItem('session_id');
+          console.log('Checking for note conflicts after login');
           
-          // If we've already synced in this session, don't show the modal again
-          if (lastSyncTime && currentSession && lastSyncTime === currentSession) {
-            return;
-          }
+          // Reset sync status for this user on each login
+          // This ensures the sync modal appears every time they log in if needed
+          const syncStatus = localStorage.getItem(SYNC_STATUS_KEY) || '{}';
+          const parsedStatus = JSON.parse(syncStatus);
+          delete parsedStatus[user.uid]; // Remove any previous sync status
+          localStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(parsedStatus));
           
           // Find conflicts between local and cloud notes
           const conflicts = await findSyncConflicts(user);
+          console.log('Sync conflicts check result:', conflicts);
           
           // If there are local notes, show the sync modal
           if (conflicts.localNoteCount > 0) {
+            console.log('Found local notes that need syncing, showing modal');
             setSyncData(conflicts);
             setShowSyncModal(true);
+          } else {
+            console.log('No local notes found that need syncing');
           }
         } catch (error) {
           console.error('Failed to check for note conflicts:', error);
@@ -61,9 +64,10 @@ export const SyncManager: React.FC = () => {
       sessionStorage.setItem('session_id', Date.now().toString());
     }
 
-    // Small delay to ensure auth state is stable
-    const timer = setTimeout(checkForConflicts, 1000);
-    return () => clearTimeout(timer);
+    // Check immediately when user logs in
+    if (user && !authLoading) {
+      checkForConflicts();
+    }
   }, [user, authLoading, findSyncConflicts]);
 
   // Handle sync action from modal

@@ -573,11 +573,15 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         return { localNoteCount: 0, cloudNoteCount: 0, conflictedNotes: [] };
       }
       
+      console.log('Finding sync conflicts for user:', user.uid);
+      
       // Get local notes
       const localNotes = localStorageNotesService.getNotes();
+      console.log('Local notes found:', localNotes.length);
       
       // Get cloud notes
       const cloudNotes = await firebaseNotesService.getNotes(user.uid);
+      console.log('Cloud notes found:', cloudNotes.length);
       
       // Initialize result
       const conflictedNotes: ConflictedNote[] = [];
@@ -588,8 +592,11 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         cloudNotesMap.set(note.id, note);
       });
       
-      // Count local-only notes (not in cloud)
-      let localOnlyCount = 0;
+      // Find local-only notes (not in cloud)
+      const localOnlyNotes = localNotes.filter(localNote => !cloudNotesMap.has(localNote.id));
+      const localOnlyCount = localOnlyNotes.length;
+      
+      console.log('Local-only notes that need syncing:', localOnlyCount);
       
       // Find conflicts by comparing local and cloud notes
       for (const localNote of localNotes) {
@@ -598,8 +605,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         // If note exists in both places, check for conflicts
         if (cloudNote) {
           // Compare last updated timestamps to detect conflicts
-          const localUpdated = localNote.updatedAt || localNote.createdAt;
-          const cloudUpdated = cloudNote.updatedAt || cloudNote.createdAt;
+          const localUpdated = new Date(localNote.updatedAt || localNote.createdAt);
+          const cloudUpdated = new Date(cloudNote.updatedAt || cloudNote.createdAt);
           
           // If the timestamps are different, we have a potential conflict
           // We also check content to avoid flagging identical notes
@@ -613,17 +620,21 @@ export const useNoteStore = create<NoteState>((set, get) => ({
               resolution: 'merge' // Default resolution
             });
           }
-        } else {
-          // This note exists locally but not in the cloud
-          localOnlyCount++;
         }
       }
       
-      return { 
-        localNoteCount: localOnlyCount, 
+      console.log('Conflicted notes found:', conflictedNotes.length);
+      
+      // Always return at least 1 for localNoteCount if there are any local notes
+      // This ensures the sync modal appears even if there are no direct conflicts
+      const result = { 
+        localNoteCount: localOnlyCount > 0 ? localOnlyCount : (localNotes.length > 0 ? 1 : 0), 
         cloudNoteCount: cloudNotes.length, 
         conflictedNotes 
       };
+      
+      console.log('Sync conflict check result:', result);
+      return result;
     } catch (error) {
       console.error('Failed to find sync conflicts:', error);
       return { localNoteCount: 0, cloudNoteCount: 0, conflictedNotes: [] };

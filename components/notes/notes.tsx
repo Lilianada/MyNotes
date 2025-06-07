@@ -3,6 +3,7 @@
 import { useRef } from "react"
 import { UnifiedContextNoteEditor } from "@/components/editor/unified-context-note-editor"
 import { useAppState } from "@/lib/state/app-state"
+import { LoadingSpinner } from "@/components/ui/loading-states"
 
 export function Notes() {
   const { 
@@ -14,8 +15,7 @@ export function Notes() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-full" role="status" aria-live="polite">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900 dark:border-gray-100"></div>
-        <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">Loading your notes...</p>
+        <LoadingSpinner className="scale-150" />
         <div className="sr-only">Loading notes</div>
       </div>
     )

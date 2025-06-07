@@ -2,10 +2,11 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserStorage, StorageAlert } from '@/types';
-// Remove dependency on auth context
 import { getUserStorage, recalculateUserStorage, getAdminStorageStats } from '@/lib/firebase/firebase-storage';
 import { checkStorageAlerts, getStoragePercentage } from '@/lib/storage/storage-utils';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth-context';
+import { firebaseNotesService } from '@/lib/firebase/firebase-notes';
 
 interface AdminStorageStats {
   adminStorage: number;
@@ -34,12 +35,11 @@ export function StorageProvider({ children }: { children: ReactNode }) {
   const [lastAlertShown, setLastAlertShown] = useState<number>(0);
   const [adminStats, setAdminStats] = useState<AdminStorageStats | null>(null);
   
-  // Use local state instead of auth context
-  const [user, setUser] = useState<{ uid: string } | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  // Use auth context to get user information
+  const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   
-  // Simplified version that works with local storage only
+  // Load storage data from both local and Firebase sources
   const loadUserStorage = async () => {
     try {
       setIsLoading(true);
@@ -50,16 +50,17 @@ export function StorageProvider({ children }: { children: ReactNode }) {
       
       // Get notes from localStorage
       const notesString = localStorage.getItem('notes');
+      let localNotes = [];
       if (notesString) {
         try {
-          const notes = JSON.parse(notesString);
-          noteCount = notes.length;
+          localNotes = JSON.parse(notesString);
+          noteCount += localNotes.length;
           
-          // Calculate total size
-          totalSize = notesString.length * 2; // Approximate size in bytes (UTF-16)
+          // Calculate local notes size
+          totalSize += notesString.length * 2; // Approximate size in bytes (UTF-16)
           
           // Add size of note histories
-          notes.forEach((note: any) => {
+          localNotes.forEach((note: any) => {
             const historyKey = `note_history_${note.id}`;
             const historyString = localStorage.getItem(historyKey);
             if (historyString) {
@@ -71,19 +72,43 @@ export function StorageProvider({ children }: { children: ReactNode }) {
         }
       }
       
+      // If user is logged in, also get Firebase notes
+      let firebaseNotes = [];
+      if (user?.uid && firebaseNotesService) {
+        try {
+          firebaseNotes = await firebaseNotesService.getNotes(user.uid, isAdmin);
+          
+          // Count Firebase notes that aren't duplicates of local notes
+          const localNoteIds = new Set(localNotes.map((note: any) => note.id));
+          const uniqueFirebaseNotes = firebaseNotes.filter((note: any) => !localNoteIds.has(note.id));
+          
+          noteCount += uniqueFirebaseNotes.length;
+          
+          // Estimate Firebase notes size
+          const firebaseNotesSize = uniqueFirebaseNotes.reduce((size: number, note: any) => {
+            // Estimate size based on content length
+            return size + (note.content?.length || 0) * 2;
+          }, 0);
+          
+          totalSize += firebaseNotesSize;
+        } catch (e) {
+          console.error('Error fetching Firebase notes for storage calculation:', e);
+        }
+      }
+      
       // Update storage info
       const updatedStorage: UserStorage = {
-        userId: 'local-user',
+        userId: user?.uid || 'local-user',
         totalStorage: totalSize,
         maxStorage: 10 * 1024 * 1024, // 10MB default
         noteCount: noteCount,
         lastUpdated: new Date(),
-        isAdmin: false
+        isAdmin: Boolean(isAdmin)
       };
       
       setUserStorage(updatedStorage);
     } catch (error) {
-      console.error('Error calculating local storage:', error);
+      console.error('Error calculating storage:', error);
     } finally {
       setIsLoading(false);
     }
