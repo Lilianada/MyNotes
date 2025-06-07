@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Note } from '@/types';
-import NoteRelationships from '@/components/relationships/note-relationships';
 import { UnifiedNoteDetailsTabs, UnifiedTabContent } from './unified-note-details-tabs';
 import { useUnifiedNoteDetails } from './unified-note-details-hooks';
 import { useAppState } from '@/lib/state/app-state';

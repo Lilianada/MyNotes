@@ -172,19 +172,16 @@ This guide consolidates all identified issues and provides a structured roadmap 
 
 #### Editor Standardization
 - [✅] Choose and implement single editor solution (UnifiedEditor)
-- [ ] Enhance markdown preview capabilities
 - [✅] Implement reliable auto-save with indicators
 - [✅] Add comprehensive keyboard shortcuts
 
 #### Note Organization
 - [ ] Enhance hierarchical structure
 - [✅] Improve category management (fixed category CRUD operations)
-- [ ] Implement advanced search with filtering
 
 #### Data & Security
 - [✅] Create unified storage abstraction (Zustand store with dual storage)
 - [ ] Strengthen Firebase security rules
-- [ ] Implement proper input validation
 - [ ] Add conflict resolution for sync
 
 ### Phase 3: Advanced Features (3-4 months)
@@ -193,8 +190,8 @@ This guide consolidates all identified issues and provides a structured roadmap 
 
 
 #### Integration & Export
-- [ ] Add export to multiple formats
-- [ ] Implement import from other apps
+- [ ] Fix the export multiple formats and make sure it works well
+- [ ] Implement import of files in the same format as we export md,txt,pdf,doc
 - [ ] Create basic API for integrations
 - [ ] Enhance offline capabilities
 

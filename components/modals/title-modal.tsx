@@ -11,7 +11,7 @@ interface TitleModalProps {
   description?: string;
 }
 
-export function TitleModal({
+function TitleModal({
   isOpen,
   onClose,
   onSubmit,
@@ -104,3 +104,6 @@ export function TitleModal({
     </div>
   );
 }
+
+export { TitleModal };
+export default TitleModal;

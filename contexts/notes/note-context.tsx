@@ -109,13 +109,6 @@ export function NoteProvider({ children }: { children: ReactNode }) {
     user
   );
 
-  const relationshipOperations = useNoteRelationships(
-    notes,
-    setNotes,
-    Boolean(isAdmin),
-    user
-  );
-
   const categoryOperations = useNoteCategories(
     notes,
     setNotes,
@@ -226,7 +219,6 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         addNote: enhancedAddNote, // Override with our enhanced version
         selectNote: enhancedSelectNote, // Override with our enhanced version
         ...tagOperations,
-        ...relationshipOperations,
         ...categoryOperations
       }}
     >

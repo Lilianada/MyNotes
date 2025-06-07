@@ -4,17 +4,10 @@ import React from 'react';
 import type { Note } from '@/types';
 import { GripVertical, Trash2, Link, FolderTree } from 'lucide-react';
 
-interface NoteRelationshipInfo {
-  isParent: boolean;
-  isChild: boolean;
-  isLinked: boolean;
-}
-
 interface NoteListItemProps {
   note: Note;
   selectedNoteId: number | null;
   isDeleting: number | null;
-  relationshipInfo: NoteRelationshipInfo;
   isSelectionMode?: boolean;
   isSelected?: boolean;
   onSelectNote: (note: Note) => void;
@@ -27,7 +20,6 @@ export default function NoteListItem({
   note,
   selectedNoteId,
   isDeleting,
-  relationshipInfo,
   isSelectionMode = false,
   isSelected = false,
   onSelectNote,
@@ -79,30 +71,7 @@ export default function NoteListItem({
               role="presentation"
             />
           )}
-          {relationshipInfo.isParent && (
-            <span 
-              className="text-blue-600 mr-1"
-              title="Has child notes"
-            >
-              <FolderTree size={12} />
-            </span>
-          )}
-          {relationshipInfo.isChild && (
-            <span 
-              className="text-green-600 mr-1"
-              title="Is a child note"
-            >
-              <FolderTree size={12} className="rotate-180" />
-            </span>
-          )}
-          {relationshipInfo.isLinked && (
-            <span 
-              className="text-purple-600 mr-1"
-              title="Has linked notes"
-            >
-              <Link size={12} />
-            </span>
-          )}
+          
           {note.publish && (
             <span 
               className="text-emerald-600 mr-1"

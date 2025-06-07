@@ -6,7 +6,6 @@ import { Note, NoteCategory } from '@/types';
 import { formatDistanceToNow, format, isValid } from 'date-fns';
 import { formatBytes } from '@/lib/storage/storage-utils';
 import { convertTimestamp } from '@/lib/firebase/helpers';
-import NoteRelationships from '@/components/relationships/note-relationships';
 import { CategoryTabContent } from './category-tab-content';
 import { MetadataTabContent } from './metadata-tab-content';
 import { TabType } from './unified-note-details-hooks';
@@ -30,7 +29,6 @@ export function UnifiedNoteDetailsTabs({ activeTab, setActiveTab }: UnifiedNoteD
     { id: 'details' as const, label: 'Details', icon: null },
     { id: 'category' as const, label: 'Category', icon: null },
     { id: 'tags' as const, label: 'Tags', icon: Hash },
-    { id: 'relationships' as const, label: 'Links', icon: Link },
     { id: 'metadata' as const, label: 'Meta', icon: Edit },
   ];
 
@@ -251,11 +249,6 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
           </div>
         </div>
       </div>
-    ),
-    
-    // Relationships Tab
-    'relationships': (
-      <NoteRelationships note={note} />
     ),
     
     // Metadata Tab
