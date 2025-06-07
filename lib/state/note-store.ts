@@ -754,8 +754,120 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   },
   updateNoteParent: async () => {},
   updateNoteLinks: async () => {},
-  updateNoteTags: async () => [],
-  updateTagAcrossNotes: async () => {},
-  deleteTagFromAllNotes: async () => {},
+  updateNoteTags: async (id, tags, user, isAdmin = false) => {
+    try {
+      const state = get();
+      const noteToUpdate = state.notes.find(note => note.id === id);
+      
+      if (!noteToUpdate) {
+        console.error(`Note with id ${id} not found`);
+        return [];
+      }
+      
+      // Limit to 5 tags
+      const limitedTags = tags.slice(0, 5);
+      
+      // Update note in state
+      const updatedNotes = state.notes.map(note => 
+        note.id === id ? { ...note, tags: limitedTags } : note
+      );
+      
+      set({ notes: updatedNotes });
+      
+      // Save to appropriate storage
+      if (user && user.uid) {
+        // Save to Firebase for logged-in users
+        await firebaseNotesService.updateNoteData(id, { tags: limitedTags }, user.uid, isAdmin);
+      } else {
+        // Save to local storage for offline use
+        localStorageNotesService.updateNote(id, { tags: limitedTags });
+      }
+      
+      return limitedTags;
+    } catch (error) {
+      console.error('Failed to update note tags:', error);
+      return [];
+    }
+  },
+  
+  updateTagAcrossNotes: async (oldTag, newTag, user, isAdmin = false) => {
+    try {
+      const state = get();
+      let updatedNotes = [...state.notes];
+      
+      // Find all notes with the old tag
+      const notesToUpdate = state.notes.filter(note => 
+        note.tags && note.tags.includes(oldTag)
+      );
+      
+      if (notesToUpdate.length === 0) {
+        return;
+      }
+      
+      // Update each note
+      for (const note of notesToUpdate) {
+        const updatedTags = note.tags?.map(tag => 
+          tag === oldTag ? newTag : tag
+        ) || [];
+        
+        // Update note in state
+        updatedNotes = updatedNotes.map(n => 
+          n.id === note.id ? { ...n, tags: updatedTags } : n
+        );
+        
+        // Save to appropriate storage
+        if (user && user.uid) {
+          // Save to Firebase for logged-in users
+          await firebaseNotesService.updateNoteData(note.id, { tags: updatedTags }, user.uid, isAdmin);
+        } else {
+          // Save to local storage for offline use
+          localStorageNotesService.updateNote(note.id, { tags: updatedTags });
+        }
+      }
+      
+      set({ notes: updatedNotes });
+    } catch (error) {
+      console.error('Failed to update tag across notes:', error);
+    }
+  },
+  
+  deleteTagFromAllNotes: async (tag, user, isAdmin = false) => {
+    try {
+      const state = get();
+      let updatedNotes = [...state.notes];
+      
+      // Find all notes with the tag
+      const notesToUpdate = state.notes.filter(note => 
+        note.tags && note.tags.includes(tag)
+      );
+      
+      if (notesToUpdate.length === 0) {
+        return;
+      }
+      
+      // Update each note
+      for (const note of notesToUpdate) {
+        const updatedTags = note.tags?.filter(t => t !== tag) || [];
+        
+        // Update note in state
+        updatedNotes = updatedNotes.map(n => 
+          n.id === note.id ? { ...n, tags: updatedTags } : n
+        );
+        
+        // Save to appropriate storage
+        if (user && user.uid) {
+          // Save to Firebase for logged-in users
+          await firebaseNotesService.updateNoteData(note.id, { tags: updatedTags }, user.uid, isAdmin);
+        } else {
+          // Save to local storage for offline use
+          localStorageNotesService.updateNote(note.id, { tags: updatedTags });
+        }
+      }
+      
+      set({ notes: updatedNotes });
+    } catch (error) {
+      console.error('Failed to delete tag from all notes:', error);
+    }
+  },
   updateNoteData: async () => {},
 }))

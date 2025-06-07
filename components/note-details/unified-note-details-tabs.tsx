@@ -1,14 +1,14 @@
 "use client";
 
 import React from 'react';
-import { Hash, Edit, Calendar, Tag, History, RefreshCw, X } from 'lucide-react';
+import { Hash, Edit, Calendar, Tag, History, RefreshCw, X} from 'lucide-react';
 import { Note } from '@/types';
 import { formatDistanceToNow, format, isValid } from 'date-fns';
 import { formatBytes } from '@/lib/storage/storage-utils';
 import { convertTimestamp } from '@/lib/firebase/helpers';
-import { CategoryTabContent } from './category-tab-content';
-import { MetadataTabContent } from './metadata-tab-content';
+import { CategoryManager } from '../categories/category-manager';
 import { TabType } from './unified-note-details-hooks';
+import { useAppState } from '@/lib/state/app-state';
 
 // Helper function to safely convert and validate dates
 const safeDate = (dateValue: any): Date => {
@@ -82,34 +82,122 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
     filePath,
     setFilePath,
     handleMetadataSave,
+    activeTab,
   } = hooks;
   
-  // Define a Map of tabs to their content
-  const tabComponents: Record<TabType, JSX.Element> = {
-    // Details Tab
-    'details': (
-      <div className="space-y-4">
+  // Get all unique tags from all notes for reuse
+  const allTags = React.useMemo(() => {
+    const appState = useAppState();
+    const notes = appState?.notes || [];
+    const tagSet = new Set<string>();
+    
+    if (notes && notes.length > 0) {
+      notes.forEach((note: Note) => {
+        if (note.tags && Array.isArray(note.tags)) {
+          note.tags.forEach((tag: string) => tagSet.add(tag));
+        }
+      });
+    }
+    
+    return Array.from(tagSet).sort();
+  }, []);
+  
+  // State for new tag input
+  const [newTag, setNewTag] = React.useState('');
+  
+  // Handle adding a new tag
+  const handleAddTag = () => {
+    if (!newTag.trim()) return;
+    
+    // Check if we've reached the limit of 5 tags
+    if (pendingTags.length >= 5) {
+      alert('Maximum of 5 tags allowed per note');
+      return;
+    }
+    
+    // Check if tag already exists
+    if (pendingTags.includes(newTag.trim())) {
+      setNewTag('');
+      return;
+    }
+    
+    // Add the new tag
+    handleTagSelection(newTag.trim());
+    setNewTag('');
+  };
+  
+  // Render the details tab content
+  const renderDetailsTab = () => {
+    return (
+      <div className="space-y-4 p-4">
         <div className="flex items-start space-x-2">
           <Calendar size={18} className="text-gray-500 mt-0.5" />
-          <div>
+          <div className="flex-1">
             <h3 className="text-sm font-medium">Created</h3>
             <p className="text-sm text-gray-500">
-              {format(safeDate(note.createdAt), 'PPP')} ({formatDistanceToNow(safeDate(note.createdAt), { addSuffix: true })})
+              {note.createdAt ? (
+                <>
+                  {format(safeDate(note.createdAt), 'PPP')}
+                  <span className="text-xs ml-2">
+                    ({formatDistanceToNow(safeDate(note.createdAt), { addSuffix: true })})
+                  </span>
+                </>
+              ) : (
+                'Unknown'
+              )}
             </p>
           </div>
         </div>
         
-        {note.category && (
+        <div className="flex items-start space-x-2">
+          <Calendar size={18} className="text-gray-500 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium">Last Modified</h3>
+            <p className="text-sm text-gray-500">
+              {note.updatedAt ? (
+                <>
+                  {format(safeDate(note.updatedAt), 'PPP')}
+                  <span className="text-xs ml-2">
+                    ({formatDistanceToNow(safeDate(note.updatedAt), { addSuffix: true })})
+                  </span>
+                </>
+              ) : (
+                'Unknown'
+              )}
+            </p>
+          </div>
+        </div>
+        
+        {note.tags && note.tags.length > 0 && (
           <div className="flex items-start space-x-2">
             <Tag size={18} className="text-gray-500 mt-0.5" />
-            <div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium">Tags</h3>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {note.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded-full"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {note.category && (
+          <div className="flex items-start space-x-2">
+            <Hash size={18} className="text-gray-500 mt-0.5" />
+            <div className="flex-1">
               <h3 className="text-sm font-medium">Category</h3>
               <div className="flex items-center mt-1">
                 <span
                   className="w-3 h-3 rounded-full mr-2"
-                  style={{ backgroundColor: note.category.color }}
+                  style={{ backgroundColor: note.category?.color || '#cccccc' }}
                 />
-                <span className="text-sm">{note.category.name}</span>
+                <span className="text-sm">{note.category?.name || 'Unnamed'}</span>
               </div>
             </div>
           </div>
@@ -161,7 +249,6 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
                     {(entry.editType === 'update' || entry.editType === 'autosave') && (
                       <p className="text-xs text-gray-500">
                         {entry.contentLength && `${formatBytes(entry.contentLength)} • `}
-                        {/* Display word count if available in the entry object */}
                         {entry.hasOwnProperty('wordCount') && typeof (entry as any).wordCount === 'number' && 
                           `${(entry as any).wordCount} words`
                         }
@@ -176,97 +263,209 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
           </div>
         </div>
       </div>
-    ),
-    
-    // Category Tab
-    'category': (
-      <CategoryTabContent
-        note={note}
+    );
+  };
+
+  // Render the category tab content
+  const renderCategoryTab = () => {
+    return (
+      <CategoryManager
         categories={categories}
-        handleCategorySave={handleCategorySave}
-        handleUpdateCategory={handleUpdateCategory}
-        handleDeleteCategory={handleDeleteCategory}
+        onSaveCategory={handleCategorySave}
+        onSelectCategory={handleCategorySave}
+        onUpdateCategory={handleUpdateCategory}
+        onDeleteCategory={handleDeleteCategory}
+        selectedCategoryId={note?.category?.id}
       />
-    ),
-    
-    // Tags Tab
-    'tags': (
+    );
+  };
+
+  // Render the tags tab content
+  const renderTagsTab = () => {
+    return (
       <div className="space-y-4">
         <h3 className="text-sm font-medium">Manage tags</h3>
         
-        {/* Display current tags */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {pendingTags.length > 0 ? (
-            pendingTags.map(tag => (
-              <div 
-                key={tag}
-                className="flex items-center bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 px-3 py-1 rounded-full text-sm"
-              >
-                <span className="mr-1">#{tag}</span>
-                <button 
-                  onClick={() => {
-                    const updatedTags = pendingTags.filter(t => t !== tag);
-                    handleTagSelection(tag); // Use existing handler instead of direct state update
-                  }}
-                  className="ml-1 text-blue-600 hover:text-blue-800 dark:text-blue-300 dark:hover:text-blue-100"
-                  aria-label={`Remove tag ${tag}`}
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No tags added yet</p>
-          )}
-        </div>
-        
-        {/* Add tag input */}
-        <div className="w-full">
-          <div className="flex">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Add Tags <span className="text-gray-500 text-xs">(max 5)</span>
+          </label>
+          <div className="flex items-center">
             <input
               type="text"
-              placeholder="Add a tag..."
-              className="text-sm flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && e.currentTarget.value) {
-                  const newTag = e.currentTarget.value.trim();
-                  if (newTag && !pendingTags.includes(newTag)) {
-                    // Add the tag to pendingTags using the existing handler
-                    if (!note.tags?.includes(newTag)) {
-                      handleTagSelection(newTag);
-                    }
-                    e.currentTarget.value = '';
-                  }
-                }
-              }}
+              value={newTag}
+              onChange={(e) => setNewTag(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddTag()}
+              className="flex-1 p-2 border border-gray-300 rounded-l-md text-sm"
+              placeholder="Enter a tag name"
+              disabled={pendingTags.length >= 5}
             />
-            <button 
-              className="text-sm px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
-              onClick={handleApplyTagChanges}
+            <button
+              onClick={handleAddTag}
+              disabled={!newTag.trim() || pendingTags.length >= 5}
+              className="p-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 disabled:bg-gray-300 disabled:text-gray-500 text-sm"
             >
-              Save
+              Add
             </button>
           </div>
+          {pendingTags.length >= 5 && (
+            <p className="text-amber-600 text-xs mt-1">Maximum of 5 tags reached</p>
+          )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Current Tags
+          </label>
+          <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md min-h-[60px]">
+            {pendingTags.length > 0 ? (
+              pendingTags.map((tag: string) => (
+                <div key={tag} className="flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  #{tag}
+                  <button
+                    onClick={() => handleTagSelection(tag)}
+                    className="ml-1 text-blue-600 hover:text-blue-800"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <span className="text-gray-400 text-sm">No tags added</span>
+            )}
+          </div>
+        </div>
+
+        {allTags.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Reuse Existing Tags
+            </label>
+            <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md">
+              {allTags.map((tag: string) => (
+                <button
+                  key={tag}
+                  onClick={() => handleTagSelection(tag)}
+                  disabled={pendingTags.length >= 5 && !pendingTags.includes(tag)}
+                  className={`px-2 py-1 text-xs rounded-full ${pendingTags.includes(tag) 
+                    ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:opacity-50'}`}
+                >
+                  #{tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end space-x-2">
+          <button
+            onClick={handleCancelTagChanges}
+            className="px-4 py-2 border border-gray-300 rounded-md text-sm hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleApplyTagChanges}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+          >
+            Save Tags
+          </button>
         </div>
       </div>
-    ),
-    
-    // Metadata Tab
-    'metadata': (
-      <MetadataTabContent
-        note={note}
-        description={description}
-        setDescription={setDescription}
-        publishStatus={publishStatus}
-        setPublishStatus={setPublishStatus}
-        archived={archived}
-        setArchived={setArchived}
-        filePath={filePath}
-        setFilePath={setFilePath}
-        onSave={handleMetadataSave}
-      />
-    ),
+    );
   };
 
-  return tabComponents[tab] || <div>Tab content not available</div>;
+  // Render the metadata tab content
+  const renderMetadataTab = () => {
+    return (
+      <div className="space-y-4 p-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Title
+          </label>
+          <input
+            type="text"
+            value={note.noteTitle}
+            readOnly
+            className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-sm"
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Description
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md text-sm min-h-[100px]"
+            placeholder="Add a description for this note..."
+          />
+        </div>
+        
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="publishStatus"
+            checked={publishStatus}
+            onChange={(e) => setPublishStatus(e.target.checked)}
+            className="mr-2"
+          />
+          <label htmlFor="publishStatus" className="text-sm font-medium text-gray-700">
+            Publish this note
+          </label>
+        </div>
+        
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="archivedStatus"
+            checked={archived}
+            onChange={(e) => setArchived(e.target.checked)}
+            className="mr-2"
+          />
+          <label htmlFor="archivedStatus" className="text-sm font-medium text-gray-700">
+            Archive this note
+          </label>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            File Path
+          </label>
+          <input
+            type="text"
+            value={filePath}
+            onChange={(e) => setFilePath(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md text-sm"
+            placeholder="Optional file path for this note"
+          />
+        </div>
+        
+        <div className="flex justify-end">
+          <button
+            onClick={handleMetadataSave}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700"
+          >
+            Save Metadata
+          </button>
+        </div>
+      </div>
+    );
+  };
+  
+  // Use the render functions based on the active tab
+  switch (activeTab) {
+    case 'details':
+      return renderDetailsTab();
+    case 'category':
+      return renderCategoryTab();
+    case 'tags':
+      return renderTagsTab();
+    case 'metadata':
+      return renderMetadataTab();
+    default:
+      return <div>Tab content not available</div>;
+  }
 }
