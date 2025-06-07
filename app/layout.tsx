@@ -12,6 +12,8 @@ import { UserPreferencesProvider } from "@/contexts/user-preferences-context"
 import { Toaster } from "@/components/ui/toaster"
 import { AppErrorBoundary } from "@/components/error-handling"
 import { AutoHistoryCleanup } from "@/components/utils/auto-history-cleanup"
+import { SyncManager } from "@/components/sync/sync-manager"
+import { SyncTest } from "@/components/sync/sync-test"
 import { AuthProvider } from "@/contexts/auth-context"
 
 export const metadata: Metadata = {
@@ -41,6 +43,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <FontProvider>
                   {children}
                   <AutoHistoryCleanup />
+                  <SyncManager />
+                  <SyncTest />
                   <Toaster />
                 </FontProvider>
               </UserPreferencesProvider>

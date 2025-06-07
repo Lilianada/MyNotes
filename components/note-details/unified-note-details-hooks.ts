@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useAppState } from '@/lib/state/app-state';
 import { useToast } from '@/components/ui/use-toast';
 
-export type TabType = 'details' | 'category' | 'relationships' | 'tags' | 'metadata';
+export type TabType = 'details' | 'category' | 'tags' | 'metadata';
 
 /**
  * Unified hook for note details state and actions

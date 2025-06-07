@@ -134,8 +134,7 @@ export default function Sidebar({
           isDeleting={state.isDeleting}
           isSelectionMode={state.isSelectionMode}
           selectedNoteIds={state.selectedNoteIds}
-          getChildNotes={getChildNotes}
-          getLinkedNotes={getLinkedNotes}
+
           onSelectNote={onSelectNote}
           onOpenDetails={handlers.handleOpenDetails}
           onDeleteNote={handlers.handleDeleteNote}

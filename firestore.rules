@@ -1,6 +1,45 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper functions for validation and security
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isValidNote() {
+      let requiredFields = ['content', 'noteTitle', 'createdAt', 'uniqueId'];
+      let hasRequiredFields = requiredFields.every(field => request.resource.data[field] != null);
+      
+      // Validate content size (prevent extremely large notes)
+      let contentSizeValid = request.resource.data.content.size() <= 500000; // ~500KB limit
+      
+      // Validate that tags are strings and limited to 5
+      let tagsValid = !request.resource.data.keys().hasAny(['tags']) || 
+        (request.resource.data.tags is list && 
+         request.resource.data.tags.size() <= 5 && 
+         request.resource.data.tags.every(tag => tag is string));
+      
+      return hasRequiredFields && contentSizeValid && tagsValid;
+    }
+    
+    function unchangedFields(fields) {
+      return fields.every(field => 
+        !request.resource.data.keys().hasAny([field]) || 
+        request.resource.data[field] == resource.data[field]
+      );
+    }
+    
+    // Rate limiting function (basic implementation)
+    function notRateLimited() {
+      // This is a simplified version - in production, you'd use Firestore triggers
+      // or Cloud Functions to implement proper rate limiting
+      return true;
+    }
+    
     // Default deny all rule
     match /{document=**} {
       allow read, write: if false;
@@ -8,49 +47,69 @@ service cloud.firestore {
     
     // Admin notes collection
     match /notes/{noteId} {
-      // Allow read access to all authenticated users
-      allow read: if request.auth != null;
+      // Allow read access to authenticated users
+      allow read: if isSignedIn() && notRateLimited();
       
-      // Allow creation by authenticated users
-      allow create: if request.auth != null;
+      // Allow creation by authenticated users with data validation
+      allow create: if isSignedIn() && 
+                     notRateLimited() && 
+                     isValidNote() && 
+                     request.resource.data.userId == request.auth.uid;
       
-      // Allow update by owner but prevent modification of createdAt field
-      allow update: if request.auth != null && 
-        request.auth.uid == resource.data.userId &&
-        (
-          // Either createdAt remains unchanged or isn't included in the update
-          !request.resource.data.keys().hasAny(['createdAt']) || 
-          request.resource.data.createdAt == resource.data.createdAt
-        );
+      // Allow update by owner with field protection and data validation
+      allow update: if isSignedIn() && 
+                     notRateLimited() && 
+                     request.auth.uid == resource.data.userId && 
+                     unchangedFields(['createdAt', 'userId', 'uniqueId']) && 
+                     isValidNote();
       
       // Allow deletion by owner
-      allow delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow delete: if isSignedIn() && 
+                     notRateLimited() && 
+                     request.auth.uid == resource.data.userId;
     }
     
     // User data and subcollections
     match /users/{userId} {
       // Users can read and write their own data
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isOwner(userId) && notRateLimited();
+      allow write: if isOwner(userId) && notRateLimited();
       
-      // Notes subcollection
+      // Notes subcollection with enhanced security
       match /notes/{noteId} {
         // Allow reading by the owner
-        allow read: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId) && notRateLimited();
         
-        // Allow creation by the owner
-        allow create: if request.auth != null && request.auth.uid == userId;
+        // Allow creation by the owner with data validation
+        allow create: if isOwner(userId) && 
+                       notRateLimited() && 
+                       isValidNote();
         
-        // Allow update by owner but prevent modification of createdAt field
-        allow update: if request.auth != null && 
-          request.auth.uid == userId &&
-          (
-            // Either createdAt remains unchanged or isn't included in the update
-            !request.resource.data.keys().hasAny(['createdAt']) || 
-            request.resource.data.createdAt == resource.data.createdAt
-          );
+        // Allow update by owner with field protection and data validation
+        allow update: if isOwner(userId) && 
+                       notRateLimited() && 
+                       unchangedFields(['createdAt', 'userId', 'uniqueId']) && 
+                       isValidNote();
         
         // Allow deletion by owner
-        allow delete: if request.auth != null && request.auth.uid == userId;
+        allow delete: if isOwner(userId) && notRateLimited();
+      }
+      
+      // User settings subcollection
+      match /settings/{settingId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+      
+      // User profile subcollection
+      match /profile/{profileId} {
+        // Allow the user to read/write their own profile
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+        
+        // Allow others to read public profiles
+        // Assuming there's a 'public' field that determines visibility
+        allow read: if resource.data.public == true;
       }
     }
   }
