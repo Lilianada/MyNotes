@@ -1,8 +1,8 @@
 "use client";
 
 import React from 'react';
-import { Hash, Link, Edit, Calendar, Tag, History, RefreshCw, HardDrive, Clock, FileText, X } from 'lucide-react';
-import { Note, NoteCategory } from '@/types';
+import { Hash, Edit, Calendar, Tag, History, RefreshCw, X } from 'lucide-react';
+import { Note } from '@/types';
 import { formatDistanceToNow, format, isValid } from 'date-fns';
 import { formatBytes } from '@/lib/storage/storage-utils';
 import { convertTimestamp } from '@/lib/firebase/helpers';
@@ -226,7 +226,7 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
             <input
               type="text"
               placeholder="Add a tag..."
-              className="flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-sm flex-1 p-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && e.currentTarget.value) {
                   const newTag = e.currentTarget.value.trim();
@@ -241,7 +241,7 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
               }}
             />
             <button 
-              className="px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
+              className="text-sm px-4 py-2 bg-blue-500 text-white rounded-r-md hover:bg-blue-600"
               onClick={handleApplyTagChanges}
             >
               Save

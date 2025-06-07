@@ -71,7 +71,7 @@ export function SidebarDialogs({
       <Sheet open={isDetailsOpen && !!activeNote} onOpenChange={(open) => {
         if (!open) onCloseDetails();
       }}>
-        <SheetOverlay className="bg-black/60" />
+        <SheetOverlay className="bg-black/20 backdrop-blur-sm" />
         <SheetContent side="right" className="w-full sm:max-w-md md:max-w-lg p-0 border-l border-gray-200 dark:border-gray-700">
           {activeNote && (
             <UnifiedNoteDetails

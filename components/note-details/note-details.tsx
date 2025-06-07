@@ -1,11 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Note } from '@/types';
 import { UnifiedNoteDetailsTabs, UnifiedTabContent } from './unified-note-details-tabs';
 import { useUnifiedNoteDetails } from './unified-note-details-hooks';
-import { useAppState } from '@/lib/state/app-state';
-import { logger } from '@/lib/utils/logger';
 
 interface NoteDetailsProps {
   note: Note;
@@ -21,7 +19,7 @@ export function NoteDetails({ note, isOpen, onClose }: NoteDetailsProps) {
   
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100]"
+      className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-[100]"
       onClick={onClose}
       style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
     >

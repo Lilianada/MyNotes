@@ -4,10 +4,15 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useNoteStore } from '@/lib/state/note-store';
 import { SyncModal, ConflictResolutionStrategy } from '../modals/sync-modal';
+import { useToast } from '@/hooks/use-toast';
+
+// Key for tracking sync status in local storage
+const SYNC_STATUS_KEY = 'noteit_sync_status';
 
 export const SyncManager: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
   const { findSyncConflicts, resolveNoteConflicts } = useNoteStore();
+  const { toast } = useToast();
   
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [syncData, setSyncData] = useState<{
@@ -27,6 +32,16 @@ export const SyncManager: React.FC = () => {
       // Only check if user is logged in and auth state is stable
       if (user && !authLoading) {
         try {
+          // Check if we've already synced for this user session
+          const syncStatus = localStorage.getItem(SYNC_STATUS_KEY);
+          const lastSyncTime = syncStatus ? JSON.parse(syncStatus)[user.uid] : null;
+          const currentSession = sessionStorage.getItem('session_id');
+          
+          // If we've already synced in this session, don't show the modal again
+          if (lastSyncTime && currentSession && lastSyncTime === currentSession) {
+            return;
+          }
+          
           // Find conflicts between local and cloud notes
           const conflicts = await findSyncConflicts(user);
           
@@ -40,6 +55,11 @@ export const SyncManager: React.FC = () => {
         }
       }
     };
+
+    // Create a unique session ID if it doesn't exist
+    if (!sessionStorage.getItem('session_id')) {
+      sessionStorage.setItem('session_id', Date.now().toString());
+    }
 
     // Small delay to ensure auth state is stable
     const timer = setTimeout(checkForConflicts, 1000);
@@ -57,9 +77,29 @@ export const SyncManager: React.FC = () => {
     
     try {
       await resolveNoteConflicts(user, false, strategy, manualResolutions);
+      
+      // Save sync status to local storage
+      const syncStatus = localStorage.getItem(SYNC_STATUS_KEY) || '{}';
+      const parsedStatus = JSON.parse(syncStatus);
+      parsedStatus[user.uid] = sessionStorage.getItem('session_id');
+      localStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(parsedStatus));
+      
+      // Show success toast
+      toast({
+        title: "Sync Complete",
+        description: "Your notes have been successfully synchronized.",
+      });
+      
       console.log('Note synchronization completed successfully');
     } catch (error) {
       console.error('Error during note synchronization:', error);
+      
+      // Show error toast
+      toast({
+        title: "Sync Failed",
+        description: "There was a problem synchronizing your notes.",
+        variant: "destructive",
+      });
     } finally {
       setIsSyncing(false);
       setShowSyncModal(false);
@@ -69,6 +109,14 @@ export const SyncManager: React.FC = () => {
   // Close modal without syncing
   const handleClose = () => {
     setShowSyncModal(false);
+    
+    // Even if user cancels, don't show the modal again in this session
+    if (user) {
+      const syncStatus = localStorage.getItem(SYNC_STATUS_KEY) || '{}';
+      const parsedStatus = JSON.parse(syncStatus);
+      parsedStatus[user.uid] = sessionStorage.getItem('session_id');
+      localStorage.setItem(SYNC_STATUS_KEY, JSON.stringify(parsedStatus));
+    }
   };
 
   return (
