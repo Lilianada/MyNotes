@@ -12,8 +12,8 @@ import { useUserPreferences } from "@/contexts/user-preferences-context";
 import { useNoteState, useNoteOperations } from "./note-hooks";
 import { initializeNotes } from "./note-initialization";
 import { useNoteTags } from "./note-tags";
-import { useNoteRelationships } from "./note-relationships";
 import { useNoteCategories } from "./note-categories";
+import { useNoteRelationships } from "./note-relationships";
 import { editHistoryService } from "@/lib/edit-history/edit-history-service";
 
 interface NoteContextType {
@@ -110,6 +110,14 @@ export function NoteProvider({ children }: { children: ReactNode }) {
   );
 
   const categoryOperations = useNoteCategories(
+    notes,
+    setNotes,
+    Boolean(isAdmin),
+    user
+  );
+  
+  // Get relationship operations
+  const relationshipOperations = useNoteRelationships(
     notes,
     setNotes,
     Boolean(isAdmin),
@@ -219,7 +227,8 @@ export function NoteProvider({ children }: { children: ReactNode }) {
         addNote: enhancedAddNote, // Override with our enhanced version
         selectNote: enhancedSelectNote, // Override with our enhanced version
         ...tagOperations,
-        ...categoryOperations
+        ...categoryOperations,
+        ...relationshipOperations // Add relationship operations
       }}
     >
       {children}

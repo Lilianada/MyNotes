@@ -28,6 +28,7 @@ interface NoteState {
   
   // User data
   user: { uid: string } | null | undefined
+  setUser: (user: { uid: string } | null | undefined) => void
   
   // Loading state
   isLoading: boolean
@@ -103,9 +104,73 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   // Initialize required properties
   selectedNoteId: null,
   user: null,
+  setUser: (user) => {
+    const currentUser = get().user;
+    const newUser = user;
+    
+    // User is signing out
+    if (currentUser && !newUser) {
+      console.log('User signed out, clearing notes');
+      set({ 
+        user: null, 
+        notes: [], // Clear notes from state
+        selectedNoteId: null // Clear selected note
+      });
+      return;
+    }
+    
+    // User is signing in or changing
+    if ((currentUser?.uid !== newUser?.uid) && newUser?.uid) {
+      console.log('User changed, loading notes from Firebase');
+      set({ user: newUser, isLoading: true });
+      
+      // Load notes from Firebase when user logs in
+      get().loadNotesFromFirebase(newUser)
+        .then(() => {
+          console.log('Successfully loaded notes from Firebase');
+        })
+        .catch((error) => {
+          console.error('Failed to load notes from Firebase:', error);
+        });
+    } else {
+      // Just update the user state without reloading
+      set({ user: newUser });
+    }
+  },
   
   isLoading: false,
   setIsLoading: (isLoading) => set({ isLoading }),
+  
+  // Load notes from Firebase
+  loadNotesFromFirebase: async (user, isAdmin = false) => {
+    try {
+      if (!user || !user.uid) {
+        console.error('Cannot load notes: No authenticated user');
+        return;
+      }
+      
+      set({ isLoading: true });
+      
+      // Get notes from Firebase
+      const cloudNotes = await firebaseNotesService.getNotes(user.uid, isAdmin);
+      
+      // Get local notes that don't exist in Firebase
+      const localNotes = localStorageNotesService.getNotes();
+      const cloudNoteIds = new Set(cloudNotes.map(note => note.id));
+      const localOnlyNotes = localNotes.filter(note => !cloudNoteIds.has(note.id));
+      
+      // Combine cloud and local-only notes
+      const combinedNotes = [...cloudNotes, ...localOnlyNotes];
+      
+      // Update state
+      set({ notes: combinedNotes, isLoading: false });
+      
+      console.log(`Loaded ${cloudNotes.length} notes from Firebase and ${localOnlyNotes.length} local-only notes`);
+    } catch (error) {
+      console.error('Failed to load notes from Firebase:', error);
+      set({ isLoading: false });
+    }
+  },
   
   // CRUD operations
   addNote: async (noteTitle, user, isAdmin) => {
@@ -704,24 +769,11 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         }
       }
       
-      // Refresh notes from both sources after syncing
-      const updatedCloudNotes = await firebaseNotesService.getNotes(user.uid);
-      const remainingLocalNotes = localStorageNotesService.getNotes();
+      // Reload all notes from Firebase to ensure we have the latest data
+      await get().loadNotesFromFirebase(user, isAdmin);
       
-      // Create a map of cloud note IDs for the final merge
-      const updatedCloudNoteIds = new Set(updatedCloudNotes.map(note => note.id));
-      
-      // Filter local notes to only include those not in the cloud
-      const uniqueLocalNotes = remainingLocalNotes.filter(note => !updatedCloudNoteIds.has(note.id));
-      
-      // Combine cloud and unique local notes
-      const combinedNotes = [...updatedCloudNotes, ...uniqueLocalNotes];
-      
-      // Update state with the combined notes
-      set({ notes: combinedNotes });
-      
-      // Log the number of notes in the final state
-      console.log(`Final state has ${combinedNotes.length} notes (${updatedCloudNotes.length} cloud, ${uniqueLocalNotes.length} local)`);
+      // Log completion
+      console.log('Note synchronization completed successfully');
       
     } catch (error) {
       console.error('Failed to resolve note conflicts:', error);

@@ -12,6 +12,7 @@ import { auth, googleProvider, db } from '@/lib/firebase/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { AuthLoadingState } from '@/components/ui/loading-states';
 import { getUserStorage } from '@/lib/firebase/firebase-storage';
+import { useNoteStore } from '@/lib/state/note-store';
 
 interface AuthContextType {
   user: User | null;
@@ -151,9 +152,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(currentUser);
           const adminStatus = await checkIfAdmin(currentUser);
           setIsAdmin(adminStatus);
+          
+          // Update the note store with the user
+          useNoteStore.getState().setUser({
+            uid: currentUser.uid
+          });
         } else {
           setUser(null);
           setIsAdmin(false);
+          
+          // Update the note store with null user
+          useNoteStore.getState().setUser(null);
         }
       } catch (error) {
         console.error('Error handling auth state change:', error);
