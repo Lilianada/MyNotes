@@ -33,6 +33,9 @@ interface NoteState {
   isLoading: boolean
   setIsLoading: (isLoading: boolean) => void
   
+  // Load notes
+  loadNotesFromFirebase: (user: { uid: string }, isAdmin?: boolean) => Promise<void>
+  
   // CRUD operations
   addNote: (noteTitle: string, user?: { uid: string } | null, isAdmin?: boolean) => Promise<Note>
   updateNote: (id: number, content: string, user?: { uid: string } | null, isAdmin?: boolean) => Promise<void>
@@ -514,20 +517,18 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       // Initialize result
       const conflictedNotes: ConflictedNote[] = [];
       
-      // Map cloud notes by uniqueId for faster lookup
-      const cloudNotesMap = new Map<string, Note>();
+      // Map cloud notes by ID for faster lookup
+      const cloudNotesMap = new Map<number, Note>();
       cloudNotes.forEach(note => {
-        if (note.uniqueId) {
-          cloudNotesMap.set(note.uniqueId, note);
-        }
+        cloudNotesMap.set(note.id, note);
       });
+      
+      // Count local-only notes (not in cloud)
+      let localOnlyCount = 0;
       
       // Find conflicts by comparing local and cloud notes
       for (const localNote of localNotes) {
-        // Skip notes that don't have a uniqueId (they're purely local)
-        if (!localNote.uniqueId) continue;
-        
-        const cloudNote = cloudNotesMap.get(localNote.uniqueId);
+        const cloudNote = cloudNotesMap.get(localNote.id);
         
         // If note exists in both places, check for conflicts
         if (cloudNote) {
@@ -547,11 +548,14 @@ export const useNoteStore = create<NoteState>((set, get) => ({
               resolution: 'merge' // Default resolution
             });
           }
+        } else {
+          // This note exists locally but not in the cloud
+          localOnlyCount++;
         }
       }
       
       return { 
-        localNoteCount: localNotes.length, 
+        localNoteCount: localOnlyCount, 
         cloudNoteCount: cloudNotes.length, 
         conflictedNotes 
       };
@@ -649,55 +653,17 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       }
       
       // After resolving conflicts, sync remaining local-only notes
-      await get().syncLocalNotesToFirebase(user, isAdmin);
-      
-      // Refresh notes from both sources
+      // Get local notes that don't exist in Firebase
+      const localNotes = localStorageNotesService.getNotes();
       const cloudNotes = await firebaseNotesService.getNotes(user.uid);
-      const localNotes = localStorageNotesService.getNotes();
       
-      // Merge notes, preferring cloud versions for notes that exist in both places
-      const cloudNotesMap = new Map<string, Note>();
-      cloudNotes.forEach(note => {
-        if (note.uniqueId) {
-          cloudNotesMap.set(note.uniqueId, note);
-        }
-      });
+      // Create a map of cloud note IDs for faster lookup
+      const cloudNoteIds = new Set(cloudNotes.map(note => note.id));
       
-      // Filter local notes to only include those not in the cloud
-      const uniqueLocalNotes = localNotes.filter(note => 
-        !note.uniqueId || !cloudNotesMap.has(note.uniqueId)
-      );
+      // Find local notes that don't exist in the cloud
+      const localOnlyNotes = localNotes.filter(note => !cloudNoteIds.has(note.id));
       
-      // Combine cloud and unique local notes
-      const combinedNotes = [...cloudNotes, ...uniqueLocalNotes];
-      
-      // Update state
-      set({ notes: combinedNotes });
-      
-    } catch (error) {
-      console.error('Failed to resolve note conflicts:', error);
-    }
-  },
-  
-  // Original sync function, now used after conflict resolution
-  syncLocalNotesToFirebase: async (user, isAdmin) => {
-    try {
-      if (!user || !user.uid) {
-        console.error('Cannot sync notes: No authenticated user');
-        return;
-      }
-      
-      const localNotes = localStorageNotesService.getNotes();
-      
-      // Identify local-only notes (those without uniqueId or not in Firebase)
-      const localOnlyNotes = localNotes.filter(note => !note.uniqueId);
-      
-      if (localOnlyNotes.length === 0) {
-        console.log('No local-only notes to sync');
-        return;
-      }
-      
-      console.log(`Syncing ${localOnlyNotes.length} local-only notes to Firebase...`);
+      console.log(`Found ${localOnlyNotes.length} local-only notes to sync`);
       
       // Track successful syncs to update local state
       const syncedNotes: Note[] = [];
@@ -709,7 +675,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           const firebaseNote = await firebaseNotesService.addNote(user.uid, note.noteTitle, isAdmin);
           
           // Update with full content and metadata
-          await firebaseNotesService.updateNoteContent(firebaseNote.id, note.content, user.uid, isAdmin);
+          await firebaseNotesService.updateNoteContent(firebaseNote.id, note.content || '', user.uid, isAdmin);
           
           // Update other properties
           const noteData = {
@@ -717,7 +683,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
             category: note.category,
             archived: note.archived || false,
             updatedAt: note.updatedAt || new Date(),
-            wordCount: note.wordCount || countWords(note.content)
+            wordCount: note.wordCount || countWords(note.content || '')
           };
           
           await firebaseNotesService.updateNoteData(firebaseNote.id, noteData, user.uid, isAdmin);
@@ -726,7 +692,94 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           syncedNotes.push({
             ...firebaseNote,
             ...noteData,
-            content: note.content
+            content: note.content || ''
+          });
+          
+          // Remove the local-only note since it's now in Firebase
+          localStorageNotesService.deleteNote(note.id);
+          
+          console.log(`Successfully synced note "${note.noteTitle}" to Firebase`);
+        } catch (error) {
+          console.error(`Failed to sync note "${note.noteTitle}":`, error);
+        }
+      }
+      
+      // Refresh notes from both sources after syncing
+      const updatedCloudNotes = await firebaseNotesService.getNotes(user.uid);
+      const remainingLocalNotes = localStorageNotesService.getNotes();
+      
+      // Create a map of cloud note IDs for the final merge
+      const updatedCloudNoteIds = new Set(updatedCloudNotes.map(note => note.id));
+      
+      // Filter local notes to only include those not in the cloud
+      const uniqueLocalNotes = remainingLocalNotes.filter(note => !updatedCloudNoteIds.has(note.id));
+      
+      // Combine cloud and unique local notes
+      const combinedNotes = [...updatedCloudNotes, ...uniqueLocalNotes];
+      
+      // Update state with the combined notes
+      set({ notes: combinedNotes });
+      
+      // Log the number of notes in the final state
+      console.log(`Final state has ${combinedNotes.length} notes (${updatedCloudNotes.length} cloud, ${uniqueLocalNotes.length} local)`);
+      
+    } catch (error) {
+      console.error('Failed to resolve note conflicts:', error);
+    }
+  },
+  
+  // Sync function to ensure all local notes are synced to Firebase
+  syncLocalNotesToFirebase: async (user, isAdmin) => {
+    try {
+      if (!user || !user.uid) {
+        console.error('Cannot sync notes: No authenticated user');
+        return;
+      }
+      
+      const localNotes = localStorageNotesService.getNotes();
+      
+      // Get existing Firebase notes to avoid duplicates
+      const firebaseNotes = await firebaseNotesService.getNotes(user.uid, isAdmin);
+      const firebaseNoteIds = new Set(firebaseNotes.map(note => note.id));
+      
+      // Identify notes that need to be synced (not already in Firebase)
+      const notesToSync = localNotes.filter(note => !firebaseNoteIds.has(note.id));
+      
+      if (notesToSync.length === 0) {
+        console.log('No notes to sync to Firebase');
+        return;
+      }
+      
+      console.log(`Syncing ${notesToSync.length} notes to Firebase...`);
+      
+      // Track successful syncs to update local state
+      const syncedNotes: Note[] = [];
+      
+      // Process each note that needs syncing
+      for (const note of notesToSync) {
+        try {
+          // Create a new note in Firebase
+          const firebaseNote = await firebaseNotesService.addNote(user.uid, note.noteTitle, isAdmin);
+          
+          // Update with full content and metadata
+          await firebaseNotesService.updateNoteContent(firebaseNote.id, note.content || '', user.uid, isAdmin);
+          
+          // Update other properties
+          const noteData = {
+            tags: note.tags || [],
+            category: note.category,
+            archived: note.archived || false,
+            updatedAt: note.updatedAt || new Date(),
+            wordCount: note.wordCount || countWords(note.content || '')
+          };
+          
+          await firebaseNotesService.updateNoteData(firebaseNote.id, noteData, user.uid, isAdmin);
+          
+          // Add to synced notes list with combined data
+          syncedNotes.push({
+            ...firebaseNote,
+            ...noteData,
+            content: note.content || ''
           });
           
           // Remove the local-only note since it's now in Firebase
@@ -742,7 +795,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       if (syncedNotes.length > 0) {
         const currentNotes = get().notes;
         const updatedNotes = currentNotes
-          .filter(note => !localOnlyNotes.some(localNote => localNote.id === note.id))
+          .filter(note => !notesToSync.some(localNote => localNote.id === note.id))
           .concat(syncedNotes);
           
         set({ notes: updatedNotes });

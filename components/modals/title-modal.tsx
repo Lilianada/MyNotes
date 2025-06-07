@@ -49,6 +49,7 @@ function TitleModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(inputValue);
+    setInputValue(" ");
   };
   
   // Handle clicking outside to close
@@ -81,7 +82,7 @@ function TitleModal({
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder="Enter a title"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="text-sm w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div className="flex justify-end space-x-3">
