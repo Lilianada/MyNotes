@@ -985,5 +985,37 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       console.error('Failed to delete tag from all notes:', error);
     }
   },
-  updateNoteData: async () => {},
+  updateNoteData: async (id, updatedNote, user, isAdmin = false) => {
+    try {
+      // Find the note to update
+      const state = get();
+      const noteToUpdate = state.notes.find(note => note.id === id);
+      
+      if (!noteToUpdate) {
+        console.error(`Note with id ${id} not found`);
+        return;
+      }
+      
+      // Update note in state
+      const updatedNotes = state.notes.map(note => 
+        note.id === id ? { ...note, ...updatedNote } : note
+      );
+      
+      set({ notes: updatedNotes });
+      
+      // Save to appropriate storage
+      if (user && user.uid) {
+        // Save to Firebase for logged-in users
+        await firebaseNotesService.updateNoteData(id, updatedNote, user.uid, isAdmin);
+      } else {
+        // Save to local storage for offline use
+        localStorageNotesService.updateNoteData(id, updatedNote);
+      }
+      
+      console.log(`Note ${id} metadata updated successfully`, updatedNote);
+    } catch (error) {
+      console.error('Failed to update note metadata:', error);
+      throw error; // Re-throw to allow handling in UI
+    }
+  },
 }))

@@ -58,6 +58,26 @@ interface UnifiedTabContentProps {
   hooks: ReturnType<typeof import('./unified-note-details-hooks').useUnifiedNoteDetails>;
 }
 
+// Custom hook to get all unique tags from notes
+function useAllTags() {
+  const appState = useAppState();
+  
+  return React.useMemo(() => {
+    const notes = appState?.notes || [];
+    const tagSet = new Set<string>();
+    
+    if (notes && notes.length > 0) {
+      notes.forEach((note: Note) => {
+        if (note.tags && Array.isArray(note.tags)) {
+          note.tags.forEach((tag: string) => tagSet.add(tag));
+        }
+      });
+    }
+    
+    return Array.from(tagSet).sort();
+  }, [appState?.notes]);
+}
+
 export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) {
   // Extract all needed properties from hooks
   const {
@@ -86,21 +106,7 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
   } = hooks;
   
   // Get all unique tags from all notes for reuse
-  const allTags = React.useMemo(() => {
-    const appState = useAppState();
-    const notes = appState?.notes || [];
-    const tagSet = new Set<string>();
-    
-    if (notes && notes.length > 0) {
-      notes.forEach((note: Note) => {
-        if (note.tags && Array.isArray(note.tags)) {
-          note.tags.forEach((tag: string) => tagSet.add(tag));
-        }
-      });
-    }
-    
-    return Array.from(tagSet).sort();
-  }, []);
+  const allTags = useAllTags();
   
   // State for new tag input
   const [newTag, setNewTag] = React.useState('');
@@ -317,10 +323,10 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Current Tags
           </label>
-          <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md min-h-[60px]">
+          <div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md min-h-[40px]">
             {pendingTags.length > 0 ? (
               pendingTags.map((tag: string) => (
-                <div key={tag} className="flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                <div key={tag} className="flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-sm">
                   #{tag}
                   <button
                     onClick={() => handleTagSelection(tag)}
@@ -347,7 +353,7 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
                   key={tag}
                   onClick={() => handleTagSelection(tag)}
                   disabled={pendingTags.length >= 5 && !pendingTags.includes(tag)}
-                  className={`px-2 py-1 text-xs rounded-full ${pendingTags.includes(tag) 
+                  className={`px-2 py-1 text-xs rounded-sm ${pendingTags.includes(tag) 
                     ? 'bg-blue-600 text-white hover:bg-blue-700' 
                     : 'bg-gray-100 text-gray-800 hover:bg-gray-200 disabled:opacity-50'}`}
                 >
