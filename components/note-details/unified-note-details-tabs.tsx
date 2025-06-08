@@ -392,9 +392,10 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
           </label>
           <input
             type="text"
-            value={note.noteTitle}
-            readOnly
-            className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-sm"
+            value={hooks.noteTitle}
+            onChange={(e) => hooks.setNoteTitle(e.target.value)}
+            className="w-full p-2 border border-gray-300 rounded-md text-sm"
+            placeholder="Note title"
           />
         </div>
         
@@ -403,9 +404,9 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
             Description
           </label>
           <textarea
-            value={description}
+            value={description ?? ''}
             onChange={(e) => setDescription(e.target.value)}
-            className="w-full p-2 border border-gray-300 rounded-md text-sm min-h-[100px]"
+            className="w-full p-2 border border-gray-300 rounded-md text-sm min-h-[100px] dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
             placeholder="Add a description for this note..."
           />
         </div>

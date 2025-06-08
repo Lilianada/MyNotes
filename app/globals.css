@@ -4,6 +4,7 @@
 
 @import 'highlight.js/styles/github.css';
 @import '../styles/markdown.css';
+@import '../styles/dialog-override.css';
 
 @layer base {
   :root {

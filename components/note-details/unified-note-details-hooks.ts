@@ -32,6 +32,7 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean, onClos
   
   // Metadata state
   const [description, setDescription] = useState<string>('');
+  const [noteTitle, setNoteTitle] = useState<string>('');
   const [publishStatus, setPublishStatus] = useState<boolean>(false);
   const [archived, setArchived] = useState<boolean>(false);
   const [filePath, setFilePath] = useState<string>('');
@@ -70,11 +71,31 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean, onClos
   // Initialize metadata when note changes
   useEffect(() => {
     if (isOpen && note) {
+      console.log('Note data for metadata:', { 
+        noteId: note.id,
+        noteTitle: note.noteTitle,
+        description: note.description,
+        publish: note.publish,
+        archived: note.archived,
+        filePath: note.filePath
+      });
+      
       loadEditHistory();
-      setDescription(note.description || '');
-      setPublishStatus(note.publish || false);
-      setArchived(note.archived || false);
-      setFilePath(note.filePath || '');
+      // Force description to be initialized even if it's undefined or null
+      // Explicitly set description with fallback to empty string
+      // Use optional chaining and nullish coalescing for safer access
+      const noteDescription = note?.description ?? '';
+      const title = note?.noteTitle ?? '';
+      const publish = note?.publish ?? false;
+      const isArchived = note?.archived ?? false;
+      const path = note?.filePath ?? '';
+      
+      // Set state with safely accessed values
+      setDescription(noteDescription);
+      setNoteTitle(title);
+      setPublishStatus(publish);
+      setArchived(isArchived);
+      setFilePath(path);
     }
   }, [isOpen, note]);
   
@@ -198,6 +219,7 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean, onClos
 
       // Update note with metadata fields
       await updateNoteData(note.id, {
+        noteTitle,
         description,
         publish: publishStatus,
         archived,
@@ -219,7 +241,7 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean, onClos
         variant: "destructive"
       });
     }
-  }, [note, description, publishStatus, archived, filePath, updateNoteData, setActiveTab, toast]);
+  }, [note, noteTitle, description, publishStatus, archived, filePath, updateNoteData, setActiveTab, toast]);
 
   return {
     // State
@@ -230,6 +252,8 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean, onClos
     categories,
     description,
     setDescription,
+    noteTitle,
+    setNoteTitle,
     publishStatus,
     setPublishStatus,
     archived,

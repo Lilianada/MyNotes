@@ -63,6 +63,7 @@ export const getNotes = async (userId: string, isAdmin: boolean = false): Promis
         linkedNoteIds: data.linkedNoteIds || [],
         wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
         publish: data.publish || false,
+        description: data.description || "", // Ensure description is properly mapped
         editHistory: data.editHistory ? convertEditHistory(data.editHistory) : [],
         archived: data.archived || false,
         fileSize: data.fileSize || calculateNoteSize(data as Note)
@@ -179,6 +180,7 @@ export const getNote = async (noteId: number, userId?: string, isAdmin?: boolean
         const data = snapshot.docs[0].data();
         return {
           id: data.id,
+          uniqueId: data.uniqueId || generateUniqueId(), // Ensure uniqueId is included
           content: data.content || "",
           noteTitle: data.noteTitle || "Untitled",
           createdAt: convertTimestamp(data.createdAt),
@@ -191,8 +193,10 @@ export const getNote = async (noteId: number, userId?: string, isAdmin?: boolean
           linkedNoteIds: data.linkedNoteIds || [],
           wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
           publish: data.publish || false,
-          description: data.description || "",
-          editHistory: data.editHistory ? convertEditHistory(data.editHistory) : []
+          description: data.description || "", // Ensure description is properly mapped
+          editHistory: data.editHistory ? convertEditHistory(data.editHistory) : [],
+          archived: data.archived || false, // Include archived status
+          fileSize: data.fileSize || calculateNoteSize(data as unknown as Note) // Include fileSize with proper type casting
         };
       }
     }
@@ -206,6 +210,7 @@ export const getNote = async (noteId: number, userId?: string, isAdmin?: boolean
       const data = adminSnapshot.docs[0].data();
       return {
         id: data.id,
+        uniqueId: data.uniqueId || generateUniqueId(), // Ensure uniqueId is included
         content: data.content || "",
         noteTitle: data.noteTitle || "Untitled",
         createdAt: convertTimestamp(data.createdAt),
@@ -218,8 +223,10 @@ export const getNote = async (noteId: number, userId?: string, isAdmin?: boolean
         linkedNoteIds: data.linkedNoteIds || [],
         wordCount: data.wordCount || (data.content ? countWords(data.content) : 0),
         publish: data.publish || false,
-        description: data.description || "",
-        editHistory: data.editHistory ? convertEditHistory(data.editHistory) : []
+        description: data.description || "", // Ensure description is properly mapped
+        editHistory: data.editHistory ? convertEditHistory(data.editHistory) : [],
+        archived: data.archived || false, // Include archived status
+        fileSize: data.fileSize || calculateNoteSize(data as unknown as Note) // Include fileSize with proper type casting
       };
     }
     

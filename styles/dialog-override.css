@@ -1,0 +1,14 @@
+/* Custom override for dialog overlay transparency */
+[data-state="open"].fixed.inset-0.z-50 {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Ensure the dialog overlay is very transparent */
+.fixed.inset-0.z-50[data-aria-hidden="true"] {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Target any dialog overlay */
+div[data-state="open"][data-aria-hidden="true"] {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}

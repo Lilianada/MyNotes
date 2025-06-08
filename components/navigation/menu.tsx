@@ -54,6 +54,14 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen, setIsOpen]);
+  
+  // Handle import modal toggle with useEffect instead of during render
+  useEffect(() => {
+    if (isImportModalOpen) {
+      // Dispatch event after component has rendered
+      window.dispatchEvent(new CustomEvent('toggle-import-dialog'));
+    }
+  }, [isImportModalOpen]);
 
   return (
     <div className="relative" ref={menuRef}>
@@ -172,22 +180,7 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
         onClose={() => setIsStorageModalOpen(false)}
       />
       
-      {/* Import Modal */}
-      {isImportModalOpen && (
-        <div
-          className="fixed inset-0 z-50"
-          onClick={() => setIsImportModalOpen(false)}
-        >
-          <div
-            className="absolute inset-0 bg-black opacity-50"
-            onClick={() => setIsImportModalOpen(false)}
-          ></div>
-          <div className="relative z-10 h-full">
-            {/* This will be replaced by the actual import dialog */}
-            {window.dispatchEvent(new CustomEvent('toggle-import-dialog'))}
-          </div>
-        </div>
-      )}
+      {/* Import Modal - Using useEffect to handle event dispatch */}
     </div>
   )
 }

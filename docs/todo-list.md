@@ -156,6 +156,7 @@ This guide consolidates all identified issues and provides a structured roadmap 
 - [✅] Add proper loading states like a progress bar or loading skeleton. Nothing that would change our current UI
 - [✅] Fix TypeScript errors in note store and unified-note-details-hooks
 - [✅] Fix UI layout issues with modals and container heights
+- [✅] Fix React warnings about state updates during rendering in Menu component
 
 #### Essential UX Improvements
 - [✅] Enhance responsive design for mobile
@@ -166,6 +167,9 @@ This guide consolidates all identified issues and provides a structured roadmap 
 - [✅] Fix details modal not appearing when triggered
 - [✅] Fix note details modal tabs for categories, tags, and metadata
 - [✅] Improve Monaco editor accessibility and loading states
+- [✅] Fix modal transparency issues with ultra-transparent overlays
+- [✅] Fix import modal visibility using React portals
+- [✅] Add proper DialogTitle and ARIA attributes to dialog components
 
 ### Phase 2: Core Features (2-3 months)
 **High Priority - Core Functionality**

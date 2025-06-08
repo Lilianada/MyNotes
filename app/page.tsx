@@ -11,7 +11,7 @@ import { Header } from "@/components/navigation/header"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { TitleModal } from "@/components/modals/title-modal"
 import ExportDialog from "@/components/modals/export-dialog"
-import ImportDialog from "@/components/modals/import-dialog"
+import PortalImportDialog from "@/components/modals/portal-import-dialog"
 import { logger } from "@/lib/utils/logger"
 import { 
   NoteErrorBoundary,
@@ -149,7 +149,7 @@ export default function Home() {
     setSidebarOpen(false)
   }
   
-  return (
+  const mainContent = (
     <FontSwitcher>
       <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
         <Header 
@@ -219,14 +219,21 @@ export default function Home() {
           allNotes={notes}
         />
         
-        {/* Import Dialog for importing notes */}
-        <ImportDialog
-          isOpen={isImportModalOpen}
-          onClose={() => setIsImportModalOpen(false)}
-        />
+        {/* Import Dialog moved to root level */}
         
         {/* No shortcuts modal needed */}
       </div>
     </FontSwitcher>
+  )
+
+  // Render ImportDialog at the root level for proper positioning
+  return (
+    <>
+      {mainContent}
+      <PortalImportDialog
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+      />
+    </>
   )
 }
