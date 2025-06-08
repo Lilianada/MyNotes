@@ -1,10 +1,10 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, HardDrive, FileText, AlertTriangle, Users, Database, User } from 'lucide-react';
+import { RefreshCw, HardDrive, FileText, AlertTriangle, Users, Database, User, Cloud, Laptop } from 'lucide-react';
 import { useStorage } from '@/contexts/storage-context';
 import { formatBytes } from '@/lib/storage/storage-utils';
 import { useAuth } from '@/contexts/auth-context';
@@ -17,7 +17,38 @@ interface StorageModalProps {
 export function StorageModal({ isOpen, onClose }: StorageModalProps) {
   const { userStorage, storagePercentage, storageAlert, isLoading, refreshStorage, 
           adminStats, loadAdminStorageStats } = useStorage();
-  const { isAdmin } = useAuth();
+  const { isAdmin, user } = useAuth();
+  
+  // State for local and Firebase note counts
+  const [localNoteCount, setLocalNoteCount] = useState(0);
+  const [firebaseNoteCount, setFirebaseNoteCount] = useState(0);
+  
+  // Calculate local and Firebase note counts
+  useEffect(() => {
+    if (isOpen) {
+      // Get local notes count
+      const notesString = localStorage.getItem('notes');
+      let localCount = 0;
+      if (notesString) {
+        try {
+          const localNotes = JSON.parse(notesString);
+          localCount = localNotes.length;
+          setLocalNoteCount(localCount);
+        } catch (e) {
+          console.error('Error parsing notes from localStorage:', e);
+        }
+      } else {
+        setLocalNoteCount(0);
+      }
+      
+      // Calculate Firebase notes (total - local)
+      if (userStorage) {
+        setFirebaseNoteCount(Math.max(0, userStorage.noteCount - localCount));
+      } else {
+        setFirebaseNoteCount(0);
+      }
+    }
+  }, [isOpen, userStorage]);
 
   if (!userStorage) {
     return null;
@@ -154,7 +185,7 @@ export function StorageModal({ isOpen, onClose }: StorageModalProps) {
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <FileText className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm font-medium">Notes</span>
+                    <span className="text-sm font-medium">Total Notes</span>
                   </div>
                   <p className="text-lg font-semibold">{userStorage.noteCount}</p>
                 </div>
@@ -165,6 +196,22 @@ export function StorageModal({ isOpen, onClose }: StorageModalProps) {
                     <span className="text-sm font-medium">Used</span>
                   </div>
                   <p className="text-lg font-semibold">{formatBytes(userStorage.totalStorage)}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Laptop className="h-4 w-4 text-gray-600" />
+                    <span className="text-sm font-medium">Local Notes</span>
+                  </div>
+                  <p className="text-lg font-semibold">{localNoteCount}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Cloud className="h-4 w-4 text-gray-600" />
+                    <span className="text-sm font-medium">Cloud Notes</span>
+                  </div>
+                  <p className="text-lg font-semibold">{user ? firebaseNoteCount : 'N/A'}</p>
                 </div>
               </div>
 

@@ -6,7 +6,7 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import HelpModal from "@/components/modals/help-modal"
 import { StorageModal } from "@/components/modals/storage-modal"
-import { HelpCircle, Download, HardDrive } from "lucide-react"
+import { HelpCircle, Download, HardDrive, FileUp } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { useAppState } from "@/lib/state/app-state"
 import { useTheme } from "next-themes"
@@ -28,6 +28,7 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
   }
   const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [isStorageModalOpen, setIsStorageModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const { notes } = useAppState();
   const { user } = useAuth();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -90,15 +91,26 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
             <div className="p-2 space-y-1">
               <button
                 onClick={() => {
+                  setIsImportModalOpen(true);
+                  setIsOpen(false);
+                }}
+                className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50"
+              >
+                <FileUp className="w-4 h-4 mr-2" />
+                <span>Import</span>
+              </button>
+              
+              <button
+                onClick={() => {
                   // Dispatch custom event for export dialog
                   console.log('Dispatching toggle-export-dialog event');
                   window.dispatchEvent(new CustomEvent('toggle-export-dialog'));
                   setIsOpen(false);
                 }}
-                className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50"
+                className="flex w-full items-center px-2 py-1 text-sm rounded hover:bg-gray-50 mt-1"
                 disabled={notes.length === 0}
               >
-                {/* <Download className="w-4 h-4 mr-2" /> */}
+                <Download className="w-4 h-4 mr-2" />
                 <span>Export</span>
               </button>
               
@@ -159,6 +171,23 @@ export function Menu({isOpen, setIsOpen }: MenuProps) {
         isOpen={isStorageModalOpen}
         onClose={() => setIsStorageModalOpen(false)}
       />
+      
+      {/* Import Modal */}
+      {isImportModalOpen && (
+        <div
+          className="fixed inset-0 z-50"
+          onClick={() => setIsImportModalOpen(false)}
+        >
+          <div
+            className="absolute inset-0 bg-black opacity-50"
+            onClick={() => setIsImportModalOpen(false)}
+          ></div>
+          <div className="relative z-10 h-full">
+            {/* This will be replaced by the actual import dialog */}
+            {window.dispatchEvent(new CustomEvent('toggle-import-dialog'))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

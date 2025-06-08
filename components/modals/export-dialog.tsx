@@ -12,7 +12,7 @@ interface ExportDialogProps {
   allNotes: Note[];
 }
 
-type ExportFormat = 'markdown' | 'txt' | 'pdf';
+type ExportFormat = 'markdown' | 'txt' | 'pdf' | 'doc';
 
 interface FormatOption {
   id: ExportFormat;
@@ -45,6 +45,12 @@ export function ExportDialog({ isOpen, onClose, currentNote, allNotes }: ExportD
       label: 'PDF',
       description: 'Export as .pdf document',
       icon: <FileDown size={18} />
+    },
+    {
+      id: 'doc',
+      label: 'Word Document',
+      description: 'Export as .docx file with formatting',
+      icon: <FileText size={18} />
     }
   ];
   

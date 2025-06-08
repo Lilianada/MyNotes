@@ -15,6 +15,7 @@ import { AutoHistoryCleanup } from "@/components/utils/auto-history-cleanup"
 import { SyncManager } from "@/components/sync/sync-manager"
 import { SyncTest } from "@/components/sync/sync-test"
 import { AuthProvider } from "@/contexts/auth-context"
+import { AutoSyncModal } from "@/components/modals/auto-sync-modal"
 
 export const metadata: Metadata = {
   title: "NoteItDown App",
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <AutoHistoryCleanup />
                   <SyncManager />
                   <SyncTest />
+                  <AutoSyncModal />
                   <Toaster />
                 </FontProvider>
               </UserPreferencesProvider>

@@ -183,6 +183,8 @@ This guide consolidates all identified issues and provides a structured roadmap 
 - [✅] Create unified storage abstraction (Zustand store with dual storage)
 - [✅] Strengthen Firebase security rules
 - [✅] Add conflict resolution for sync
+- [✅] Improve storage modal with local and cloud note counts
+- [✅] Auto-trigger sync modal after login to prevent note loss
 
 ### Phase 3: Advanced Features (3-4 months)
 **Medium Priority - Competitive Features**
@@ -190,8 +192,8 @@ This guide consolidates all identified issues and provides a structured roadmap 
 
 
 #### Integration & Export
-- [ ] Fix the export multiple formats and make sure it works well
-- [ ] Implement import of files in the same format as we export md,txt,pdf,doc
+- [✅] Fix the export multiple formats and make sure it works well
+- [✅] Implement import of files in the same format as we export md,txt,pdf,doc
 - [ ] Create basic API for integrations
 - [ ] Enhance offline capabilities
 

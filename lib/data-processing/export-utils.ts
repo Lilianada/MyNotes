@@ -3,8 +3,9 @@ import { saveAs } from 'file-saver';
 import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import JSZip from 'jszip';
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell } from 'docx';
 
-type ExportFormat = 'markdown' | 'txt' | 'pdf';
+type ExportFormat = 'markdown' | 'txt' | 'pdf' | 'doc';
 
 /**
  * Helper function to safely handle date conversions
@@ -128,6 +129,10 @@ export async function exportNote(note: Note, format: ExportFormat, allNotes?: No
         const txtBlob = new Blob([note.content], { type: 'text/plain;charset=utf-8' });
         saveAs(txtBlob, `${filename}.txt`);
         break;
+
+      case 'doc':
+        await exportToDoc(note, notesForRelations);
+        break;
         
       case 'pdf':
         await exportToPdf(note);
@@ -144,118 +149,61 @@ export async function exportNote(note: Note, format: ExportFormat, allNotes?: No
  */
 export async function exportAllNotes(notes: Note[], format: ExportFormat): Promise<void> {
   try {
-    if (!Array.isArray(notes) || notes.length === 0) {
-      throw new Error('No notes to export');
+    // Handle empty notes array
+    if (notes.length === 0) {
+      throw new Error("No notes to export");
     }
     
-    // Check for any invalid notes
-    const validNotes = notes.filter(note => 
-      note && typeof note === 'object' && 
-      typeof note.id === 'number' && 
-      (typeof note.content === 'string' || note.content === null || note.content === undefined)
-    );
-    
-    if (validNotes.length === 0) {
-      throw new Error('No valid notes to export');
+    // For PDF format, use the specialized function
+    if (format === 'pdf') {
+      await exportMultipleToPdf(notes);
+      return;
+    }
+
+    // For DOC format, use the specialized function
+    if (format === 'doc') {
+      await exportMultipleToDoc(notes);
+      return;
     }
     
-    if (validNotes.length !== notes.length) {
-      console.warn(`Filtered out ${notes.length - validNotes.length} invalid notes from export`);
-    }
+    // For other formats, create a zip file with all notes
+    const zip = new JSZip();
+    const timestamp = format(new Date(), 'yyyy-MM-dd');
+    const zipFilename = `my-notes-${timestamp}.zip`;
     
-    switch (format) {
-      case 'markdown':
-        // For markdown, create a single file per note with frontmatter
-        // or a zip file with all notes
-        const markdownContents = validNotes.map(note => {
+    // Process each note
+    for (const note of notes) {
+      const safeTitle = (note.noteTitle || 'note')
+        .replace(/[^a-z0-9]/gi, '_')
+        .toLowerCase();
+      const filename = `${safeTitle}-${note.id}`;
+      
+      switch (format) {
+        case 'markdown':
+          // Create markdown with frontmatter and relationship sections
           const frontMatter = generateFrontMatter(note);
-          const relationshipSections = generateNoteRelationshipsSections(note, validNotes);
-          return frontMatter + (note.content || '') + relationshipSections;
-        });
-        
-        // If it's just one note, save directly
-        if (validNotes.length === 1) {
-          const note = validNotes[0];
-          const safeTitle = (note.noteTitle || 'note')
-            .replace(/[^a-z0-9]/gi, '_')
-            .toLowerCase();
-          const filename = `${safeTitle}-${note.id}`;
-          const mdBlob = new Blob([markdownContents[0]], { type: 'text/markdown;charset=utf-8' });
-          saveAs(mdBlob, `${filename}.md`);
-        } else {
-          // For multiple notes, create a zip file containing individual md files
-          const zip = new JSZip();
+          const relationshipSections = generateNoteRelationshipsSections(note, notes);
+          const mdContent = frontMatter + note.content + relationshipSections;
           
-          // Create a folder for the notes and a readme file
-          const notesFolder = zip.folder("notes");
+          zip.file(`${filename}.md`, mdContent);
+          break;
           
-          if (!notesFolder) {
-            throw new Error("Failed to create notes folder in zip file");
-          }
-          
-          // Add readme file with export information
-          const readmeContent = [
-            `# Exported Notes`,
-            ``,
-            `Date: ${new Date().toLocaleDateString()}`,
-            `Number of notes: ${validNotes.length}`,
-            ``,
-            `## Contents`,
-            ``,
-            ...validNotes.map((note, i) => `${i+1}. ${note.noteTitle || 'Untitled Note'} (ID: ${note.id})`)
-          ].join('\n');
-          
-          zip.file("README.md", readmeContent);
-          
-          // Add each note as a separate file
-          validNotes.forEach((note, index) => {
-            const safeTitle = (note.noteTitle || 'untitled')
-              .replace(/[^a-z0-9]/gi, '_')
-              .toLowerCase();
-            const filename = `${safeTitle}-${note.id}.md`;
-            notesFolder.file(filename, markdownContents[index]);
-          });
-          
-          // Generate the zip file and save it
-          zip.generateAsync({ type: "blob" })
-            .then(function(content) {
-              // Use "my-notes-collection" instead of timestamp for consistency
-              saveAs(content, `my-notes-collection.zip`);
-            });
-        }
-        break;
-        
-      case 'txt':
-        if (validNotes.length === 1) {
-          // For a single note, create a simple text file
-          const note = validNotes[0];
-          const txtContent = `${note.noteTitle || 'Untitled Note'}\n\n${note.content || ''}`;
-          const txtBlob = new Blob([txtContent], { type: 'text/plain;charset=utf-8' });
-          
-          const safeTitle = (note.noteTitle || 'note')
-            .replace(/[^a-z0-9]/gi, '_')
-            .toLowerCase();
-          saveAs(txtBlob, `${safeTitle}-${note.id}.txt`);
-        } else {
-          // For multiple notes, create a single file with clear separators
-          const content = validNotes.map((note, index) => {
-            const header = `NOTE ${index + 1}: ${note.noteTitle || 'Untitled Note'} (ID: ${note.id})`;
-            const separator = '='.repeat(header.length);
-            return `${separator}\n${header}\n${separator}\n\n${note.content || ''}\n`;
-          }).join('\n\n');
-          
-          const txtBlob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-          saveAs(txtBlob, `my-notes-collection.txt`);
-        }
-        break;
-        
-      case 'pdf':
-        await exportMultipleToPdf(validNotes);
-        break;
+        case 'txt':
+          zip.file(`${filename}.txt`, note.content);
+          break;
+      }
     }
+    
+    // Generate and save the zip file
+    const content = await zip.generateAsync({ 
+      type: "blob",
+      compression: "DEFLATE",
+      compressionOptions: { level: 9 } // Maximum compression
+    });
+    saveAs(content, zipFilename);
   } catch (error) {
-    console.error('Error exporting all notes:', error);
-    throw new Error(`Failed to export notes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error("Error exporting notes:", error);
+    throw error;
   }
 }
 
@@ -336,8 +284,9 @@ async function exportToPdf(note: Note): Promise<void> {
       doc.text(lines, 20, y);
     }
     
-    // Save the PDF
-    doc.save(`${safeTitle}-${note.id}.pdf`);
+    // Save the PDF with improved filename
+    const timestamp = format(new Date(), 'yyyy-MM-dd');
+    doc.save(`${safeTitle}-${note.id}-${timestamp}.pdf`);
   } catch (error) {
     console.error(`Error creating PDF for note ${note.id}:`, error);
     throw new Error(`Failed to export PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -354,7 +303,11 @@ async function exportMultipleToPdf(notes: Note[]): Promise<void> {
       throw new Error("No notes to export to PDF");
     }
     
-    const doc = new jsPDF();
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4"
+    });
     
     for (let i = 0; i < notes.length; i++) {
       const note = notes[i];
@@ -451,8 +404,9 @@ async function exportMultipleToPdf(notes: Note[]): Promise<void> {
     }
   }
   
-  // Save the PDF
-  doc.save(`my-notes-collection.pdf`);
+  // Save the PDF with timestamp
+  const timestamp = format(new Date(), 'yyyy-MM-dd');
+  doc.save(`my-notes-collection-${timestamp}.pdf`);
   } catch (error) {
     console.error("Error exporting multiple notes to PDF:", error);
     throw new Error(`Failed to export notes to PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);

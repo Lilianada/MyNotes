@@ -11,6 +11,7 @@ import { Header } from "@/components/navigation/header"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { TitleModal } from "@/components/modals/title-modal"
 import ExportDialog from "@/components/modals/export-dialog"
+import ImportDialog from "@/components/modals/import-dialog"
 import { logger } from "@/lib/utils/logger"
 import { 
   NoteErrorBoundary,
@@ -38,6 +39,7 @@ export default function Home() {
   const [showTitleModal, setShowTitleModal] = useState(false)
   const [titleInput, setTitleInput] = useState('')
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false)
   const { toast } = useToast()
   
   // Get the currently selected note
@@ -64,18 +66,25 @@ export default function Home() {
     }
   }, [isCreatingNote, toast, setCreatingNote, notes])
   
-  // Define event handler outside useEffect to avoid hooks rule violations
+  // Define event handlers outside useEffect to avoid hooks rule violations
   const handleToggleExportDialog = (event: Event) => {
     logger.debug('Export dialog toggle event received')
     setIsExportModalOpen(prev => !prev)
   }
   
-  // Listen for export dialog toggle events
+  const handleToggleImportDialog = (event: Event) => {
+    logger.debug('Import dialog toggle event received')
+    setIsImportModalOpen(prev => !prev)
+  }
+  
+  // Listen for dialog toggle events
   useEffect(() => {
     // Use the correct event type
     window.addEventListener('toggle-export-dialog', handleToggleExportDialog)
+    window.addEventListener('toggle-import-dialog', handleToggleImportDialog)
     return () => {
       window.removeEventListener('toggle-export-dialog', handleToggleExportDialog)
+      window.removeEventListener('toggle-import-dialog', handleToggleImportDialog)
     }
   }, [])
 
@@ -208,6 +217,12 @@ export default function Home() {
           onClose={() => setIsExportModalOpen(false)}
           currentNote={currentNote}
           allNotes={notes}
+        />
+        
+        {/* Import Dialog for importing notes */}
+        <ImportDialog
+          isOpen={isImportModalOpen}
+          onClose={() => setIsImportModalOpen(false)}
         />
         
         {/* No shortcuts modal needed */}
