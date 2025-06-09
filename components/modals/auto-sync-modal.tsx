@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useNoteStore } from '@/lib/state/note-store';
 import { SyncModal } from './sync-modal';
+import { ConflictResolutionStrategy } from './sync-modal';
 
 export function AutoSyncModal() {
   const [showSyncModal, setShowSyncModal] = useState(false);
@@ -55,7 +56,7 @@ export function AutoSyncModal() {
     };
   }, [user, findSyncConflicts]);
   
-  const handleSync = async (strategy, manualResolutions) => {
+  const handleSync = async (strategy: ConflictResolutionStrategy, manualResolutions?: Record<string, ConflictResolutionStrategy>) => {
     try {
       setIsLoading(true);
       await resolveNoteConflicts(user, false, strategy, manualResolutions);

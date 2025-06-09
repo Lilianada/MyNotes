@@ -8,7 +8,7 @@ import HelpModal from "@/components/modals/help-modal"
 import { StorageModal } from "@/components/modals/storage-modal"
 import { HelpCircle, Download, HardDrive, FileUp } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
-import { useAppState } from "@/lib/state/app-state"
+import { useAppState } from "@/lib/state/use-app-state"
 import { useTheme } from "next-themes"
 
 interface MenuProps {

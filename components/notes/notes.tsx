@@ -2,13 +2,13 @@
 
 import { useRef } from "react"
 import { UnifiedContextNoteEditor } from "@/components/editor/unified-context-note-editor"
-import { useAppState } from "@/lib/state/app-state"
+import { useAppState } from "@/lib/state/use-app-state"
 import { LoadingSpinner } from "@/components/ui/loading-states"
 
 export function Notes() {
   const { 
-    isLoading,
-    selectedNote
+    activeNote, 
+    isLoading 
   } = useAppState()
   
   // Show loading state
@@ -22,7 +22,7 @@ export function Notes() {
   }
   
   // Show empty state when no note is selected
-  if (!selectedNote) {
+  if (!activeNote) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center p-4">
         <div className="max-w-md">
@@ -45,7 +45,7 @@ export function Notes() {
       {/* <div className="border border-gray-200 rounded-lg px-4 pt-4 bg-white dark:bg-gray-800 dark:border-gray-700 flex-1 flex flex-col overflow-auto">
       </div> */}
         <div className="flex-1 overflow-hidden">
-          <UnifiedContextNoteEditor key={selectedNote.id} note={selectedNote} />
+          <UnifiedContextNoteEditor key={activeNote.id} note={activeNote} />
         </div>
     </div>
   )

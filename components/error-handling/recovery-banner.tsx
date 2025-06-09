@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
-import { useAppState } from "@/lib/state/app-state";
+import { useAppState } from "@/lib/state/use-app-state";
 import { useToast } from "@/components/ui/use-toast";
 
 /**

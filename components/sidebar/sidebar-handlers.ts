@@ -30,30 +30,45 @@ export function useSidebarHandlers(state: any) {
   
   const confirmDelete = async () => {
     const { noteToDelete } = state;
-    if (noteToDelete) {
-      setIsDeleting(noteToDelete.id);
+    if (!noteToDelete) return;
+    
+    setIsDeleting(noteToDelete.id);
+    console.log('Deleting note:', noteToDelete.id);
+    
+    try {
+      // Show loading toast
+      const loadingToast = toast({
+        title: "Deleting note",
+        description: "Please wait while we delete your note...",
+        variant: "default",
+      });
       
-      try {
-        await deleteNote(noteToDelete.id);
-        
-        toast({
-          title: "Note deleted",
-          description: `"${noteToDelete.noteTitle || `Note #${noteToDelete.id}`}" has been deleted.`,
-          variant: "default",
-        });
-      } catch (error) {
-        console.error("Error deleting note:", error);
-        
-        toast({
-          title: "Error",
-          description: "Failed to delete note. Please try again.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsDeleting(null);
-        setNoteToDelete(null);
-        setIsDeleteDialogOpen(false);
+      // Call deleteNote (user and isAdmin are handled internally)
+      const result = await deleteNote(noteToDelete.id);
+      
+      // Dismiss loading toast if it's still showing
+      if (loadingToast && loadingToast.dismiss) {
+        loadingToast.dismiss();
       }
+      
+      // Show success toast
+      toast({
+        title: "Note deleted",
+        description: `"${noteToDelete.noteTitle || `Note #${noteToDelete.id}`}" has been deleted.`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error deleting note:", error);
+      
+      toast({
+        title: "Error",
+        description: "Failed to delete note. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(null);
+      setNoteToDelete(null);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -95,11 +110,26 @@ export function useSidebarHandlers(state: any) {
     if (selectedNoteIds.size === 0) return;
     
     setIsBulkDeleting(true);
+    console.log('Bulk deleting notes:', Array.from(selectedNoteIds));
     
     try {
+      // Show loading toast
+      const loadingToast = toast({
+        title: "Deleting notes",
+        description: `Please wait while we delete ${selectedNoteIds.size} note(s)...`,
+        variant: "default",
+      });
+      
       const idsToDelete = Array.from(selectedNoteIds);
       
+      // Call bulkDeleteNotes (user and isAdmin are handled internally)
       const result = await bulkDeleteNotes(idsToDelete);
+      console.log('Bulk delete result:', result);
+      
+      // Dismiss loading toast if it's still showing
+      if (loadingToast && loadingToast.dismiss) {
+        loadingToast.dismiss();
+      }
       
       if (result.failed.length === 0) {
         toast({

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { RefreshCw } from "lucide-react";
-import { useAppState } from "@/lib/state/app-state";
+import { useAppState } from "@/lib/state/use-app-state";
 
 export function NoteErrorDetector() {
   const [showBanner, setShowBanner] = useState(false);

@@ -7,7 +7,8 @@ import {
   query, 
   where,
   writeBatch,
-  getDoc
+  getDoc,
+  updateDoc
 } from 'firebase/firestore';
 import { decrementStorage } from './firebase-storage';
 import { calculateNoteSize } from '../storage/storage-utils';
@@ -16,21 +17,29 @@ import { calculateNoteSize } from '../storage/storage-utils';
  * Delete a note by ID
  */
 export const deleteNote = async (noteId: number, userId?: string, isAdmin: boolean = false): Promise<{ success: boolean, error?: string }> => {
+  console.log(`[Firebase] Deleting note ${noteId} for user ${userId}, isAdmin: ${isAdmin}`);
+  
   try {
     // For non-admin users, userId is required for subcollection access
     if (!isAdmin && !userId) {
+      console.error('[Firebase] User ID is required for non-admin users');
       return { success: false, error: 'User ID is required for non-admin users' };
     }
     
     // Get the appropriate collection reference
     const notesRef = getNotesCollectionRef(userId, isAdmin);
+    console.log('[Firebase] Got notes collection ref');
     
     const q = query(notesRef, where("id", "==", noteId));
+    console.log('[Firebase] Querying for note with ID:', noteId);
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
+      console.error(`[Firebase] Note with ID ${noteId} not found`);
       return { success: false, error: 'Note not found' };
     }
+    
+    console.log(`[Firebase] Found note with ID ${noteId}:`, snapshot.docs[0].id);
     
     // Get note data for storage tracking
     const noteData = snapshot.docs[0].data();
@@ -39,22 +48,41 @@ export const deleteNote = async (noteId: number, userId?: string, isAdmin: boole
     // Get document reference
     const docRef = doc(notesRef, snapshot.docs[0].id);
     
-    // Delete the document
+    // First, clear all fields in the document (except id for reference)
+    console.log('[Firebase] Clearing note fields before deletion');
+    await updateDoc(docRef, {
+      content: "",
+      noteTitle: "",
+      description: "",
+      tags: [],
+      category: null,
+      fileSize: 0,
+      wordCount: 0,
+      charCount: 0,
+      archived: true, // Mark as archived before deletion
+      deletedAt: new Date().toISOString() // Add deletion timestamp
+    });
+    
+    // Then delete the document
+    console.log('[Firebase] Deleting document');
     await deleteDoc(docRef);
+    console.log('[Firebase] Document deleted successfully');
     
     // Update storage tracking for non-admin users
     if (!isAdmin && userId && noteFileSize > 0) {
       try {
+        console.log(`[Firebase] Updating storage tracking, decrementing ${noteFileSize} bytes`);
         await decrementStorage(userId, noteFileSize);
       } catch (storageError) {
-        console.error('Error updating storage tracking:', storageError);
+        console.error('[Firebase] Error updating storage tracking:', storageError);
         // Don't fail the deletion if storage tracking fails
       }
     }
     
+    console.log(`[Firebase] Note ${noteId} deleted successfully`);
     return { success: true };
   } catch (error) {
-    console.error(`Error deleting note ${noteId}:`, error);
+    console.error(`[Firebase] Error deleting note ${noteId}:`, error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

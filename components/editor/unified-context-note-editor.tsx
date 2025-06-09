@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useRef, useState } from "react"
 import { UnifiedEditor } from "./unified-editor"
 import { editHistoryService } from "@/lib/edit-history/edit-history-service"
-import { useAppState } from "@/lib/state/app-state"
+import { useAppState } from "@/lib/state/use-app-state"
 import { Note } from "@/types"
 import { EditorSkeleton } from "@/components/ui/note-skeleton"
 

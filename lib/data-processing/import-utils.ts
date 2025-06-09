@@ -14,8 +14,8 @@ if (typeof window !== 'undefined') {
   // Dynamic import to avoid SSR issues
   const initPdfJs = async () => {
     pdfjs = await import('pdfjs-dist');
-    // Use a CDN-hosted worker instead of trying to import it
-    pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+    // Set the worker source directly
+    pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
   };
   
   // Initialize PDF.js

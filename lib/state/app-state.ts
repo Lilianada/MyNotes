@@ -1,3 +1,8 @@
+/**
+ * @deprecated This file is deprecated. Use the new implementation in use-app-state.ts instead.
+ * Import from '@/lib/state/use-app-state' instead of '@/lib/state/app-state'.
+ */
+
 import { useNoteStore } from './note-store'
 import { useUIStore } from './ui-store'
 import { Note } from '@/types'
@@ -18,6 +23,9 @@ export type SortOrder = 'asc' | 'desc'
 /**
  * Custom hook that consolidates all app state from various stores
  * This provides a single entry point for components to access all state
+ * 
+ * @deprecated This hook is deprecated. Use the new implementation in use-app-state.ts instead.
+ * Import from '@/lib/state/use-app-state' instead of '@/lib/state/app-state'.
  */
 export const useAppState = () => {
   const {

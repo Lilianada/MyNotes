@@ -8,7 +8,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useStorage } from "@/contexts/storage-context";
 import { StorageProgress } from "@/components/ui/storage-progress";
 import { Note } from "@/types";
-import { useAppState } from "@/lib/state/app-state";
+import { useAppState } from "@/lib/state/use-app-state";
 
 interface HeaderProps {
   onNewNote: () => void;

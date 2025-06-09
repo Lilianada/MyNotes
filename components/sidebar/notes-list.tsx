@@ -2,7 +2,7 @@ import React from "react";
 import { Note } from "@/types";
 import NoteListItem from "./note-list-item";
 import { NoteListSkeleton } from "@/components/ui/note-skeleton";
-import { useAppState } from "@/lib/state/app-state";
+import { useAppState } from "@/lib/state/use-app-state";
 
 interface NotesListProps {
   filteredNotes: Note[];

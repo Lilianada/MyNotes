@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 
 // Define the Monaco theme settings
-const defineMonacoThemes = (monaco: unknown) => {
+const defineMonacoThemes = () => {
   // Skip theme initialization during server-side rendering
   if (typeof window === 'undefined') return;
   

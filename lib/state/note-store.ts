@@ -178,18 +178,12 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       let newNote: Note;
       
       if (user) {
-        // For authenticated users, save to Firebase
+        // For authenticated users, save to Firebase only
         newNote = await firebaseNotesService.addNote(user.uid, noteTitle, isAdmin);
         
-        // Also save to local storage as a backup/cache
-        try {
-          // Just save the note data directly to local storage as a cache
-          const localNotes = localStorageNotesService.getNotes();
-          localNotes.push(newNote);
-          window.localStorage.setItem('notes', JSON.stringify(localNotes));
-        } catch (localError) {
-          console.warn("Failed to cache note in local storage:", localError);
-        }
+        // Don't save to local storage for authenticated users
+        // This prevents duplication and ensures data consistency
+        // Notes will be loaded from Firebase when needed
       } else {
         // For offline users, save to local storage
         newNote = localStorageNotesService.addNote(noteTitle);
@@ -284,7 +278,11 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     }
   },
   
+  // Main deleteNote implementation
   deleteNote: async (id, user, isAdmin) => {
+    // Set loading state
+    set({ isLoading: true });
+    
     try {
       const { notes } = get();
       const noteToDelete = notes.find(note => note.id === id);
@@ -293,17 +291,30 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         throw new Error(`Note with ID ${id} not found`);
       }
       
+      // If user is authenticated, delete from Firebase
       if (user) {
-        await firebaseNotesService.deleteNote(id, user.uid, isAdmin);
+        // First attempt Firebase deletion
+        const deleteResult = await firebaseNotesService.deleteNote(id, user.uid, isAdmin);
+        
+        if (!deleteResult.success) {
+          throw new Error(deleteResult.error || 'Failed to delete note from cloud storage');
+        }
+        
+        // Also delete from local storage to ensure consistency
+        localStorageNotesService.deleteNote(id);
       } else {
+        // If user is not authenticated, only delete from local storage
         localStorageNotesService.deleteNote(id);
       }
       
-      // Update local state
+      // Update local state only after successful deletion
       set({ notes: notes.filter(note => note.id !== id) });
     } catch (error) {
       console.error("Failed to delete note:", error);
       throw error;
+    } finally {
+      // Reset loading state
+      set({ isLoading: false });
     }
   },
   
@@ -563,7 +574,71 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       throw error;
     }
   },
-  bulkDeleteNotes: async () => ({ successful: [], failed: [] }),
+  bulkDeleteNotes: async (ids, user, isAdmin) => {
+    // Set loading state
+    set({ isLoading: true });
+    
+    const successful: number[] = [];
+    const failed: { id: number, error: string }[] = [];
+    
+    try {
+      const { notes } = get();
+      
+      // Process each note ID
+      for (const id of ids) {
+        try {
+          const noteToDelete = notes.find(note => note.id === id);
+          
+          if (!noteToDelete) {
+            failed.push({ id, error: `Note with ID ${id} not found` });
+            continue;
+          }
+          
+          // If user is authenticated, delete from Firebase
+          if (user) {
+            // First attempt Firebase deletion
+            const deleteResult = await firebaseNotesService.deleteNote(id, user.uid, isAdmin);
+            
+            if (!deleteResult.success) {
+              failed.push({ id, error: deleteResult.error || 'Failed to delete note from cloud storage' });
+              continue;
+            }
+            
+            // Also delete from local storage to ensure consistency
+            localStorageNotesService.deleteNote(id);
+          } else {
+            // If user is not authenticated, only delete from local storage
+            localStorageNotesService.deleteNote(id);
+          }
+          
+          successful.push(id);
+        } catch (error) {
+          console.error(`Failed to delete note ${id}:`, error);
+          failed.push({ 
+            id, 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+          });
+        }
+      }
+      
+      // Update local state to remove successfully deleted notes
+      if (successful.length > 0) {
+        const successfulSet = new Set(successful);
+        set({ notes: notes.filter(note => !successfulSet.has(note.id)) });
+      }
+      
+      return { successful, failed };
+    } catch (error) {
+      console.error("Failed during bulk delete operation:", error);
+      return { successful, failed: [...failed, ...ids.filter(id => !successful.includes(id)).map(id => ({ 
+        id, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      }))] };
+    } finally {
+      // Reset loading state
+      set({ isLoading: false });
+    }
+  },
   getNoteHistory: async () => [],
   // Find conflicts between local and cloud notes
   findSyncConflicts: async (user) => {
@@ -604,14 +679,16 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         
         // If note exists in both places, check for conflicts
         if (cloudNote) {
-          // Compare last updated timestamps to detect conflicts
-          const localUpdated = new Date(localNote.updatedAt || localNote.createdAt);
-          const cloudUpdated = new Date(cloudNote.updatedAt || cloudNote.createdAt);
+          // Compare updated timestamps to determine which is newer
+          const localUpdatedAt = localNote.updatedAt || new Date(0).toISOString();
+          const cloudUpdatedAt = cloudNote.updatedAt || new Date(0).toISOString();
+          const localIsNewer = new Date(localUpdatedAt) > new Date(cloudUpdatedAt);
           
           // If the timestamps are different, we have a potential conflict
           // We also check content to avoid flagging identical notes
           if (
-            localUpdated.getTime() !== cloudUpdated.getTime() && 
+            localIsNewer && 
+            new Date(localUpdatedAt).getTime() !== new Date(cloudUpdatedAt).getTime() && 
             (localNote.content !== cloudNote.content || localNote.noteTitle !== cloudNote.noteTitle)
           ) {
             conflictedNotes.push({
@@ -690,7 +767,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
               // Merge both versions
               const mergedNote = {
                 // Prefer the more recent title
-                noteTitle: conflict.localNote.updatedAt > conflict.cloudNote.updatedAt 
+                noteTitle: (conflict.localNote.updatedAt || '') > (conflict.cloudNote.updatedAt || '') 
                   ? conflict.localNote.noteTitle 
                   : conflict.cloudNote.noteTitle,
                   
@@ -698,7 +775,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
                 content: `${conflict.localNote.content}\n\n---\n\n${conflict.cloudNote.content}`,
                 
                 // Combine tags without duplicates
-                tags: [...new Set([...(conflict.localNote.tags || []), ...(conflict.cloudNote.tags || [])])],
+                tags: Array.from(new Set([...(conflict.localNote.tags || []), ...(conflict.cloudNote.tags || [])])),
                 
                 // Prefer local category if it exists
                 category: conflict.localNote.category || conflict.cloudNote.category,
@@ -734,7 +811,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       const cloudNotes = await firebaseNotesService.getNotes(user.uid);
       
       // Create a map of cloud note IDs for faster lookup
-      const cloudNoteIds = new Set(cloudNotes.map(note => note.id));
+      const cloudNoteIds = new Set<number | string>();
+      cloudNotes.forEach(note => cloudNoteIds.add(note.id));
       
       // Find local notes that don't exist in the cloud
       const localOnlyNotes = localNotes.filter(note => !cloudNoteIds.has(note.id));
@@ -896,7 +974,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         await firebaseNotesService.updateNoteData(id, { tags: limitedTags }, user.uid, isAdmin);
       } else {
         // Save to local storage for offline use
-        localStorageNotesService.updateNote(id, { tags: limitedTags });
+        localStorageNotesService.updateNoteData(id, { tags: limitedTags });
       }
       
       return limitedTags;
@@ -937,7 +1015,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           await firebaseNotesService.updateNoteData(note.id, { tags: updatedTags }, user.uid, isAdmin);
         } else {
           // Save to local storage for offline use
-          localStorageNotesService.updateNote(note.id, { tags: updatedTags });
+          localStorageNotesService.updateNoteData(note.id, { tags: updatedTags });
         }
       }
       
@@ -976,7 +1054,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           await firebaseNotesService.updateNoteData(note.id, { tags: updatedTags }, user.uid, isAdmin);
         } else {
           // Save to local storage for offline use
-          localStorageNotesService.updateNote(note.id, { tags: updatedTags });
+          localStorageNotesService.updateNoteData(note.id, { tags: updatedTags });
         }
       }
       

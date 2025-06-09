@@ -6,8 +6,9 @@ import { useSidebarHandlers } from "./sidebar-handlers";
 import { SidebarHeader } from "./sidebar-header";
 import { NotesList } from "./notes-list";
 import { SidebarDialogs } from "./sidebar-dialogs";
-import { useAppState } from "@/lib/state/app-state";
-import { FilterOptions } from "@/lib/state/app-state";
+import { useAppState, FilterOptions, SortField } from "@/lib/state/use-app-state";
+import { useToast } from "@/hooks/use-toast";
+import type { SortOption } from "./filter-sort-toolbar";
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -24,12 +25,16 @@ export default function Sidebar({
     selectedNoteId, 
     deleteNote, 
     selectNote,
-    filterNotes,
-    sortNotes,
     getChildNotes,
     getLinkedNotes,
-    user
+    filterNotes,
+    sortNotes,
+    bulkDeleteNotes,
+    user,
+    isAdmin
   } = useAppState();
+  
+  const { toast } = useToast();
   
   // Use custom hooks for state and handlers
   // We'll keep using these hooks for now but integrate with our new state management
@@ -43,51 +48,53 @@ export default function Sidebar({
       state.selectNote(id);
     },
     deleteNote: (id: number) => {
-      deleteNote(id, user, !!user?.isAdmin);
+      deleteNote(id);
       state.setNoteToDelete(null);
       state.setIsDeleteDialogOpen(false);
     }
   });
 
-  // Apply filters and sorting from the sidebar state to our notes
-  const filteredNotes = React.useMemo(() => {
-    let result = [...notes];
-    
-    // Combine all filters into a single FilterOptions object
-    const filterOptions: FilterOptions = {};
-    
-    if (state.selectedTag) {
-      filterOptions.tag = state.selectedTag;
-    }
-    
-    if (state.selectedCategory) {
-      filterOptions.category = state.selectedCategory;
-    }
-    
-    if (state.selectedArchive !== null) {
-      filterOptions.archived = state.selectedArchive;
-    }
-    
-    if (state.selectedPublished !== null) {
-      filterOptions.published = state.selectedPublished;
-    }
-    
-    // Apply filters if any are set
-    if (Object.keys(filterOptions).length > 0) {
-      result = filterNotes(result, filterOptions);
-    }
-    
-    // Apply sorting - map the sidebar's sort options to our store's sort fields
-    const sortField = state.sortBy === 'updated' ? 'updatedAt' :
-                     state.sortBy === 'created' ? 'createdAt' :
-                     state.sortBy === 'title' ? 'noteTitle' : 
-                     state.sortBy || 'updatedAt';
-    
-    result = sortNotes(result, sortField, state.sortOrder || 'desc');
-    
-    return result;
-  }, [notes, state.selectedTag, state.selectedCategory, state.selectedArchive, state.selectedPublished, state.sortBy, state.sortOrder, filterNotes, sortNotes]);
+  // Apply filters and sorting
+  const filterOptions: FilterOptions = {
+    tag: state.selectedTag || undefined,
+    category: state.selectedCategory || undefined,
+    archived: state.selectedArchive !== null ? state.selectedArchive : undefined,
+    published: state.selectedPublished !== null ? state.selectedPublished : undefined,
+  };
   
+  // Map sidebar sort options to the app state sort fields
+  const getSortField = (sortOption: SortOption): SortField => {
+    switch (sortOption) {
+      case 'title': return 'noteTitle';
+      case 'created': return 'createdAt';
+      case 'updated': return 'updatedAt';
+      default: return 'updatedAt';
+    }
+  };
+  
+  const filteredNotes = filterNotes(notes, filterOptions);
+  const sortedNotes = sortNotes(filteredNotes, getSortField(state.sortBy), state.sortOrder);
+
+  const bulkDeleteHandler = async (noteIds: number[]) => {
+    try {
+      // Call the bulkDeleteNotes function (user and isAdmin are handled internally)
+      await bulkDeleteNotes(noteIds);
+      
+      toast({
+        title: "Notes deleted",
+        description: `Successfully deleted ${noteIds.length} note(s).`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error during bulk delete:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete notes. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <>
       <aside 
@@ -100,7 +107,7 @@ export default function Sidebar({
       >
         {/* Header */}
         <SidebarHeader 
-          filteredNotesLength={filteredNotes.length}
+          filteredNotesLength={sortedNotes.length}
           totalNotesLength={notes.length}
           filterOptions={state.filterOptions}
         />
@@ -120,7 +127,7 @@ export default function Sidebar({
           onSortChange={state.handleSortChange}
           isSelectionMode={state.isSelectionMode}
           selectedNoteIds={state.selectedNoteIds}
-          filteredNotesLength={filteredNotes.length}
+          filteredNotesLength={sortedNotes.length}
           isBulkDeleting={state.isBulkDeleting}
           onToggleSelectionMode={handlers.handleToggleSelectionMode}
           onSelectAll={handlers.handleSelectAll}
@@ -129,7 +136,7 @@ export default function Sidebar({
 
         {/* Notes List */}
         <NotesList
-          filteredNotes={filteredNotes}
+          filteredNotes={sortedNotes}
           selectedNoteId={selectedNoteId}
           isDeleting={state.isDeleting}
           isSelectionMode={state.isSelectionMode}
@@ -157,7 +164,7 @@ export default function Sidebar({
             // Ensure we're using the numeric ID
             const noteId = typeof state.noteToDelete === 'object' ? 
               state.noteToDelete.id : state.noteToDelete;
-            deleteNote(noteId, user, !!user?.isAdmin);
+            deleteNote(noteId);
             state.setIsDeleteDialogOpen(false);
             state.setNoteToDelete(null);
           }
@@ -169,10 +176,7 @@ export default function Sidebar({
         }}
         onConfirmBulkDelete={() => {
           // Delete all selected notes
-          Array.from(state.selectedNoteIds).forEach(id => {
-            // Ensure we're using the numeric ID
-            deleteNote(id, user, !!user?.isAdmin);
-          });
+          bulkDeleteHandler(Array.from(state.selectedNoteIds));
           state.setIsBulkDeleteDialogOpen(false);
           state.setSelectedNoteIds(new Set());
           state.setIsSelectionMode(false);

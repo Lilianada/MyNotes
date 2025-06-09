@@ -1,9 +1,9 @@
 import { Note } from '@/types';
 import { saveAs } from 'file-saver';
-import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
+import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell } from 'docx';
+import { exportToDoc, exportMultipleToDoc } from './doc-export';
 
 type ExportFormat = 'markdown' | 'txt' | 'pdf' | 'doc';
 

@@ -3,7 +3,7 @@
 import React, { forwardRef } from "react";
 import dynamic from 'next/dynamic';
 import type { Note } from "@/types";
-import { useAppState } from "@/lib/state/app-state";
+import { useAppState } from "@/lib/state/use-app-state";
 import MarkdownRenderer from "@/components/markdown/markdown-renderer";
 import NoteTitleEditor from "@/components/modals/new-note-modal";
 import WordCount from "@/components/utils/word-count";
@@ -123,7 +123,7 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
         </div>
 
         {/* Editor content */}
-        <div className="flex-grow relative">
+        <div className="flex-grow relative overflow-y-auto pb-4">
           {renderHTML ? (
             // Render markdown preview
             <div className={`h-full overflow-auto p-4 ${fontFamilyClass}`}>

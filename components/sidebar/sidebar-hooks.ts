@@ -3,7 +3,7 @@ import { Note } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { useSortedAndFilteredNotes, type FilterOptions } from "./note-filtering";
 import type { SortOption } from "./filter-sort-toolbar";
-import { useAppState } from "@/lib/state/app-state";
+import { useAppState } from "@/lib/state/use-app-state";
 
 /**
  * Custom hook for managing sidebar state

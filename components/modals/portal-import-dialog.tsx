@@ -5,15 +5,16 @@ import { FileUp, FileText, FilePlus, Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { importFiles, ImportResult } from '@/lib/data-processing/import-utils';
 import { useAppState } from '@/lib/state/app-state';
+import { useAuth } from '@/contexts/auth-context';
 import { createPortal } from 'react-dom';
 import {
-  UltraTransparentDialog,
-  UltraTransparentDialogContent,
-  UltraTransparentDialogHeader,
-  UltraTransparentDialogTitle,
-  UltraTransparentDialogDescription,
-  UltraTransparentDialogFooter
-} from '@/components/ui/ultra-transparent-dialog';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 
 interface ImportDialogProps {
   isOpen: boolean;
@@ -27,7 +28,8 @@ export function PortalImportDialog({ isOpen, onClose }: ImportDialogProps) {
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-  const { addNote } = useAppState();
+  const { addNote, updateNote, updateNoteData } = useAppState();
+  const { user, isAdmin } = useAuth();
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,8 +98,25 @@ export function PortalImportDialog({ isOpen, onClose }: ImportDialogProps) {
       if (result.success) {
         // Add imported notes to the app
         for (const note of result.notes) {
-          // Type fix: Pass note properties instead of the note object
-          await addNote(note.noteTitle || 'Imported Note');
+          try {
+            // First create the note with just the title
+            const createdNote = await addNote(note.noteTitle || 'Imported Note', user, isAdmin);
+            
+            // Then update the content
+            await updateNote(createdNote.id, note.content || '', user, isAdmin);
+            
+            // Then update metadata if available
+            if (note.description || note.category || note.tags) {
+              const metadata: any = {};
+              if (note.description) metadata.description = note.description;
+              if (note.category) metadata.category = note.category;
+              if (note.tags) metadata.tags = note.tags;
+              
+              await updateNoteData(createdNote.id, metadata, user, isAdmin);
+            }
+          } catch (error) {
+            console.error('Error importing note:', error);
+          }
         }
 
         toast({
@@ -129,76 +148,70 @@ export function PortalImportDialog({ isOpen, onClose }: ImportDialogProps) {
     }
   };
 
-  // Create a portal to render the dialog at the root level
-  return createPortal(
-    <UltraTransparentDialog open={isOpen} onOpenChange={onClose}>
-      <UltraTransparentDialogContent className="max-w-md">
-        <UltraTransparentDialogHeader>
-          <UltraTransparentDialogTitle>Import Notes</UltraTransparentDialogTitle>
-          <UltraTransparentDialogDescription>
-            Import notes from various file formats
-          </UltraTransparentDialogDescription>
-        </UltraTransparentDialogHeader>
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Import Notes</DialogTitle>
+          <DialogDescription>
+            Import notes from Markdown, text, PDF, or Word documents.
+          </DialogDescription>
+        </DialogHeader>
         
-        <div className="p-2">
+        <div className="p-4">
           <div
-            className={`border-2 border-dashed rounded-md p-6 text-center ${
-              dragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-600'
-            }`}
+            className={`border-2 border-dashed rounded-lg p-6 text-center ${dragActive ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-gray-300 dark:border-gray-700'}`}
             onDragEnter={handleDrag}
             onDragOver={handleDrag}
             onDragLeave={handleDrag}
             onDrop={handleDrop}
           >
             <div className="flex flex-col items-center justify-center">
-              <FileUp size={32} className="text-gray-400 mb-2" />
-              <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                Drag and drop files here, or click to select
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Supports .md, .txt, .pdf, .doc, .docx
-              </p>
+              <FileUp size={36} className="text-gray-400 mb-2" />
+              <p className="text-sm font-medium mb-1">Drag and drop files here</p>
+              <p className="text-xs text-gray-500 mb-4">or</p>
               <button
                 type="button"
                 onClick={handleButtonClick}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 Select Files
               </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".md,.txt,.pdf,.doc,.docx"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Supported formats: .md, .txt, .pdf, .doc, .docx
+              </p>
             </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept=".md,.txt,.pdf,.doc,.docx"
-              onChange={handleFileChange}
-              className="hidden"
-            />
           </div>
-
+          
           {selectedFiles.length > 0 && (
             <div className="mt-4">
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm font-medium">Selected Files ({selectedFiles.length})</h3>
                 <button
                   type="button"
                   onClick={handleClearFiles}
-                  className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
+                  className="text-xs text-red-600 hover:text-red-800"
                 >
-                  Clear all
+                  Clear All
                 </button>
               </div>
-              <div className="max-h-40 overflow-y-auto border rounded-md">
+              
+              <div className="max-h-40 overflow-y-auto border rounded-md divide-y">
                 {selectedFiles.map((file, index) => (
-                  <div 
-                    key={index} 
-                    className="flex items-center p-2 text-sm border-b last:border-b-0"
-                  >
-                    <FileText size={16} className="mr-2 text-gray-500" />
-                    <div className="truncate">{file.name}</div>
-                    <div className="ml-auto text-xs text-gray-500">
-                      {(file.size / 1024).toFixed(1)} KB
+                  <div key={index} className="flex items-center justify-between p-2 text-sm">
+                    <div className="flex items-center">
+                      <FileText size={16} className="text-gray-400 mr-2" />
+                      <span className="truncate max-w-[200px]">{file.name}</span>
                     </div>
+                    <span className="text-xs text-gray-500">{(file.size / 1024).toFixed(1)} KB</span>
                   </div>
                 ))}
               </div>
@@ -236,38 +249,37 @@ export function PortalImportDialog({ isOpen, onClose }: ImportDialogProps) {
               )}
             </div>
           )}
+          
+          <DialogFooter className="flex justify-end mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 mr-2"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleImport}
+              disabled={isImporting || selectedFiles.length === 0}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {isImporting ? (
+                <>
+                  <Loader2 size={16} className="mr-2 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <FilePlus size={16} className="mr-2" />
+                  Import
+                </>
+              )}
+            </button>
+          </DialogFooter>
         </div>
-        
-        <UltraTransparentDialogFooter>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 mr-2"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleImport}
-            disabled={isImporting || selectedFiles.length === 0}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-          >
-            {isImporting ? (
-              <>
-                <Loader2 size={16} className="mr-2 animate-spin" />
-                Importing...
-              </>
-            ) : (
-              <>
-                <FilePlus size={16} className="mr-2" />
-                Import
-              </>
-            )}
-          </button>
-        </UltraTransparentDialogFooter>
-      </UltraTransparentDialogContent>
-    </UltraTransparentDialog>,
-    document.body
+      </DialogContent>
+    </Dialog>
   );
 }
 

@@ -2,7 +2,7 @@
 
 import List from "@/components/sidebar/sidebar"
 import FontSwitcher from "@/components/theme/font-switcher"
-import { useAppState } from "@/lib/state/app-state"
+import { useAppState } from "@/lib/state/use-app-state"
 import { useState, useEffect } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { generateUniqueTitle } from "@/lib/data-processing/title-generator"
