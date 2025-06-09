@@ -54,7 +54,7 @@ export function Header({
       <div>
         <button
           onClick={toggleSidebar}
-          className="p-1.5 text-gray-500 hover:text-gray-700 md:hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md"
+          className="p-1.5 text-gray-500 hover:text-gray-700 md:hidden focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded-md grid place-items-center"
           aria-label={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
           aria-expanded={isSidebarOpen}
           aria-controls="sidebar"
@@ -89,8 +89,8 @@ export function Header({
 
         {/* Search dropdown */}
         {mobileSearchOpen && (
-          <div className="absolute top-full mt-1 w-[calc(100vw-2rem)] sm:w-80 right-0 z-50">
-            <div className="bg-white rounded-md border border-gray-200 shadow-lg p-2" role="search">
+          <div className="absolute top-full mt-1 w-[calc(100vw-2rem)] sm:w-80 left-1/2 -translate-x-1/2 sm:left-auto sm:right-0 sm:translate-x-0 z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 shadow-lg p-2" role="search">
               <SearchNotes
                 notes={notes}
                 onSelectNote={(note: Note) => {

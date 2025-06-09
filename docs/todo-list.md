@@ -198,30 +198,27 @@ This guide consolidates all identified issues and provides a structured roadmap 
 #### Integration & Export
 - [✅] Fix the export multiple formats and make sure it works well
 - [✅] Implement import of files in the same format as we export md,txt,pdf,doc
-- [ ] Create basic API for integrations
 - [ ] Enhance offline capabilities
 
 ### Phase 4: Polish & Scale (2-3 months)
 **Lower Priority - Optimization & Polish**
 
 #### Performance at Scale
-- [ ] Optimize for large note collections
-- [ ] Implement advanced caching strategies
-- [ ] Add performance monitoring
-- [ ] Create advanced indexing
+- [✅] Optimize for large note collections
+- [ ] Add basic performance monitoring
 
 #### Mobile & PWA
-- [ ] Implement PWA capabilities
 - [ ] Optimize touch interactions
 - [ ] Create mobile-specific navigation
-- [ ] Add background sync
 
 #### User Experience Refinement
-- [ ] Add customizable UI themes
+- [ ] Add darkmode theme toggle
 - [ ] Implement comprehensive keyboard navigation
 - [ ] Create user onboarding experience
 - [ ] Add inline help and tooltips
 
+
+Let's focus on mobile now. Our app has bad UI for mobile devices, the monaco editor, the sidebar, the search bar modal
 ---
 
 ## 🎯 Immediate Action Items

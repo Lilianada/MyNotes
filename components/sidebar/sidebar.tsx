@@ -4,7 +4,7 @@ import { FilterSortToolbar } from "./filter-sort-toolbar";
 import { useSidebarState } from "./sidebar-hooks";
 import { useSidebarHandlers } from "./sidebar-handlers";
 import { SidebarHeader } from "./sidebar-header";
-import { NotesList } from "./notes-list";
+import { VirtualizedNotesList } from "./virtualized-notes-list";
 import { SidebarDialogs } from "./sidebar-dialogs";
 import { useAppState, FilterOptions, SortField } from "@/lib/state/use-app-state";
 import { useToast } from "@/hooks/use-toast";
@@ -103,7 +103,10 @@ export default function Sidebar({
           isSidebarOpen ? ' translate-x-0' : ' -translate-x-full'
         } md:translate-x-0 md:relative md:w-full md:m-2 md:border md:rounded-md md:shadow-sm md:transition-shadow`}
         aria-label="Sidebar navigation"
-        aria-hidden={!isSidebarOpen && window.innerWidth < 768}
+        // Using tabIndex to prevent focus when sidebar is closed on mobile
+        tabIndex={!isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768 ? -1 : undefined}
+        // Using aria-hidden for screen readers but with proper focus management
+        aria-hidden={!isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768}
       >
         {/* Header */}
         <SidebarHeader 
@@ -135,7 +138,7 @@ export default function Sidebar({
         />
 
         {/* Notes List */}
-        <NotesList
+        <VirtualizedNotesList
           filteredNotes={sortedNotes}
           selectedNoteId={selectedNoteId}
           isDeleting={state.isDeleting}
@@ -146,7 +149,7 @@ export default function Sidebar({
           onOpenDetails={handlers.handleOpenDetails}
           onDeleteNote={handlers.handleDeleteNote}
           onToggleSelection={handlers.handleSelectNote}
-          selectNote={(noteId) => selectNote(noteId)}
+          selectNote={(noteId: number) => selectNote(noteId)}
         />
         
       </aside>
