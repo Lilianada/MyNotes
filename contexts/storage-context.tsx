@@ -1,12 +1,13 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { UserStorage, StorageAlert } from '@/types';
 import { getUserStorage, recalculateUserStorage, getAdminStorageStats } from '@/lib/firebase/firebase-storage';
 import { checkStorageAlerts, getStoragePercentage } from '@/lib/storage/storage-utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
 import { firebaseNotesService } from '@/lib/firebase/firebase-notes';
+import { useAppState } from '@/lib/state/app-state';
 
 interface AdminStorageStats {
   adminStorage: number;
@@ -39,8 +40,11 @@ export function StorageProvider({ children }: { children: ReactNode }) {
   const { user, isAdmin } = useAuth();
   const { toast } = useToast();
   
+  // Get app state to monitor note changes
+  const appState = useAppState();
+  
   // Load storage data from both local and Firebase sources
-  const loadUserStorage = async () => {
+  const loadUserStorage = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -112,10 +116,10 @@ export function StorageProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, isAdmin]);
   
   // Simplified refresh function
-  const refreshStorage = async () => {
+  const refreshStorage = useCallback(async () => {
     try {
       setIsLoading(true);
       await loadUserStorage();
@@ -129,7 +133,7 @@ export function StorageProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [loadUserStorage, toast]);
 
   // Initialize with local storage values
   useEffect(() => {
@@ -145,7 +149,21 @@ export function StorageProvider({ children }: { children: ReactNode }) {
     return () => {
       clearInterval(refreshInterval);
     };
-  }, []);
+  }, [loadUserStorage, refreshStorage]);
+  
+  // Monitor note changes to update storage info automatically
+  // Debounce the refresh to avoid excessive updates
+  useEffect(() => {
+    // Only refresh when notes actually change and not on initial render
+    if (appState?.notes && appState.notes.length > 0) {
+      // Use a short timeout to debounce multiple rapid changes
+      const debounceTimeout = setTimeout(() => {
+        refreshStorage();
+      }, 2000); // Wait 2 seconds after notes change before refreshing
+      
+      return () => clearTimeout(debounceTimeout);
+    }
+  }, [appState?.notes, refreshStorage]);
 
   // Check for storage alerts when storage changes
   useEffect(() => {
@@ -167,10 +185,10 @@ export function StorageProvider({ children }: { children: ReactNode }) {
   }, [userStorage, toast, lastAlertShown]);
 
   // Simplified admin stats function (no-op in local mode)
-  const loadAdminStorageStats = async () => {
+  const loadAdminStorageStats = useCallback(async () => {
     // No admin stats in local mode
     return;
-  };
+  }, []);
 
   const checkStorageLimit = (noteSize: number): boolean => {
     if (!userStorage) return true; // No storage info yet, allow it

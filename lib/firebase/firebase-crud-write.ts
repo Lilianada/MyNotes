@@ -96,25 +96,15 @@ export class FirebaseCRUDWrite {
       const noteDoc = await getDoc(docRef);
       const noteData = noteDoc.data();
       
-      // Create new history entry with regular Date object for arrays
-      // Firebase doesn't support serverTimestamp() in arrays
-      const newHistoryEntry = {
-        timestamp: new Date(),
-        editType: 'update'
-      };
+      // Note: Edit history is now managed by EditHistoryService, not added here directly
+      // This prevents excessive history entries and Firestore writes
       
-      // Get existing history or create empty array if none exists
-      const existingHistory = noteData?.editHistory || [];
-      
-      // Add new history entry (keeping history limited to most recent 20 entries)
-      const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
-      
-      // Update the document with content and new history
+      // Update the document with content only
       await updateDoc(docRef, { 
         content,
         wordCount,
-        updatedAt: serverTimestamp(), // This is fine outside arrays
-        editHistory: updatedHistory
+        updatedAt: serverTimestamp()
+        // editHistory is intentionally omitted - managed by EditHistoryService
       });
     } catch (error) {
       console.error('Error updating note content:', error);
@@ -142,26 +132,16 @@ export class FirebaseCRUDWrite {
       const oldDocRef = doc(db, 'notes', snapshot.docs[0].id);
       const oldData = snapshot.docs[0].data();
       
-      // Create new history entry with regular Date object for arrays
-      // Firebase doesn't support serverTimestamp() in arrays
-      const newHistoryEntry = {
-        timestamp: new Date(),
-        editType: 'title'
-      };
-      
-      // Get existing history or create empty array if none exists
-      const existingHistory = oldData.editHistory || [];
-      
-      // Add new history entry (keeping history limited to most recent 20 entries)
-      const updatedHistory = [newHistoryEntry, ...existingHistory].slice(0, 20);
+      // Note: Edit history is now managed by EditHistoryService, not added here directly
+      // This prevents excessive history entries and Firestore writes
       
       // Update the existing document in place
       await updateDoc(oldDocRef, {
         noteTitle,
         slug: newSlug,
         filePath,
-        updatedAt: serverTimestamp(),
-        editHistory: updatedHistory
+        updatedAt: serverTimestamp()
+        // editHistory is intentionally omitted - managed by EditHistoryService
       });
       
       return filePath;

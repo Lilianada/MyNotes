@@ -2,10 +2,17 @@
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
-// Initialize Firebase Admin
-const serviceAccount = require('../firebase-service-account.json');
+const path = require('path');
+
+// Load environment variables from .env.local
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
+
+// Import the Firebase Admin config helper
+const { getFirebaseAdminCredential } = require('../lib/firebase-admin-config');
+
+// Initialize Firebase Admin with credentials from environment variables
 initializeApp({
-  credential: cert(serviceAccount)
+  credential: getFirebaseAdminCredential()
 });
 
 const db = getFirestore();

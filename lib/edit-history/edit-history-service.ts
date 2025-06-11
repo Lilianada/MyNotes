@@ -35,6 +35,7 @@ export class EditHistoryService {
 
   /**
    * Track content change and schedule autosave
+   * Only saves history for significant changes, not every keystroke
    */
   trackContentChange(
     noteId: number,
@@ -67,7 +68,7 @@ export class EditHistoryService {
       this.autosaveTimers.delete(noteId); // Ensure we clean up the map entry
     }
 
-    // Set new timer for autosave
+    // Set new timer for autosave - use longer interval to prevent excessive saves
     const timer = setTimeout(() => {
       this.performAutosave(noteId, isAdmin, user);
     }, this.config.autosaveInterval);
@@ -76,8 +77,8 @@ export class EditHistoryService {
   }
 
   /**
-   * Perform autosave - always save current state when leaving note
-   * This function saves content frequently without always creating history entries
+   * Perform autosave - only save when significant changes are detected
+   * This function saves content less frequently and only creates history entries for significant changes
    */
   private async performAutosave(
     noteId: number,
@@ -95,13 +96,11 @@ export class EditHistoryService {
       
       // Skip autosave if there's no pending content change
       if (!newContent) {
-        console.log(`[EditHistory] No pending changes for note ${noteId}, skipping autosave`);
         return;
       }
 
       // Make sure we have last saved content for this note
       if (!this.lastSavedContent.has(noteId)) {
-        console.log(`[EditHistory] No last saved content for note ${noteId}, initializing`);
         this.lastSavedContent.set(noteId, newContent);
         this.pendingChanges.delete(noteId);
         return;
@@ -111,34 +110,39 @@ export class EditHistoryService {
       
       // Skip autosave if content hasn't changed or is empty
       if (newContent === lastContent || newContent.trim() === '') {
-        console.log(`[EditHistory] No significant changes for note ${noteId}, skipping autosave`);
         this.pendingChanges.delete(noteId);
         this.autosaveTimers.delete(noteId);
         return;
       }
-
-      console.log(`[EditHistory] Performing autosave for note ${noteId}`);
       
+      // Check if the change is significant enough to warrant a history entry
+      // This prevents creating history entries for minor edits like typo fixes
       // Calculate change metrics for logging regardless of whether we create a history entry
       const diff = calculateTextDifference(lastContent, newContent);
       
-      // Check if the change is significant enough to create a history entry
-      const shouldAddToHistory = shouldCreateHistoryEntry(lastContent, newContent);
+      // Determine if we should create a history entry - use stricter criteria
+      const shouldAddHistory = shouldCreateHistoryEntry(lastContent, newContent, this.config);
       
-      if (shouldAddToHistory) {
-        console.log(`[EditHistory] Change is significant, adding to history for note ${noteId}`);
-        // Create history entry for significant changes
+      // Only create history entries for significant changes
+      if (shouldAddHistory) {
+        // Create history entry
         const historyEntry = createHistoryEntry(lastContent, newContent, 'autosave');
+        
+        // Save with history
         await this.saveWithHistory(noteId, newContent, historyEntry, isAdmin, user);
+        
+        // Update last saved content
+        this.lastSavedContent.set(noteId, newContent);
       } else {
-        console.log(`[EditHistory] Change is minor, updating content without history entry for note ${noteId}`);
-        // For minor changes, just update content without adding to history
-        if (user && typeof firebaseNotesService?.updateNoteContent === 'function') {
-          await firebaseNotesService.updateNoteContent(noteId, newContent, user.uid, isAdmin);
-        } else if (typeof localStorageNotesService?.updateNoteContent === 'function') {
-          await localStorageNotesService.updateNoteContent(noteId, newContent);
+        // For minor changes, just save content without creating a history entry
+        // This prevents history bloat while still preserving user's work
+        if (user && firebaseNotesService) {
+          await firebaseNotesService.updateNoteData(noteId, { content: newContent }, user.uid, isAdmin);
+        } else {
+          localStorageNotesService.updateNoteContent(noteId, newContent);
         }
-        // Update last saved content regardless
+        
+        // Update last saved content
         this.lastSavedContent.set(noteId, newContent);
       }
 
@@ -164,19 +168,65 @@ export class EditHistoryService {
     try {
       // First verify this noteId exists in our tracking
       if (!this.lastSavedContent.has(noteId) && noteId !== 0) {
-        console.log(`[EditHistory] Initializing tracking for note ${noteId} during forceSave`);
         // Initialize tracking if it doesn't exist yet
         this.initializeTracking(noteId, content);
       }
       
       const lastContent = this.lastSavedContent.get(noteId) || '';
-      const historyEntry = createHistoryEntry(lastContent, content, editType);
       
       // Add some validation to prevent erroneous saves
       if (editType === 'update' && content.trim() === '') {
         console.warn(`[EditHistory] Prevented saving empty content for note ${noteId}`);
         return;
       }
+      
+      // Check if we already have history entries for this note
+      let existingHistory: NoteEditHistory[] = [];
+      
+      // Get existing history to check for recent entries
+      if (user && firebaseNotesService) {
+        const note = await firebaseNotesService.getNote(noteId, user.uid, isAdmin);
+        existingHistory = note?.editHistory || [];
+      } else {
+        const notes = localStorageNotesService.getNotes();
+        const note = notes.find(n => n.id === noteId);
+        existingHistory = note?.editHistory || [];
+      }
+      
+      // Check if we have a recent entry (within the last minute)
+      const now = new Date();
+      const recentEntry = existingHistory[0]; // Most recent entry
+      
+      if (recentEntry && editType === 'update') {
+        const entryTime = new Date(recentEntry.timestamp);
+        const timeDiffMs = now.getTime() - entryTime.getTime();
+        const timeDiffMinutes = timeDiffMs / (1000 * 60);
+        
+        // If we have an entry from less than 1 minute ago, just update content without new history
+        if (timeDiffMinutes < 1) {
+          // Just update content without creating a new history entry
+          if (user && firebaseNotesService) {
+            await firebaseNotesService.updateNoteData(noteId, { content }, user.uid, isAdmin);
+          } else {
+            localStorageNotesService.updateNoteContent(noteId, content);
+          }
+          
+          // Update tracking
+          this.lastSavedContent.set(noteId, content);
+          this.pendingChanges.delete(noteId);
+          
+          // Clear any pending autosave
+          const timer = this.autosaveTimers.get(noteId);
+          if (timer) {
+            clearTimeout(timer);
+            this.autosaveTimers.delete(noteId);
+          }
+          return;
+        }
+      }
+      
+      // Create history entry for significant changes or explicit save requests
+      const historyEntry = createHistoryEntry(lastContent, content, editType);
       
       await this.saveWithHistory(noteId, content, historyEntry, isAdmin, user);
       
@@ -190,8 +240,6 @@ export class EditHistoryService {
         clearTimeout(timer);
         this.autosaveTimers.delete(noteId);
       }
-      
-      console.log(`[EditHistory] Force saved note ${noteId} with type: ${editType}`);
     } catch (error) {
       console.error(`[EditHistory] Failed to force save note ${noteId}:`, error);
       throw error;
@@ -256,10 +304,11 @@ export class EditHistoryService {
         throw new Error(`Note ID mismatch: expected ${noteId}, got ${currentNote.id}`);
       }
 
-      // Add new history entry and prune old ones
+      // Add new history entry and prune old ones - limit to 15 entries max
+      const MAX_HISTORY_ENTRIES = 15; // Hard limit of 15 entries per note
       const updatedHistory = pruneHistoryEntries(
         [historyEntry, ...(currentNote.editHistory || [])],
-        this.config.maxVersions
+        Math.min(MAX_HISTORY_ENTRIES, this.config.maxVersions)
       );
 
       // Update note with new content and history (pass userId and isAdmin)
@@ -284,10 +333,11 @@ export class EditHistoryService {
         throw new Error(`Note ID mismatch in localStorage: expected ${noteId}, got ${currentNote.id}`);
       }
       
-      // Add new history entry and prune old ones
+      // Add new history entry and prune old ones - limit to 15 entries max
+      const MAX_HISTORY_ENTRIES = 15; // Hard limit of 15 entries per note
       const updatedHistory = pruneHistoryEntries(
         [historyEntry, ...(currentNote.editHistory || [])],
-        this.config.maxVersions
+        Math.min(MAX_HISTORY_ENTRIES, this.config.maxVersions)
       );
       
       // Update note

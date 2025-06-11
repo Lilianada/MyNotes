@@ -18,23 +18,33 @@ export function generateUniqueId(): string {
 
 /**
  * Calculate file size of a note in bytes
+ * This calculates the size of the note as it would be stored in Firestore
+ * Excludes edit history which is stored separately
  */
 export function calculateNoteSize(note: Note): number {
+  // Only include fields that are actually stored in Firestore document
+  // Exclude edit history which is stored separately and can inflate the size
   const noteData = {
     id: note.id,
     uniqueId: note.uniqueId,
     content: note.content,
     noteTitle: note.noteTitle,
     slug: note.slug,
-    category: note.category,
-    tags: note.tags,
+    category: note.category ? {
+      id: note.category.id,
+      name: note.category.name,
+      color: note.category.color
+    } : null,
+    tags: note.tags || [],
     parentId: note.parentId,
     linkedNoteIds: note.linkedNoteIds,
     publish: note.publish,
     description: note.description,
     archived: note.archived,
     wordCount: note.wordCount,
-    editHistory: note.editHistory
+    createdAt: note.createdAt,
+    updatedAt: note.updatedAt,
+    // Exclude editHistory as it's stored separately
   };
   
   // Convert to JSON and calculate byte size

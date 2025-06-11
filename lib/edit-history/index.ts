@@ -11,11 +11,11 @@ export interface EditHistoryConfig {
 }
 
 export const DEFAULT_EDIT_HISTORY_CONFIG: EditHistoryConfig = {
-  autosaveInterval: 10000, // 10 seconds (reduced from 60s to prevent data loss)
-  minChangeThreshold: 150, // at least 150 characters changed (threshold for history entries)
-  minChangePercentage: 25, // at least 25% change (threshold for history entries)
-  maxVersions: 20, // keep last 20 versions
-  significantChangeThreshold: 200 // 200+ characters is significant (for history entries)
+  autosaveInterval: 120000, // 120 seconds (2 minutes) - longer interval to reduce Firestore writes
+  minChangeThreshold: 500, // at least 500 characters changed (higher threshold for history entries)
+  minChangePercentage: 40, // at least 40% change (higher threshold for history entries)
+  maxVersions: 10, // keep only last 10 versions (reduced from 15 to further limit storage)
+  significantChangeThreshold: 800 // 800+ characters is significant (higher threshold for history entries)
 };
 
 /**

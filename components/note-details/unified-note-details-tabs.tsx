@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { Hash, Edit, Calendar, Tag, History, RefreshCw, X} from 'lucide-react';
+import { Hash, Edit, Calendar, Tag, History, RefreshCw, X, AlertTriangle, FileText} from 'lucide-react';
 import { Note } from '@/types';
 import { formatDistanceToNow, format, isValid } from 'date-fns';
 import { formatBytes } from '@/lib/storage/storage-utils';
@@ -134,8 +134,37 @@ export function UnifiedTabContent({ tab, note, hooks }: UnifiedTabContentProps) 
   
   // Render the details tab content
   const renderDetailsTab = () => {
+    // Calculate if file size exceeds Firestore limit (1MB)
+    const fileSize = note.fileSize || 0;
+    const exceedsFirestoreLimit = fileSize > 1048576; // 1MB in bytes
+    
     return (
       <div className="space-y-4 p-4">
+        {/* File Size Information */}
+        <div className="flex items-start space-x-2">
+          <FileText size={18} className="text-gray-500 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-sm font-medium">File Size</h3>
+            <div>
+              <p className="text-sm text-gray-500">
+                {formatBytes(fileSize)} • {note.wordCount || 0} words
+              </p>
+              
+              {exceedsFirestoreLimit && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-md flex items-start space-x-2">
+                  <AlertTriangle size={16} className="text-red-500 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-red-700 font-medium">Firebase Storage Limit Exceeded</p>
+                    <p className="text-xs text-red-600">
+                      This note exceeds Firestore's 1MB document limit and cannot be saved to the cloud.
+                      Consider reducing its size or splitting it into multiple notes.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
         <div className="flex items-start space-x-2">
           <Calendar size={18} className="text-gray-500 mt-0.5" />
           <div className="flex-1">

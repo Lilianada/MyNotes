@@ -8,8 +8,11 @@ import {
   serverTimestamp, 
   query, 
   where,
-  getDoc
+  getDoc,
+  setDoc,
+  deleteDoc
 } from 'firebase/firestore';
+import { createSlugFromTitle, getUniqueSlug } from './firebase-helpers';
 import { countWords } from '../data-processing/word-count';
 import { calculateNoteSize } from '../storage/storage-utils';
 import { incrementStorage, decrementStorage } from './firebase-storage';
@@ -56,27 +59,16 @@ export const updateNoteContent = async (noteId: number, content: string, userId?
     const oldFileSize = currentData.fileSize || 0;
     const sizeDifference = newFileSize - oldFileSize;
     
-    // Add to edit history with enhanced data
-    const historyEntry: any = {
-      timestamp: new Date(), // Use regular Date for array elements
-      editType: 'update',
-      contentLength: content.length
-    };
-    
-    // Only add contentSnapshot if content is longer than 100 characters
-    if (content.length > 100) {
-      historyEntry.contentSnapshot = content;
-    }
+    // Note: Edit history is now managed by EditHistoryService, not added here directly
+    // This prevents excessive history entries and Firestore writes
     
     // Prepare update data
     const updateData = {
       content,
       updatedAt: serverTimestamp(),
       wordCount,
-      fileSize: newFileSize,
-      "editHistory": currentData.editHistory
-        ? [...currentData.editHistory, historyEntry]
-        : [historyEntry]
+      fileSize: newFileSize
+      // editHistory is intentionally omitted - managed by EditHistoryService
     };
     
     // Sanitize before sending to Firebase
@@ -110,11 +102,10 @@ export const updateNoteContent = async (noteId: number, content: string, userId?
  */
 export const updateNoteTitle = async (noteId: number, newTitle: string, userId?: string, isAdmin: boolean = false): Promise<void> => {
   try {
-    // For non-admin users, userId is required for subcollection access
     if (!isAdmin && !userId) {
       throw new Error('User ID is required for non-admin users');
     }
-    
+
     // Get the appropriate collection reference
     let notesRef;
     if (isAdmin) {
@@ -122,29 +113,79 @@ export const updateNoteTitle = async (noteId: number, newTitle: string, userId?:
     } else {
       notesRef = collection(db, 'users', userId!, 'notes');
     }
-    
+
     const q = query(notesRef, where("id", "==", noteId));
     const snapshot = await getDocs(q);
-    
     if (snapshot.empty) {
       throw new Error(`Note with ID ${noteId} not found`);
     }
+    const oldDocSnap = snapshot.docs[0];
+    const oldDocRef = doc(notesRef, oldDocSnap.id);
+    const currentData = oldDocSnap.data();
+
+    // Generate slug from new title using the proper helper function
+    const baseSlug = createSlugFromTitle(newTitle);
+    const slug = await getUniqueSlug(baseSlug);
+    // Generate file path based on the new slug
+    const filePath = `notes/${slug}`;
+    console.log(`Updating note ${noteId} with new filePath: ${filePath}`);
+    // Note: Edit history is now managed by EditHistoryService, not added here directly
+    // This prevents excessive history entries and Firestore writes
+
+    // If the slug (doc ID) does NOT change, just update as before
+    if (slug === currentData.slug) {
+      const updateData = {
+        noteTitle: newTitle,
+        slug: slug,
+        filePath: filePath, // Ensure filePath is updated even if slug doesn't change
+        updatedAt: serverTimestamp()
+        // editHistory is intentionally omitted - managed by EditHistoryService
+      };
+      const sanitizedUpdateData = sanitizeForFirebase(updateData);
+      sanitizedUpdateData.updatedAt = serverTimestamp();
+      await updateDoc(oldDocRef, sanitizedUpdateData);
+      console.log(`Updated note in place with filePath: ${filePath}`);
+      return;
+    }
+
+    // Otherwise, perform Firestore document rename (copy + delete)
+    // Create new doc with new slug as ID
+    const newDocRef = doc(notesRef, slug);
     
-    const docRef = doc(notesRef, snapshot.docs[0].id);
-    
-    // Note: History is managed by EditHistoryService, not added here
-    
-    const updateData = {
-      noteTitle: newTitle,
-      updatedAt: serverTimestamp()
+    // Prepare new data - only change the specific fields we need to update
+    // This preserves all other properties including createdAt
+    const newDocData = {
+      ...currentData,
+      noteTitle: newTitle,  // Update the title
+      slug,                // Update the slug
+      filePath: `notes/${slug}`,  // Explicitly set filePath based on new slug
+      updatedAt: serverTimestamp() // Update the timestamp
+      // All other properties remain unchanged
+      // editHistory is preserved from the old document
     };
     
-    // Sanitize before sending to Firebase
-    const sanitizedUpdateData = sanitizeForFirebase(updateData);
-    // Re-add serverTimestamp since it gets processed by sanitization
-    sanitizedUpdateData.updatedAt = serverTimestamp();
+    console.log(`Document rename: Setting filePath to notes/${slug}`);
     
-    await updateDoc(docRef, sanitizedUpdateData);
+    // Sanitize data before sending to Firestore
+    const sanitizedData = sanitizeForFirebase(newDocData);
+    // Re-add serverTimestamp since it gets processed by sanitization
+    sanitizedData.updatedAt = serverTimestamp();
+    
+    // Write new doc - always use setDoc for new document creation
+    await setDoc(newDocRef, sanitizedData);
+    
+    // Delete old doc after successful creation of new doc
+    await deleteDoc(oldDocRef);
+
+    // Recalculate user storage to ensure stats are correct
+    if (!isAdmin && userId) {
+      try {
+        const { recalculateUserStorage } = await import('./firebase-storage');
+        await recalculateUserStorage(userId, false);
+      } catch (err) {
+        console.error('Error recalculating user storage after rename:', err);
+      }
+    }
   } catch (error) {
     console.error(`Error updating note title ${noteId}:`, error);
     throw error;

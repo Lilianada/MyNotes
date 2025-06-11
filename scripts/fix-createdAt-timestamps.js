@@ -6,13 +6,17 @@
 // This needs to be run in a Node.js environment with Firebase Admin SDK
 const admin = require('firebase-admin');
 const { getFirestore } = require('firebase-admin/firestore');
+const path = require('path');
 
-// Initialize Firebase Admin SDK with your service account
-// You need to provide a path to your service account key JSON file
-const serviceAccount = require('../firebase-service-account.json');
+// Load environment variables from .env.local
+require('dotenv').config({ path: path.join(__dirname, '..', '.env.local') });
 
+// Import the Firebase Admin config helper
+const { getFirebaseAdminCredential } = require('../lib/firebase-admin-config');
+
+// Initialize Firebase Admin SDK with credentials from environment variables
 admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
+  credential: getFirebaseAdminCredential()
 });
 
 const db = getFirestore();
