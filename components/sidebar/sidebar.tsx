@@ -103,10 +103,9 @@ export default function Sidebar({
           isSidebarOpen ? ' translate-x-0' : ' -translate-x-full'
         } md:translate-x-0 md:relative md:w-full md:m-2 md:border md:rounded-md md:shadow-sm md:transition-shadow`}
         aria-label="Sidebar navigation"
-        // Using tabIndex to prevent focus when sidebar is closed on mobile
-        tabIndex={!isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768 ? -1 : undefined}
-        // Using aria-hidden for screen readers but with proper focus management
-        aria-hidden={!isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768}
+        // Using inert attribute instead of aria-hidden to properly remove from accessibility tree
+        // This prevents focus on descendant elements when sidebar is closed
+        {...(!isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768 ? { inert: '' } : {})}
       >
         {/* Header */}
         <SidebarHeader 

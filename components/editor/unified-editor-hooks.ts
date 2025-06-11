@@ -1,6 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
+
+// Add cursor save timeout to Window interface
+declare global {
+  interface Window {
+    cursorSaveTimeout?: NodeJS.Timeout;
+  }
+}
 import type { Note } from "@/types";
 import { useFont } from '@/contexts/font-context';
 import { useTheme } from 'next-themes';
@@ -20,6 +27,11 @@ interface CursorPosition {
   line: number;
   column: number;
   timestamp: number;
+  // Selection range properties
+  selectionStartLine?: number;
+  selectionStartColumn?: number;
+  selectionEndLine?: number;
+  selectionEndColumn?: number;
 }
 
 type CursorPositions = Record<number, CursorPosition>;
@@ -85,11 +97,20 @@ export function useUnifiedEditorState(
     const saveCursorPosition = () => {
       try {
         const position = editorInstance.getPosition();
+        const selection = editorInstance.getSelection();
+        
         if (position) {
           const positions = getStoredCursorPositions();
+          
+          // Store both cursor position and selection range
           positions[note.id] = {
             line: position.lineNumber,
             column: position.column,
+            // Store selection if it exists
+            selectionStartLine: selection?.startLineNumber,
+            selectionStartColumn: selection?.startColumn,
+            selectionEndLine: selection?.endLineNumber,
+            selectionEndColumn: selection?.endColumn,
             timestamp: Date.now(),
           };
           
@@ -109,14 +130,47 @@ export function useUnifiedEditorState(
           const savedPosition = positions[note.id];
           
           if (savedPosition) {
-            editorInstance.setPosition({
-              lineNumber: savedPosition.line,
-              column: savedPosition.column
-            });
-            editorInstance.revealPositionInCenter({
-              lineNumber: savedPosition.line,
-              column: savedPosition.column
-            });
+            // Use a shorter delay for better responsiveness
+            setTimeout(() => {
+              // Check if editor instance still exists and is valid
+              if (editorInstance && !editorInstance.getOption(editor.EditorOption.readOnly)) {
+                try {
+                  // Ensure the content is loaded before setting position
+                  const model = editorInstance.getModel();
+                  if (model && model.getValueLength() > 0) {
+                    // Restore selection if it exists
+                    if (savedPosition.selectionStartLine && 
+                        savedPosition.selectionStartColumn && 
+                        savedPosition.selectionEndLine && 
+                        savedPosition.selectionEndColumn) {
+                      editorInstance.setSelection({
+                        startLineNumber: savedPosition.selectionStartLine,
+                        startColumn: savedPosition.selectionStartColumn,
+                        endLineNumber: savedPosition.selectionEndLine,
+                        endColumn: savedPosition.selectionEndColumn
+                      });
+                    } else {
+                      // Just set cursor position if no selection
+                      editorInstance.setPosition({
+                        lineNumber: savedPosition.line,
+                        column: savedPosition.column
+                      });
+                    }
+                    
+                    // Ensure the cursor is visible
+                    editorInstance.revealPositionInCenter({
+                      lineNumber: savedPosition.line,
+                      column: savedPosition.column
+                    });
+                    
+                    // Force editor to focus
+                    editorInstance.focus();
+                  }
+                } catch (err) {
+                  console.error("Error setting cursor position:", err);
+                }
+              }
+            }, 100); // Reduced delay for better responsiveness
           }
         }
       } catch (e) {
@@ -126,7 +180,13 @@ export function useUnifiedEditorState(
     
     // Set up position saving on editor changes
     const disposable = editorInstance.onDidChangeCursorPosition(() => {
-      saveCursorPosition();
+      // Debounce cursor position saving to avoid excessive localStorage writes
+      if (window.cursorSaveTimeout) {
+        clearTimeout(window.cursorSaveTimeout);
+      }
+      window.cursorSaveTimeout = setTimeout(() => {
+        saveCursorPosition();
+      }, 300);
     });
     
     // Reset undo/redo stack when switching to a different note
@@ -201,6 +261,10 @@ export function useUnifiedEditorState(
     return () => {
       saveCursorPosition();
       disposable.dispose();
+      // Clear any pending timeouts
+      if (window.cursorSaveTimeout) {
+        clearTimeout(window.cursorSaveTimeout);
+      }
     };
   }, [editorInstance, note?.id]);
 

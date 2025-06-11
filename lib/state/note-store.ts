@@ -387,6 +387,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     });
   },
   
+  // Search notes by query
   searchNotes: (query) => {
     const { notes } = get();
     if (!query.trim()) return notes;
@@ -396,6 +397,12 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       note.noteTitle.toLowerCase().includes(searchTerm) ||
       note.content.toLowerCase().includes(searchTerm)
     );
+  },
+  
+  // Get linked notes
+  getLinkedNotes: (noteId) => {
+    const { notes } = get();
+    return notes.filter(note => note.linkedNoteIds?.includes(noteId));
   },
   
   // Select a note by ID with optimized loading
@@ -408,29 +415,11 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     const selectedNote = state.notes.find(note => note.id === id)
     
     if (selectedNote) {
-      // If the note content is empty or minimal, try to fetch full content
-      // This helps with notes that might have been partially loaded
+      // Only fetch content if actually needed - avoid unnecessary loads
       if (!selectedNote.content || selectedNote.content.length < 100) {
-        try {
-          // For Firebase notes
-          if (state.user) {
-            firebaseNotesService.getNotes(state.user.uid)
-              .then((notes: Note[]) => {
-                const fullNote = notes.find(note => note.id === id)
-                if (fullNote && fullNote.content !== selectedNote.content) {
-                  // Update the note in the store with full content
-                  const updatedNotes = state.notes.map(note => 
-                    note.id === id ? { ...note, content: fullNote.content } : note
-                  )
-                  set({ notes: updatedNotes })
-                }
-              })
-              .catch((err: Error) => {
-                console.error('Error pre-fetching full note content from Firebase:', err)
-              })
-          } 
-          // For local storage notes
-          else {
+        // For local storage notes - check synchronously first for immediate display
+        if (!state.user?.uid) {
+          try {
             const localNotes = localStorageNotesService.getNotes()
             const fullNote = localNotes.find(note => note.id === id)
             if (fullNote && fullNote.content !== selectedNote.content) {
@@ -440,23 +429,35 @@ export const useNoteStore = create<NoteState>((set, get) => ({
               )
               set({ notes: updatedNotes })
             }
+          } catch (err) {
+            console.error('Error loading local note content:', err)
           }
-        } catch (err) {
-          console.error('Error pre-fetching full note content:', err)
+        } 
+        // For Firebase notes - load asynchronously with minimal delay
+        else if (state.user?.uid) {
+          // Use a timeout to prevent blocking the UI
+          setTimeout(() => {
+            firebaseNotesService.getNote(id, state.user!.uid)
+              .then(fullNote => {
+                if (fullNote && fullNote.content !== selectedNote.content) {
+                  // Update the note in the store with full content
+                  const updatedNotes = state.notes.map(note => 
+                    note.id === id ? { ...note, content: fullNote.content } : note
+                  )
+                  set({ notes: updatedNotes })
+                }
+              })
+              .catch(err => console.error('Error fetching full note content:', err))
+          }, 10) // Minimal timeout to allow UI to update first
         }
       }
     }
   },
   
-  // Relationships
+  // Get child notes
   getChildNotes: (parentId) => {
     const { notes } = get();
     return notes.filter(note => note.parentId === parentId);
-  },
-  
-  getLinkedNotes: (noteId) => {
-    const { notes } = get();
-    return notes.filter(note => note.linkedNoteIds?.includes(noteId));
   },
   
   // Placeholder implementations for remaining methods

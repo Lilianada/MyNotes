@@ -6,13 +6,16 @@ import type { Note } from "@/types";
 import { useAppState } from "@/lib/state/use-app-state";
 import MarkdownRenderer from "@/components/markdown/markdown-renderer";
 import NoteTitleEditor from "@/components/modals/new-note-modal";
-import WordCount from "@/components/utils/word-count";
-import { useUnifiedEditorState, useMonacoConfig } from "./unified-editor-hooks";
+import { useMonacoConfig } from "./monaco-config-hook";
+import { configureEditorOptions, configureEditorShortcuts } from "./editor-config";
+import { useUnifiedEditorState } from "./unified-editor-hooks";
+import { useSimpleEditorCursor } from "./simple-editor-hooks";
 import { configureMarkdownLanguage } from '@/lib/markdown/monaco-markdown-completions';
 import { configureWikiLinkCompletion } from '@/lib/markdown/monaco-wiki-links';
 import { Monaco, EditorInstance } from './types';
 import { Button } from '@/components/ui/button';
 import { Eye, Code, Copy, MoreVertical, Smartphone } from "lucide-react";
+import WordCount from "@/components/utils/word-count";
 import { useToast } from "@/components/ui/use-toast";
 import { MobileOptimizedEditor } from "./mobile-optimized-editor";
 import {
@@ -38,6 +41,13 @@ interface UnifiedEditorProps {
 
 export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>(
   function UnifiedEditor({ note, onChange, onSave, onUpdateTitle }, ref) {
+    // Create a local ref if external ref is not provided
+    const localTextareaRef = useRef<HTMLTextAreaElement>(null);
+    // Ensure we always have a RefObject by using the local ref if the forwarded ref is a function
+    const textareaRef = (typeof ref === 'function') ? localTextareaRef : (ref || localTextareaRef);
+    
+    // Use the simple editor cursor position hook for textarea
+    useSimpleEditorCursor(note, textareaRef);
     const { notes } = useAppState();
     const { toast } = useToast();
     const [isMobile, setIsMobile] = useState(false);
@@ -49,6 +59,11 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
         // Only check width, not user agent, for more reliable detection
         const mobile = window.innerWidth < 768;
         setIsMobile(mobile);
+        
+        // Automatically disable Monaco on mobile devices
+        if (mobile) {
+          setMonacoLoadFailed(true);
+        }
       };
       
       // Check on mount
@@ -59,10 +74,12 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
       return () => window.removeEventListener('resize', checkMobile);
     }, []);
     
-    // Reset Monaco failure state when note changes
+    // Only reset Monaco failure state when note changes if we're not on mobile
     useEffect(() => {
-      setMonacoLoadFailed(false);
-    }, [note.id]);
+      if (!isMobile) {
+        setMonacoLoadFailed(false);
+      }
+    }, [note.id, isMobile]);
 
     // Use our consolidated hook for state management
     const {
@@ -80,55 +97,38 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
     } = useUnifiedEditorState(note, onChange, onSave);
 
     // Use Monaco configuration hook
-    const { handleEditorDidMount } = useMonacoConfig(
-      editorInstance,
-      handleSave,
-      isDarkTheme,
-      fontFamily
-    );
+    const { handleEditorDidMount } = useMonacoConfig();
     
-    // Track if the editor component is visible
-    const [isEditorVisible, setIsEditorVisible] = useState(false);
+    // Always keep editor visible to prevent loading delays
+    // This eliminates the "Editor loading..." message when switching modes
+    const [isEditorVisible, setIsEditorVisible] = useState(true);
     const editorContainerRef = useRef<HTMLDivElement>(null);
     
-    // Always set editor visible by default
+    // Set editor always visible for better user experience
     useEffect(() => {
-      // Set editor visible immediately for better user experience
+      // Always keep editor visible to prevent loading delays
       setIsEditorVisible(true);
       
-      // Only use IntersectionObserver for performance optimization
-      const observer = new IntersectionObserver(
-        (entries) => {
-          const [entry] = entries;
-          if (!entry.isIntersecting) {
-            // Only update if not visible to avoid unnecessary re-renders
-            setIsEditorVisible(false);
-          } else {
-            setIsEditorVisible(true);
-          }
-        },
-        { threshold: 0.05 } // 5% visibility is enough
-      );
-      
-      if (editorContainerRef.current) {
-        observer.observe(editorContainerRef.current);
-      }
-      
-      return () => {
-        observer.disconnect();
-      };
-    }, []);
+      // We're no longer using IntersectionObserver as it causes the loading delay
+      // Monaco editor will now stay mounted even when not visible
+      // This improves the switching experience between edit and view modes
+    }, [note.id]); // Re-run when note changes to ensure editor is visible
 
     // Handle editor mounting
     const onEditorDidMount = (editor: EditorInstance, monaco: Monaco) => {
       setEditorInstance(editor);
       
-      // Configure Monaco for markdown editing
-      configureMarkdownLanguage(monaco);
-      configureWikiLinkCompletion(monaco, notes.map((note: any) => note.noteTitle));
+      // Apply basic Monaco configuration through our hook
+      handleEditorDidMount(editor, monaco);
       
-      // Set up keyboard shortcuts and other editor configuration
-      handleEditorDidMount(monaco, editor);
+      // Configure wiki link completion with note titles
+      configureWikiLinkCompletion(monaco, notes.filter(note => note.noteTitle).map(note => note.noteTitle || ''));
+      
+      // Configure editor options based on theme and font
+      configureEditorOptions(editor, isDarkTheme, fontFamily);
+      
+      // Set up keyboard shortcuts for saving
+      configureEditorShortcuts(monaco, editor, handleSave);
     };
 
     // Handle Monaco editor load errors
@@ -213,18 +213,26 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
             <div className={`h-full overflow-auto p-4 ${fontFamilyClass}`}>
               <MarkdownRenderer content={note.content || ""} />
             </div>
-          ) : isMobile ? (
-            // Mobile-optimized editor for small screens and touch devices
-            <MobileOptimizedEditor 
-              note={note} 
-              onChange={handleContentChange} 
-              onSave={handleSave} 
-            />
+          ) : isMobile || monacoLoadFailed ? (
+            // Simple editor for mobile screens or when Monaco fails
+            <div className="h-full w-full relative flex flex-col" aria-label="Simple text editor">
+              <textarea
+                ref={textareaRef}
+                className={`w-full flex-1 min-h-0 p-4 resize-none outline-none bg-white dark:bg-gray-900 overflow-auto text-[15px] ${fontFamilyClass}`}
+                value={note.content || ""}
+                onChange={(e) => handleContentChange(e.target.value)}
+                placeholder="Start writing..."
+                spellCheck={true}
+                autoCapitalize="sentences"
+                autoComplete="on"
+                autoCorrect="on"
+              />
+            </div>
           ) : (
-            // Desktop editor options
+            // Desktop editor options - only show Monaco on desktop
             <div className="flex flex-col h-full max-h-[calc(100vh_-_7rem)] md:max-h-[calc(100vh_-_7rem)]">
-              {useMonacoEditor ? (
-                // Monaco editor
+              {!isMobile && useMonacoEditor && !monacoLoadFailed ? (
+                // Monaco editor - only for desktop
                 <div 
                   ref={editorContainerRef}
                   className="h-full w-full" 
@@ -240,21 +248,22 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                       value={note.content || ""}
                       onChange={(value) => value !== undefined && handleContentChange(value)}
                       onMount={onEditorDidMount}
+                      onError={handleMonacoLoadError}
                       options={{
                         automaticLayout: true,
                         wordWrap: 'on',
                         minimap: { enabled: false },
-                        scrollBeyondLastLine: !isMobile,
-                        fontSize: isMobile ? 16 : 14, // Larger font on mobile
+                        scrollBeyondLastLine: true,
+                        fontSize: 14,
                         lineHeight: 1.6,
-                        quickSuggestions: !isMobile, // Disable suggestions on mobile
+                        quickSuggestions: true,
                         padding: { top: 16 },
-                        folding: !isMobile,
+                        folding: true,
                         accessibilitySupport: 'on',
                         ariaLabel: 'Markdown Editor',
                         scrollbar: {
-                          verticalScrollbarSize: isMobile ? 14 : 10,
-                          horizontalScrollbarSize: isMobile ? 14 : 5,
+                          verticalScrollbarSize: 10,
+                          horizontalScrollbarSize: 5,
                           alwaysConsumeMouseWheel: false
                         },
                         renderLineHighlight: 'all',
@@ -264,14 +273,10 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                       }}
                     />
                   )}
-                  {!isEditorVisible && (
-                    <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-gray-800">
-                      <p className="text-gray-500 dark:text-gray-400">Editor loading...</p>
-                    </div>
-                  )}
+                  {/* Loading indicator removed to prevent delays */}
                 </div>
               ) : (
-                // Plain text editor fallback
+                // Plain text editor fallback - used for mobile or when Monaco fails
                 <div className="h-full w-full relative flex flex-col" aria-label="Simple text editor">
                   <textarea
                     ref={ref}
@@ -279,6 +284,10 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                     value={note.content || ""}
                     onChange={(e) => handleContentChange(e.target.value)}
                     placeholder="Start writing..."
+                    spellCheck={true}
+                    autoCapitalize="sentences"
+                    autoComplete="on"
+                    autoCorrect="on"
                   />
                 </div>
               )}

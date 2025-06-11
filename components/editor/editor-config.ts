@@ -43,35 +43,53 @@ export function configureEditorOptions(
   isDarkTheme: boolean,
   fontFamily?: string
 ): void {
-  // Check if we're on a mobile device
-  const isMobile = window.innerWidth < 768;
+  // Monaco editor is now only used on desktop devices
+  // Simple editor is used for mobile
   
   editor.updateOptions({
+    // Font settings
     fontFamily: fontFamily || 'var(--font-mono)',
-    fontSize: isMobile ? 16 : 14, // Larger font on mobile to prevent zoom
-    lineHeight: isMobile ? 28 : 24,
+    fontSize: 14,
+    lineHeight: 24,
+    fontLigatures: true,
+    
+    // Layout settings
     wordWrap: 'on',
     wrappingIndent: 'same',
-    lineNumbers: isMobile ? 'off' : 'on', // Hide line numbers on mobile to save space
+    lineNumbers: 'on',
     renderLineHighlight: 'all',
     scrollBeyondLastLine: false,
     minimap: { enabled: false },
+    
+    // Scrollbar settings
     scrollbar: {
       vertical: 'visible',
-      horizontalScrollbarSize: isMobile ? 12 : 8, // Larger scrollbars on mobile
-      verticalScrollbarSize: isMobile ? 12 : 8
+      horizontalScrollbarSize: 8,
+      verticalScrollbarSize: 8,
+      alwaysConsumeMouseWheel: false // Prevent scrolling issues
     },
+    
+    // Padding and spacing
     padding: {
       top: 16,
       bottom: 16
     },
-    fontLigatures: true,
     tabSize: 2,
-    // Mobile-specific options to prevent zoom
-    quickSuggestions: true, // Enable suggestions on all devices
+    
+    // Cursor settings - fixed positioning issues
+    cursorBlinking: 'solid',
+    cursorSmoothCaretAnimation: 'off', // Disabled for better cursor positioning
+    cursorWidth: 2,
+    cursorStyle: 'line',
+    renderValidationDecorations: 'on',
+    // Fix cursor positioning by using exact cursor surrogate positioning
+    useTabStops: true,
+    
+    // Code intelligence
+    quickSuggestions: true,
     parameterHints: { enabled: true },
     suggestOnTriggerCharacters: true,
-    acceptSuggestionOnEnter: isMobile ? 'smart' : 'on',
+    acceptSuggestionOnEnter: 'on',
     suggest: {
       showWords: true,
       showSnippets: true,
@@ -81,11 +99,19 @@ export function configureEditorOptions(
       showClasses: true,
       showModules: true,
       showProperties: true,
-      insertMode: 'insert'
+      insertMode: 'insert',
+      snippetsPreventQuickSuggestions: false
     },
-    // Improve touch interaction
+    
+    // Selection and highlighting
     multiCursorModifier: 'alt',
-    selectionHighlight: !isMobile, // Reduce visual noise on mobile
-    occurrencesHighlight: !isMobile,
+    selectionHighlight: true,
+    occurrencesHighlight: true,
+    
+    // Performance and UX improvements
+    fixedOverflowWidgets: true,
+    smoothScrolling: true,
+    mouseWheelScrollSensitivity: 1.5,
+    renderWhitespace: 'none',
   });
 }
