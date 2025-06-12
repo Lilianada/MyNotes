@@ -173,9 +173,49 @@ export function useAppState() {
   
   // Initialize notes when auth state changes
   useEffect(() => {
-    // This would be implemented to handle note initialization
-    // Similar to the existing initialization logic but using our new stores
-  }, [user, isAdmin, authLoading])
+    const initializeNotes = async () => {
+      if (authLoading) return; // Wait until auth is resolved
+      
+      setIsLoading(true);
+      try {
+        if (user) {
+          // User is authenticated, load notes from Firebase
+          await useNoteStore.getState().loadNotesFromFirebase(user, Boolean(isAdmin));
+          
+          // Check for sync conflicts after loading
+          const conflicts = await useNoteStore.getState().findSyncConflicts(user);
+          
+          // If there are conflicts, we should notify the user
+          if (conflicts.conflictedNotes.length > 0) {
+            // This would typically trigger a UI notification or modal
+            console.log(`Found ${conflicts.conflictedNotes.length} notes with sync conflicts`);
+            // You could set a state here to show a sync modal
+          }
+        } else {
+          // User is not authenticated, ensure we're using local notes
+          const localNotes = useNoteStore.getState().notes;
+          if (localNotes.length === 0) {
+            // If no notes in state, try to load from localStorage
+            const storedNotes = localStorage.getItem('notes');
+            if (storedNotes) {
+              try {
+                const parsedNotes = JSON.parse(storedNotes);
+                setNotes(parsedNotes);
+              } catch (e) {
+                console.error('Failed to parse stored notes:', e);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing notes:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    initializeNotes();
+  }, [user, isAdmin, authLoading, setIsLoading, setNotes])
   
   return {
     // UI state

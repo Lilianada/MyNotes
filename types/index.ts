@@ -29,6 +29,7 @@ export interface Note {
   linkedNoteIds?: number[];
   updatedAt?: Date;
   publish?: boolean;
+  published?: boolean; // Whether the note is published publicly
   description?: string;
   editHistory?: NoteEditHistory[];
   archived?: boolean;

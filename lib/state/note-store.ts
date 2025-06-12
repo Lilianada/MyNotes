@@ -346,7 +346,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     // Filter by published status
     if (options.published !== undefined) {
       filteredNotes = filteredNotes.filter(note => 
-        (note as any).published === options.published
+        note.published === options.published
       );
     }
     

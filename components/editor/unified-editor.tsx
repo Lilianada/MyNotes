@@ -248,7 +248,7 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                       value={note.content || ""}
                       onChange={(value) => value !== undefined && handleContentChange(value)}
                       onMount={onEditorDidMount}
-                      onError={handleMonacoLoadError}
+                      // error={handleMonacoLoadError}
                       options={{
                         automaticLayout: true,
                         wordWrap: 'on',

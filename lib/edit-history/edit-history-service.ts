@@ -16,11 +16,13 @@ import {
  * Enhanced edit history service with autosave and intelligent change detection
  */
 export class EditHistoryService {
-  private config: EditHistoryConfig;
+  private config: EditHistoryConfig & { debug?: boolean };
   private pendingChanges: Map<number, string> = new Map(); // Track pending content changes
   private lastSavedContent: Map<number, string> = new Map(); // Track last saved content
   private autosaveTimers: Map<number, NodeJS.Timeout> = new Map(); // Track autosave timers
   private activeNoteIds: Set<number> = new Set(); // Track active notes to prevent memory leaks
+  private maxHistoryEntries: number = 50; // Maximum number of history entries per note
+  private maxStorageSize: number = 5 * 1024 * 1024; // 5MB max storage for history
 
   constructor(config?: EditHistoryConfig) {
     this.config = config || DEFAULT_EDIT_HISTORY_CONFIG;
@@ -128,7 +130,7 @@ export class EditHistoryService {
         // Create history entry
         const historyEntry = createHistoryEntry(lastContent, newContent, 'autosave');
         
-        // Save with history
+        // Save content with history entry
         await this.saveWithHistory(noteId, newContent, historyEntry, isAdmin, user);
         
         // Update last saved content
@@ -155,7 +157,11 @@ export class EditHistoryService {
     } catch (error) {
       console.error(`[EditHistory] Failed to autosave note ${noteId}:`, error);
     }
-  }  /**
+  }
+
+  // saveWithHistory implementation is below
+
+  /**
    * Force save with history entry
    */
   async forceSave(
@@ -248,6 +254,7 @@ export class EditHistoryService {
 
   /**
    * Save content with history entry
+   * Implementation of the method declared above
    */
   private async saveWithHistory(
     noteId: number,
@@ -304,18 +311,35 @@ export class EditHistoryService {
         throw new Error(`Note ID mismatch: expected ${noteId}, got ${currentNote.id}`);
       }
 
-      // Add new history entry and prune old ones - limit to 15 entries max
-      const MAX_HISTORY_ENTRIES = 15; // Hard limit of 15 entries per note
+      // Optimize history entry to reduce storage size for autosaves
+      if (historyEntry.editType === 'autosave' && historyEntry.contentSnapshot) {
+        // For autosaves, limit the snapshot size
+        if (historyEntry.contentSnapshot.length > 1000) {
+          historyEntry.contentSnapshot = historyEntry.contentSnapshot.substring(0, 1000) + '... [truncated]';
+        }
+      }
+      
+      // Add new history entry and prune old ones - respect both hard limit and config
       const updatedHistory = pruneHistoryEntries(
         [historyEntry, ...(currentNote.editHistory || [])],
-        Math.min(MAX_HISTORY_ENTRIES, this.config.maxVersions)
+        Math.min(this.maxHistoryEntries, this.config.maxVersions)
       );
 
       // Update note with new content and history (pass userId and isAdmin)
       await firebaseNotesService.updateNoteData(noteId, {
         content,
         editHistory: updatedHistory
-      }, user.uid, isAdmin);    } else {
+      }, user.uid, isAdmin);
+      
+      // Debug logging only if enabled
+      if (this.config.debug) {
+        console.log(`[EditHistory] Saved note ${noteId} with history entry:`, {
+          type: historyEntry.editType,
+          timestamp: historyEntry.timestamp,
+          historySize: updatedHistory.length
+        });
+      }
+    } else {
       // Handle localStorage
       const notes = localStorageNotesService.getNotes();
       const noteIndex = notes.findIndex(note => note.id === noteId);
@@ -333,11 +357,18 @@ export class EditHistoryService {
         throw new Error(`Note ID mismatch in localStorage: expected ${noteId}, got ${currentNote.id}`);
       }
       
-      // Add new history entry and prune old ones - limit to 15 entries max
-      const MAX_HISTORY_ENTRIES = 15; // Hard limit of 15 entries per note
+      // Optimize history entry to reduce storage size for autosaves
+      if (historyEntry.editType === 'autosave' && historyEntry.contentSnapshot) {
+        // For autosaves, limit the snapshot size
+        if (historyEntry.contentSnapshot.length > 1000) {
+          historyEntry.contentSnapshot = historyEntry.contentSnapshot.substring(0, 1000) + '... [truncated]';
+        }
+      }
+      
+      // Add new history entry and prune old ones - respect both hard limit and config
       const updatedHistory = pruneHistoryEntries(
         [historyEntry, ...(currentNote.editHistory || [])],
-        Math.min(MAX_HISTORY_ENTRIES, this.config.maxVersions)
+        Math.min(this.maxHistoryEntries, this.config.maxVersions)
       );
       
       // Update note
@@ -346,6 +377,15 @@ export class EditHistoryService {
         editHistory: updatedHistory,
         updatedAt: new Date()
       });
+      
+      // Debug logging only if enabled
+      if (this.config.debug) {
+        console.log(`[EditHistory] Saved note ${noteId} with history entry in localStorage:`, {
+          type: historyEntry.editType,
+          timestamp: historyEntry.timestamp,
+          historySize: updatedHistory.length
+        });
+      }
     }
   }
 
