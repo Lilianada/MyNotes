@@ -8,9 +8,11 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
+    // Disable ESLint during builds
     ignoreDuringBuilds: true,
   },
   typescript: {
+    // Disable TypeScript errors during builds
     ignoreBuildErrors: true,
   },
   
