@@ -29,7 +29,7 @@ interface NoteState {
   
   // User data
   user: { uid: string } | null | undefined
-  setUser: (user: { uid: string } | null | undefined) => void
+  setUser: (user: { uid: string } | null | undefined, isAdmin?: boolean) => void
   
   // Loading state
   isLoading: boolean
@@ -105,7 +105,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
   // Initialize required properties
   selectedNoteId: null,
   user: null,
-  setUser: (user) => {
+  setUser: (user, isAdmin = false) => {
     const currentUser = get().user;
     const newUser = user;
     
@@ -124,8 +124,8 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     if ((currentUser?.uid !== newUser?.uid) && newUser?.uid) {
       set({ user: newUser, isLoading: true });
       
-      // Load notes from Firebase when user logs in
-      get().loadNotesFromFirebase(newUser)
+      // Load notes from Firebase when user logs in, passing the isAdmin flag
+      get().loadNotesFromFirebase(newUser, isAdmin)
         .catch((error) => {
           console.error('Failed to load notes from Firebase:', error);
         });

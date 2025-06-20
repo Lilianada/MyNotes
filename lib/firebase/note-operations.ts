@@ -43,7 +43,16 @@ function getNotesCollectionRef(userId: string, isAdmin: boolean) {
 export const getNotes = async (userId: string, isAdmin: boolean = false): Promise<Note[]> => {
   try {
     const notesRef = getNotesCollectionRef(userId, isAdmin);
-    const q = query(notesRef, where("userId", "==", userId));
+    
+    let q;
+    if (isAdmin) {
+      // For admin users, get ALL notes from the top-level collection (no userId filter)
+      q = query(notesRef);
+    } else {
+      // For regular users, filter by userId in their subcollection
+      q = query(notesRef, where("userId", "==", userId));
+    }
+    
     const snapshot = await getDocs(q);
     
     return snapshot.docs.map(doc => {
@@ -247,11 +256,20 @@ export const getChildNotes = async (parentId: number, userId: string, isAdmin: b
     }
 
     const notesRef = getNotesCollectionRef(userId, isAdmin);
-    const q = query(
-      notesRef, 
-      where("userId", "==", userId),
-      where("parentId", "==", parentId)
-    );
+    
+    let q;
+    if (isAdmin) {
+      // For admin users, get child notes from top-level collection (no userId filter)
+      q = query(notesRef, where("parentId", "==", parentId));
+    } else {
+      // For regular users, filter by userId in their subcollection
+      q = query(
+        notesRef, 
+        where("userId", "==", userId),
+        where("parentId", "==", parentId)
+      );
+    }
+    
     const snapshot = await getDocs(q);
     
     return snapshot.docs.map(doc => {

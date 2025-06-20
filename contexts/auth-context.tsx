@@ -153,16 +153,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const adminStatus = await checkIfAdmin(currentUser);
           setIsAdmin(adminStatus);
           
-          // Update the note store with the user
+          // Update the note store with the user and admin status
           useNoteStore.getState().setUser({
             uid: currentUser.uid
-          });
+          }, adminStatus);
         } else {
           setUser(null);
           setIsAdmin(false);
           
           // Update the note store with null user
-          useNoteStore.getState().setUser(null);
+          useNoteStore.getState().setUser(null, false);
         }
       } catch (error) {
         console.error('Error handling auth state change:', error);

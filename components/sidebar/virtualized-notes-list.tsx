@@ -39,27 +39,30 @@ export function VirtualizedNotesList({
   
   // Container ref to measure available height
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState(400); // Default height
+  const [containerHeight, setContainerHeight] = useState(600); // Default height before measurement
   
-  // Item height (can be adjusted based on your design)
-  const itemHeight = 48; // Height of each note item in pixels
+  const itemHeight = 48; 
   
   // Update container height on mount and window resize
   useEffect(() => {
     const updateHeight = () => {
       if (containerRef.current) {
-        setContainerHeight(containerRef.current.clientHeight);
+        const rect = containerRef.current.getBoundingClientRect();
+        const availableHeight = rect.height - 16; // Account for padding
+        setContainerHeight(Math.max(200, availableHeight)); 
       }
     };
     
-    // Initial measurement
-    updateHeight();
+    const timeoutId = setTimeout(updateHeight, 100);
     
     // Add resize listener
     window.addEventListener('resize', updateHeight);
     
     // Cleanup
-    return () => window.removeEventListener('resize', updateHeight);
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener('resize', updateHeight);
+    };
   }, []);
   
   // Loading state
@@ -86,9 +89,6 @@ export function VirtualizedNotesList({
       
       // Use a longer delay on mobile devices to ensure the sidebar animation completes
       const delay = isMobile ? 300 : 50;
-      
-      // Use setTimeout to defer the selection until after any sidebar animations
-      // This helps prevent Monaco editor errors when the sidebar is being hidden
       setTimeout(() => {
         try {
           if (selectNote) {
@@ -123,7 +123,7 @@ export function VirtualizedNotesList({
   return (
     <div 
       ref={containerRef} 
-      className="md:max-h-[calc(100vh_-_155px)] overflow-hidden p-2"
+      className="flex-1 overflow-hidden p-2 h-full"
       role="list" 
       aria-label="Notes list"
     >

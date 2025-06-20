@@ -50,7 +50,7 @@ export function NotesList({
   }
 
   return (
-    <ul className="md:max-h-[calc(100vh_-_155px)] overflow-y-auto p-2 scrollbar-hide" role="list" aria-label="Notes list">
+    <ul className="h-full md:max-h-[calc(100vh_-_155px)] overflow-y-auto p-2 scrollbar-hide" role="list" aria-label="Notes list">
       {filteredNotes.map((note) => {
         return (
           <NoteListItem

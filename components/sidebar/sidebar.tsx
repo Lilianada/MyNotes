@@ -99,13 +99,11 @@ export default function Sidebar({
     <>
       <aside 
         id="sidebar"
-        className={`fixed top-[var(--header-height)] sm:top-0 left-0 z-30 w-[85%] sm:w-72 md:w-full bg-white dark:bg-gray-800 border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg h-full max-h-[calc(100vh_-_var(--header-height))] overflow-y-auto overflow-x-hidden scrollbar-hide sm:overflow-y-auto sm:border${
+        className={`fixed top-[var(--header-height)] sm:top-0 left-0 z-30 w-[85%] sm:w-72 md:w-full bg-white dark:bg-gray-800 border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg h-[calc(100vh-var(--header-height))] md:h-full overflow-x-hidden scrollbar-hide flex flex-col${
           isSidebarOpen ? ' translate-x-0' : ' -translate-x-full'
         } md:translate-x-0 md:relative md:w-full md:m-2 md:border md:rounded-md md:shadow-sm md:transition-shadow`}
         aria-label="Sidebar navigation"
-        // Using tabIndex to prevent focus when sidebar is closed on mobile
         tabIndex={!isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768 ? -1 : undefined}
-        // Using aria-hidden for screen readers but with proper focus management
         aria-hidden={!isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768}
       >
         {/* Header */}
