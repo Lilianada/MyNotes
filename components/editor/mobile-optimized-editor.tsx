@@ -4,7 +4,7 @@ import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'rea
 import TextareaAutosize from 'react-textarea-autosize';
 import type { Note } from '@/types';
 import { Button } from '@/components/ui/button';
-import { Maximize2, Minimize2 } from 'lucide-react';
+import { Minimize2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 export interface MobileOptimizedEditorProps {

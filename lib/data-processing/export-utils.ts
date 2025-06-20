@@ -106,7 +106,7 @@ function generateNoteRelationshipsSections(note: Note, allNotes: Note[]): string
 /**
  * Export a single note to the selected format
  */
-export async function exportNote(note: Note, format: ExportFormat, allNotes?: Note[]): Promise<void> {
+export async function exportNote(note: Note, exportFormat: ExportFormat, allNotes?: Note[]): Promise<void> {
   try {
     const safeTitle = (note.noteTitle || 'note')
       .replace(/[^a-z0-9]/gi, '_')
@@ -114,7 +114,7 @@ export async function exportNote(note: Note, format: ExportFormat, allNotes?: No
     const filename = `${safeTitle}-${note.id}`;
     const notesForRelations = allNotes || [note];
     
-    switch (format) {
+    switch (exportFormat) {
       case 'markdown':
         // Create markdown with frontmatter and relationship sections
         const frontMatter = generateFrontMatter(note);
@@ -147,7 +147,7 @@ export async function exportNote(note: Note, format: ExportFormat, allNotes?: No
 /**
  * Export multiple notes to the selected format
  */
-export async function exportAllNotes(notes: Note[], format: ExportFormat): Promise<void> {
+export async function exportAllNotes(notes: Note[], exportFormat: ExportFormat): Promise<void> {
   try {
     // Handle empty notes array
     if (notes.length === 0) {
@@ -155,13 +155,13 @@ export async function exportAllNotes(notes: Note[], format: ExportFormat): Promi
     }
     
     // For PDF format, use the specialized function
-    if (format === 'pdf') {
+    if (exportFormat === 'pdf') {
       await exportMultipleToPdf(notes);
       return;
     }
 
     // For DOC format, use the specialized function
-    if (format === 'doc') {
+    if (exportFormat === 'doc') {
       await exportMultipleToDoc(notes);
       return;
     }
@@ -178,7 +178,7 @@ export async function exportAllNotes(notes: Note[], format: ExportFormat): Promi
         .toLowerCase();
       const filename = `${safeTitle}-${note.id}`;
       
-      switch (format) {
+      switch (exportFormat) {
         case 'markdown':
           // Create markdown with frontmatter and relationship sections
           const frontMatter = generateFrontMatter(note);
