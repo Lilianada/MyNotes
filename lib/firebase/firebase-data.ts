@@ -238,7 +238,6 @@ export class FirebaseDataOperations {
       // Special handling for tags - make a direct copy
       if (updatedNote.tags !== undefined) {
         cleanData.tags = Array.isArray(updatedNote.tags) ? [...updatedNote.tags] : [];
-        console.log(`[FIREBASE] Setting tags for note ${id} to:`, JSON.stringify(cleanData.tags));
       }
       
       // Handle linked notes
@@ -272,8 +271,6 @@ export class FirebaseDataOperations {
       sanitizedUpdatePayload.updatedAt = serverTimestamp();
       
       await updateDoc(docRef, sanitizedUpdatePayload);
-      
-      console.log(`[FIREBASE] Note ${id} updated successfully in Firestore`);
     } catch (error) {
       console.error('Error updating note data:', error);
       throw new Error(`Failed to update note data: ${error instanceof Error ? error.message : 'Unknown error'}`);

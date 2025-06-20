@@ -128,10 +128,7 @@ export const updateNoteTitle = async (noteId: number, newTitle: string, userId?:
     const slug = await getUniqueSlug(baseSlug);
     // Generate file path based on the new slug
     const filePath = `notes/${slug}`;
-    console.log(`Updating note ${noteId} with new filePath: ${filePath}`);
-    // Note: Edit history is now managed by EditHistoryService, not added here directly
-    // This prevents excessive history entries and Firestore writes
-
+    
     // If the slug (doc ID) does NOT change, just update as before
     if (slug === currentData.slug) {
       const updateData = {
@@ -144,7 +141,6 @@ export const updateNoteTitle = async (noteId: number, newTitle: string, userId?:
       const sanitizedUpdateData = sanitizeForFirebase(updateData);
       sanitizedUpdateData.updatedAt = serverTimestamp();
       await updateDoc(oldDocRef, sanitizedUpdateData);
-      console.log(`Updated note in place with filePath: ${filePath}`);
       return;
     }
 
@@ -163,9 +159,6 @@ export const updateNoteTitle = async (noteId: number, newTitle: string, userId?:
       // All other properties remain unchanged
       // editHistory is preserved from the old document
     };
-    
-    console.log(`Document rename: Setting filePath to notes/${slug}`);
-    
     // Sanitize data before sending to Firestore
     const sanitizedData = sanitizeForFirebase(newDocData);
     // Re-add serverTimestamp since it gets processed by sanitization

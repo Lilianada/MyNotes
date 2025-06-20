@@ -155,8 +155,6 @@ export const localStorageNotesService = {
       
       // Add creation history entry
       this.addHistoryEntry(numericId, 'create');
-      
-      console.log(`Note created and saved to localStorage: ${noteTitle} (ID: ${numericId})`);
     } catch (error) {
       console.error('Failed to save note to localStorage:', error);
       // Try with a smaller payload if storage quota might be exceeded
@@ -303,7 +301,6 @@ export const localStorageNotesService = {
         // Make sure tags is an array
         newNote.tags = Array.isArray(updatedNote.tags) ? 
           [...updatedNote.tags] : [];
-        console.log(`[LOCAL STORAGE] Setting tags for note ${id} to:`, JSON.stringify(newNote.tags));
       }
       
       // Set the update timestamp
@@ -350,9 +347,6 @@ export const localStorageNotesService = {
     // Clean and normalize tags
     const cleanTags = Array.isArray(tags) ? 
       [...tags].filter(Boolean).map(tag => tag.trim().toLowerCase()) : [];
-    
-    console.log(`[LOCAL STORAGE] Setting tags for note ${id} to:`, JSON.stringify(cleanTags));
-    
     // Update the note
     note.tags = cleanTags;
     note.updatedAt = new Date();

@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { Note, NoteEditHistory } from '@/types';
 import { editHistoryService } from './edit-history-service';
 import { EditHistoryConfig, DEFAULT_EDIT_HISTORY_CONFIG } from './index';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Hook for managing edit history with autosave functionality
@@ -73,7 +74,7 @@ export function useEditHistory(
         // Clear our initialization tracking set
         isInitializedRef.current.clear();
       } catch (error) {
-        console.error('Error during history cleanup:', error);
+        logger.error('Error during history cleanup:', error);
       }
     };
   }, []);
@@ -180,7 +181,7 @@ export function useEditorWithHistory(
         // The automatic save system will handle the actual saving
         onSave();
       } catch (error) {
-        console.error('Error in save handler:', error);
+        logger.error('Error in save handler:', error);
         // Still call original save handler as fallback
         onSave();
       }

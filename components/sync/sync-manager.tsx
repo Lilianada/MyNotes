@@ -32,8 +32,6 @@ export const SyncManager: React.FC = () => {
       // Only check if user is logged in and auth state is stable
       if (user && !authLoading) {
         try {
-          console.log('Checking for note conflicts after login');
-          
           // Reset sync status for this user on each login
           // This ensures the sync modal appears every time they log in if needed
           const syncStatus = localStorage.getItem(SYNC_STATUS_KEY) || '{}';
@@ -43,15 +41,11 @@ export const SyncManager: React.FC = () => {
           
           // Find conflicts between local and cloud notes
           const conflicts = await findSyncConflicts(user);
-          console.log('Sync conflicts check result:', conflicts);
           
           // If there are local notes, show the sync modal
           if (conflicts.localNoteCount > 0) {
-            console.log('Found local notes that need syncing, showing modal');
             setSyncData(conflicts);
             setShowSyncModal(true);
-          } else {
-            console.log('No local notes found that need syncing');
           }
         } catch (error) {
           console.error('Failed to check for note conflicts:', error);

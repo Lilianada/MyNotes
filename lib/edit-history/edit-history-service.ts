@@ -11,6 +11,7 @@ import {
   pruneHistoryEntries,
   calculateTextDifference 
 } from './index';
+import { logger } from '@/lib/utils/logger';
 
 /**
  * Enhanced edit history service with separated autosave and session-based history tracking
@@ -55,7 +56,7 @@ export class EditHistoryService {
   ): void {
     // Safety check - ensure we're dealing with a valid noteId
     if (noteId === 0 || noteId === null || noteId === undefined) {
-      console.warn('[EditHistory] Invalid noteId in trackContentChange:', noteId);
+      logger.warn('Invalid noteId in trackContentChange:', noteId);
       return;
     }
     
@@ -184,9 +185,9 @@ export class EditHistoryService {
         // For now, we'll add this to a pending history queue
         await this.addHistoryEntry(noteId, historyEntry);
         
-        console.log(`[EditHistory] Created history entry for session of ${Math.round(sessionDuration / 1000)}s`);
+        logger.debug(`Created history entry for session of ${Math.round(sessionDuration / 1000)}s`);
       } catch (error) {
-        console.error('[EditHistory] Failed to create session history entry:', error);
+        logger.error('Failed to create session history entry:', error);
       }
     }
     
@@ -207,7 +208,7 @@ export class EditHistoryService {
     try {
       // Validate noteId
       if (!noteId || noteId <= 0) {
-        console.warn(`[EditHistory] Invalid noteId in performAutosave: ${noteId}`);
+        logger.warn(`Invalid noteId in performAutosave: ${noteId}`);
         return;
       }
       
@@ -246,10 +247,10 @@ export class EditHistoryService {
       this.pendingChanges.delete(noteId);
       this.autosaveTimers.delete(noteId);
       
-      console.log(`[EditHistory] Autosaved note ${noteId} (${newContent.length} chars)`);
+      logger.debug(`Autosaved note ${noteId} (${newContent.length} chars)`);
       
     } catch (error) {
-      console.error(`[EditHistory] Autosave failed for note ${noteId}:`, error);
+      logger.error(`Autosave failed for note ${noteId}:`, error);
       // Don't delete pending changes if save failed - we'll try again later
     }
   }
@@ -260,7 +261,7 @@ export class EditHistoryService {
   private async addHistoryEntry(noteId: number, historyEntry: NoteEditHistory): Promise<void> {
     // This will be implemented to add history entries
     // For now, just log
-    console.log(`[EditHistory] Would add history entry for note ${noteId}:`, historyEntry.editType);
+    logger.debug(`Would add history entry for note ${noteId}:`, historyEntry.editType);
   }
 
   /**
@@ -284,7 +285,7 @@ export class EditHistoryService {
       
       // Add some validation to prevent erroneous saves
       if (editType === 'update' && content.trim() === '') {
-        console.warn(`[EditHistory] Prevented saving empty content for note ${noteId}`);
+        logger.warn(`Prevented saving empty content for note ${noteId}`);
         return;
       }
       
@@ -349,7 +350,7 @@ export class EditHistoryService {
         this.autosaveTimers.delete(noteId);
       }
     } catch (error) {
-      console.error(`[EditHistory] Failed to force save note ${noteId}:`, error);
+      logger.error(`Failed to force save note ${noteId}:`, error);
       throw error;
     }
   }
@@ -366,12 +367,12 @@ export class EditHistoryService {
   ): Promise<void> {
     // Validate parameters
     if (!noteId) {
-      console.error(`[EditHistory] Invalid noteId in saveWithHistory: ${noteId}`);
+      logger.error(`Invalid noteId in saveWithHistory: ${noteId}`);
       throw new Error(`Invalid noteId: ${noteId}`);
     }
     
     if (content === undefined || content === null) {
-      console.error(`[EditHistory] Invalid content in saveWithHistory for note ${noteId}`);
+      logger.error(`Invalid content in saveWithHistory for note ${noteId}`);
       throw new Error(`Invalid content for note ${noteId}`);
     }
     
@@ -379,22 +380,22 @@ export class EditHistoryService {
     if (historyEntry.editType === 'autosave' && !user) {
       // Skip the check if we're in test environment
       if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
-        console.log(`[EditHistory] Skipping existence check during save - running in test environment`);
+        logger.debug(`Skipping existence check during save - running in test environment`);
       } else if (localStorageNotesService && typeof localStorageNotesService.getNotes === 'function') {
         try {
           const notes = localStorageNotesService.getNotes();
           const noteExists = notes.some(note => note.id === noteId);
           
           if (!noteExists) {
-            console.warn(`[EditHistory] Note ${noteId} not found during autosave cleanup - skipping save`);
+            logger.warn(`Note ${noteId} not found during autosave cleanup - skipping save`);
             return;
           }
         } catch (error) {
-          console.error(`[EditHistory] Error checking note existence during save: ${error}`);
+          logger.error(`Error checking note existence during save: ${error}`);
           // Continue with the save operation to avoid data loss
         }
       } else {
-        console.log(`[EditHistory] Skipping existence check - storage service unavailable`);
+        logger.debug(`Skipping existence check - storage service unavailable`);
       }
     }
     
@@ -402,13 +403,13 @@ export class EditHistoryService {
       // Use Firebase for all authenticated users (both admin and regular)
       const currentNote = await firebaseNotesService.getNote(noteId, user.uid, isAdmin);
       if (!currentNote) {
-        console.error(`[EditHistory] Note ${noteId} not found in Firebase`);
+        logger.error(`Note ${noteId} not found in Firebase`);
         throw new Error(`Note ${noteId} not found`);
       }
       
       // Add safety check - verify the note's ID matches
       if (currentNote.id !== noteId) {
-        console.error(`[EditHistory] Note ID mismatch: expected ${noteId}, got ${currentNote.id}`);
+        logger.error(`Note ID mismatch: expected ${noteId}, got ${currentNote.id}`);
         throw new Error(`Note ID mismatch: expected ${noteId}, got ${currentNote.id}`);
       }
 
@@ -429,7 +430,7 @@ export class EditHistoryService {
       const noteIndex = notes.findIndex(note => note.id === noteId);
       
       if (noteIndex === -1) {
-        console.error(`[EditHistory] Note ${noteId} not found in localStorage`);
+        logger.error(`Note ${noteId} not found in localStorage`);
         throw new Error(`Note ${noteId} not found in localStorage`);
       }
 
@@ -437,7 +438,7 @@ export class EditHistoryService {
       
       // Add safety check - verify the note's ID matches
       if (currentNote.id !== noteId) {
-        console.error(`[EditHistory] Note ID mismatch in localStorage: expected ${noteId}, got ${currentNote.id}`);
+        logger.error(`Note ID mismatch in localStorage: expected ${noteId}, got ${currentNote.id}`);
         throw new Error(`Note ID mismatch in localStorage: expected ${noteId}, got ${currentNote.id}`);
       }
       
@@ -472,7 +473,7 @@ export class EditHistoryService {
         return localStorageNotesService.getNoteHistory(noteId);
       }
     } catch (error) {
-      console.error(`[EditHistory] Failed to get history for note ${noteId}:`, error);
+      logger.error(`Failed to get history for note ${noteId}:`, error);
       return [];
     }
   }
@@ -523,12 +524,12 @@ export class EditHistoryService {
             if (noteExists) {
               // No need to await, we're just ensuring the change gets queued
               this.forceSave(noteId, pendingContent, 'autosave', false, null)
-                .catch(error => console.error(`[EditHistory] Error saving before cleanup: ${error}`));
+                .catch(error => logger.error(`Error saving before cleanup: ${error}`));
             }
           }
         } catch (error) {
           // Just log the error without stopping cleanup
-          console.error(`[EditHistory] Error checking note existence during cleanup: ${error}`);
+          logger.error(`Error checking note existence during cleanup: ${error}`);
         }
       }
     }

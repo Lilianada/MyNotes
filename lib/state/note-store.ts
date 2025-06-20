@@ -4,6 +4,7 @@ import { localStorageNotesService } from '@/lib/storage/local-storage-notes'
 import { firebaseNotesService } from '@/lib/firebase/firebase-notes'
 import { countWords } from '@/lib/data-processing/title-generator'
 import { ConflictResolutionStrategy, ConflictedNote } from '@/components/modals/sync-modal'
+import { logger } from '@/lib/utils/logger'
 
 // Filter options type definition
 type FilterOptions = {
@@ -110,7 +111,7 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     
     // User is signing out
     if (currentUser && !newUser) {
-      console.log('User signed out, clearing notes');
+      logger.debug('User signed out, clearing notes');
       set({ 
         user: null, 
         notes: [], // Clear notes from state
@@ -121,14 +122,10 @@ export const useNoteStore = create<NoteState>((set, get) => ({
     
     // User is signing in or changing
     if ((currentUser?.uid !== newUser?.uid) && newUser?.uid) {
-      console.log('User changed, loading notes from Firebase');
       set({ user: newUser, isLoading: true });
       
       // Load notes from Firebase when user logs in
       get().loadNotesFromFirebase(newUser)
-        .then(() => {
-          console.log('Successfully loaded notes from Firebase');
-        })
         .catch((error) => {
           console.error('Failed to load notes from Firebase:', error);
         });
@@ -164,8 +161,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       
       // Update state
       set({ notes: combinedNotes, isLoading: false });
-      
-      console.log(`Loaded ${cloudNotes.length} notes from Firebase and ${localOnlyNotes.length} local-only notes`);
     } catch (error) {
       console.error('Failed to load notes from Firebase:', error);
       set({ isLoading: false });
@@ -659,15 +654,11 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         return { localNoteCount: 0, cloudNoteCount: 0, conflictedNotes: [] };
       }
       
-      console.log('Finding sync conflicts for user:', user.uid);
-      
       // Get local notes
       const localNotes = localStorageNotesService.getNotes();
-      console.log('Local notes found:', localNotes.length);
       
       // Get cloud notes
       const cloudNotes = await firebaseNotesService.getNotes(user.uid);
-      console.log('Cloud notes found:', cloudNotes.length);
       
       // Initialize result
       const conflictedNotes: ConflictedNote[] = [];
@@ -681,8 +672,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       // Find local-only notes (not in cloud)
       const localOnlyNotes = localNotes.filter(localNote => !cloudNotesMap.has(localNote.id));
       const localOnlyCount = localOnlyNotes.length;
-      
-      console.log('Local-only notes that need syncing:', localOnlyCount);
       
       // Find conflicts by comparing local and cloud notes
       for (const localNote of localNotes) {
@@ -711,8 +700,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         }
       }
       
-      console.log('Conflicted notes found:', conflictedNotes.length);
-      
       // Always return at least 1 for localNoteCount if there are any local notes
       // This ensures the sync modal appears even if there are no direct conflicts
       const result = { 
@@ -721,7 +708,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         conflictedNotes 
       };
       
-      console.log('Sync conflict check result:', result);
       return result;
     } catch (error) {
       console.error('Failed to find sync conflicts:', error);
@@ -809,8 +795,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
             default:
               console.warn(`Unknown resolution strategy: ${resolution}`);
           }
-          
-          console.log(`Resolved conflict for note "${conflict.localNote.noteTitle}" using ${resolution} strategy`);
         } catch (error) {
           console.error(`Failed to resolve conflict for note "${conflict.localNote.noteTitle}":`, error);
         }
@@ -827,8 +811,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       
       // Find local notes that don't exist in the cloud
       const localOnlyNotes = localNotes.filter(note => !cloudNoteIds.has(note.id));
-      
-      console.log(`Found ${localOnlyNotes.length} local-only notes to sync`);
       
       // Track successful syncs to update local state
       const syncedNotes: Note[] = [];
@@ -863,7 +845,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           // Remove the local-only note since it's now in Firebase
           localStorageNotesService.deleteNote(note.id);
           
-          console.log(`Successfully synced note "${note.noteTitle}" to Firebase`);
         } catch (error) {
           console.error(`Failed to sync note "${note.noteTitle}":`, error);
         }
@@ -873,7 +854,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       await get().loadNotesFromFirebase(user, isAdmin);
       
       // Log completion
-      console.log('Note synchronization completed successfully');
       
     } catch (error) {
       console.error('Failed to resolve note conflicts:', error);
@@ -898,11 +878,9 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       const notesToSync = localNotes.filter(note => !firebaseNoteIds.has(note.id));
       
       if (notesToSync.length === 0) {
-        console.log('No notes to sync to Firebase');
         return;
       }
       
-      console.log(`Syncing ${notesToSync.length} notes to Firebase...`);
       
       // Track successful syncs to update local state
       const syncedNotes: Note[] = [];
@@ -937,7 +915,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           // Remove the local-only note since it's now in Firebase
           localStorageNotesService.deleteNote(note.id);
           
-          console.log(`Successfully synced note "${note.noteTitle}" to Firebase`);
         } catch (error) {
           console.error(`Failed to sync note "${note.noteTitle}":`, error);
         }
@@ -951,7 +928,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
           .concat(syncedNotes);
           
         set({ notes: updatedNotes });
-        console.log(`Synced ${syncedNotes.length} notes to Firebase`);
       }
     } catch (error) {
       console.error('Failed to sync notes to Firebase:', error);
@@ -1101,7 +1077,6 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         localStorageNotesService.updateNoteData(id, updatedNote);
       }
       
-      console.log(`Note ${id} metadata updated successfully`, updatedNote);
     } catch (error) {
       console.error('Failed to update note metadata:', error);
       throw error; // Re-throw to allow handling in UI
