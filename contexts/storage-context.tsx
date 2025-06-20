@@ -133,7 +133,7 @@ export function StorageProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [loadUserStorage, toast]);
+  }, [loadUserStorage]);
 
   // Initialize with local storage values
   useEffect(() => {

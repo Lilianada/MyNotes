@@ -87,37 +87,8 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
       fontFamily
     );
     
-    // Track if the editor component is visible
-    const [isEditorVisible, setIsEditorVisible] = useState(false);
+    // Editor container ref for potential future optimizations
     const editorContainerRef = useRef<HTMLDivElement>(null);
-    
-    // Always set editor visible by default
-    useEffect(() => {
-      // Set editor visible immediately for better user experience
-      setIsEditorVisible(true);
-      
-      // Only use IntersectionObserver for performance optimization
-      const observer = new IntersectionObserver(
-        (entries) => {
-          const [entry] = entries;
-          if (!entry.isIntersecting) {
-            // Only update if not visible to avoid unnecessary re-renders
-            setIsEditorVisible(false);
-          } else {
-            setIsEditorVisible(true);
-          }
-        },
-        { threshold: 0.05 } // 5% visibility is enough
-      );
-      
-      if (editorContainerRef.current) {
-        observer.observe(editorContainerRef.current);
-      }
-      
-      return () => {
-        observer.disconnect();
-      };
-    }, []);
 
     // Handle editor mounting
     const onEditorDidMount = (editor: EditorInstance, monaco: Monaco) => {
@@ -223,7 +194,7 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
           ) : (
             // Desktop editor options
             <div className="flex flex-col h-full max-h-[calc(100vh_-_7rem)] md:max-h-[calc(100vh_-_7rem)]">
-              {useMonacoEditor ? (
+              {useMonacoEditor && !monacoLoadFailed ? (
                 // Monaco editor
                 <div 
                   ref={editorContainerRef}
@@ -231,16 +202,18 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                   aria-live="polite" 
                   aria-label="Monaco code editor"
                 >
-                  {isEditorVisible && (
-                    <MonacoEditor
-                      height="100%"
-                      language="markdown"
-                      theme={isDarkTheme ? "vs-dark" : "vs"}
-                      defaultValue={note.content || ""}
-                      value={note.content || ""}
-                      onChange={(value) => value !== undefined && handleContentChange(value)}
-                      onMount={onEditorDidMount}
-                      options={{
+                  <MonacoEditor
+                    height="100%"
+                    language="markdown"
+                    theme={isDarkTheme ? "vs-dark" : "vs"}
+                    defaultValue={note.content || ""}
+                    value={note.content || ""}
+                    onChange={(value) => value !== undefined && handleContentChange(value)}
+                    onMount={onEditorDidMount}
+                    loading={<div className="h-full w-full flex items-center justify-center">
+                      <div className="text-gray-500 dark:text-gray-400">Loading editor...</div>
+                    </div>}
+                    options={{
                         automaticLayout: true,
                         wordWrap: 'on',
                         minimap: { enabled: false },
@@ -263,12 +236,6 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                         smoothScrolling: true
                       }}
                     />
-                  )}
-                  {!isEditorVisible && (
-                    <div className="h-full w-full flex items-center justify-center bg-gray-50 dark:bg-gray-800">
-                      <p className="text-gray-500 dark:text-gray-400">Editor loading...</p>
-                    </div>
-                  )}
                 </div>
               ) : (
                 // Plain text editor fallback

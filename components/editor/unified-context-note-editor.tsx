@@ -1,11 +1,10 @@
 "use client"
 
-import { forwardRef, useEffect, useRef, useState } from "react"
+import { forwardRef, useEffect, useRef } from "react"
 import { UnifiedEditor } from "./unified-editor"
 import { editHistoryService } from "@/lib/edit-history/edit-history-service"
 import { useAppState } from "@/lib/state/use-app-state"
 import { Note } from "@/types"
-import { EditorSkeleton } from "@/components/ui/note-skeleton"
 
 interface UnifiedContextNoteEditorProps {
   note: Note
@@ -13,15 +12,6 @@ interface UnifiedContextNoteEditorProps {
 
 export const UnifiedContextNoteEditor = forwardRef<HTMLTextAreaElement, UnifiedContextNoteEditorProps>(({ note }, ref) => {
   const { updateNote, updateNoteTitle, selectedNoteId } = useAppState()
-  const [isEditorLoading, setIsEditorLoading] = useState(true)
-  
-  // Set a very brief loading state when switching notes
-  useEffect(() => {
-    // Only show loading state for 100ms to avoid flickering but still allow Monaco to initialize
-    setIsEditorLoading(true)
-    const timer = setTimeout(() => setIsEditorLoading(false), 100)
-    return () => clearTimeout(timer)
-  }, [note.id])
   
   // Track previous note ID to detect note changes
   const prevNoteIdRef = useRef<number | null>(null)
@@ -74,11 +64,7 @@ export const UnifiedContextNoteEditor = forwardRef<HTMLTextAreaElement, UnifiedC
     // We don't need to implement save explicitly since the state store is handling persistence
     console.log(`Saving note ${note.id}`)
   }
-  
-  if (isEditorLoading) {
-    return <EditorSkeleton />
-  }
-  
+
   return (
     <div role="region" aria-label={`Editor for ${note.noteTitle}`} className="h-screen">
       <UnifiedEditor

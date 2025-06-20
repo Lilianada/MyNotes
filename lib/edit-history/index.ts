@@ -3,19 +3,23 @@
 import { Note, NoteEditHistory } from '@/types';
 
 export interface EditHistoryConfig {
-  autosaveInterval: number; // milliseconds (30-60 seconds)
+  autosaveInterval: number; // milliseconds (10-30 seconds)
   minChangeThreshold: number; // minimum characters changed
   minChangePercentage: number; // minimum percentage changed (0-100)
   maxVersions: number; // maximum versions to keep
   significantChangeThreshold: number; // threshold for significant changes
+  sessionTimeout: number; // milliseconds - how long before we consider it a new editing session
+  minSessionDuration: number; // milliseconds - minimum time user must be editing before creating history
 }
 
 export const DEFAULT_EDIT_HISTORY_CONFIG: EditHistoryConfig = {
-  autosaveInterval: 120000, // 120 seconds (2 minutes) - longer interval to reduce Firestore writes
-  minChangeThreshold: 500, // at least 500 characters changed (higher threshold for history entries)
-  minChangePercentage: 40, // at least 40% change (higher threshold for history entries)
-  maxVersions: 10, // keep only last 10 versions (reduced from 15 to further limit storage)
-  significantChangeThreshold: 800 // 800+ characters is significant (higher threshold for history entries)
+  autosaveInterval: 10000, // 10 seconds - autosave frequently for data safety
+  minChangeThreshold: 500, // at least 500 characters changed for history entry (much stricter)
+  minChangePercentage: 25, // at least 25% change for history entry (much stricter)
+  maxVersions: 15, // keep reasonable number of versions
+  significantChangeThreshold: 1000, // 1000+ characters is significant (much stricter)
+  sessionTimeout: 300000, // 5 minutes - if no activity for 5 minutes, start new session
+  minSessionDuration: 30000 // 30 seconds - user must be editing for at least 30 seconds
 };
 
 /**

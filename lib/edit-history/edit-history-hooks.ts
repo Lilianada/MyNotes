@@ -135,7 +135,7 @@ export function useEditorWithHistory(
   user: { uid: string } | null | undefined,
   config: Partial<EditHistoryConfig> = {}
 ) {
-  const { trackContentChange, forceSave, cleanupCurrentNote } = useEditHistory(note, isAdmin, user, config);
+  const { trackContentChange, cleanupCurrentNote } = useEditHistory(note, isAdmin, user, config);
   const lastContentRef = useRef<string>('');
   const previousNoteIdRef = useRef<number | null>(null);
 
@@ -161,76 +161,31 @@ export function useEditorWithHistory(
     // Only track changes if we have a valid note and the content actually changed
     if (!note || newContent === lastContentRef.current) return;
     
-    // Validate that the current noteId matches the lastContentRef's noteId
-    // This prevents us from applying changes to the wrong note
-    
-    // Call original handler
+    // Call original handler immediately for UI responsiveness
     onContentChange(newContent);
     
-    // Track change for history
-    trackContentChange(newContent);
+    // Update our reference
     lastContentRef.current = newContent;
+    
+    // Track change for autosave (NOT for history - that will be determined by autosave logic)
+    // This will only trigger autosave, not history creation
+    trackContentChange(newContent);
   }, [note, onContentChange, trackContentChange]);
 
-  // Enhanced save handler with history
+  // Enhanced save handler - since saving is automatic, this is just a trigger
   const handleSave = useCallback(async () => {
     if (note) {
       try {
-        // Ensure we have the correct content for the current note
-        // This prevents saving the wrong content when switching notes quickly
-        if (lastContentRef.current !== note.content) {
-          lastContentRef.current = note.content;
-        }
-        
-        // Force save with history
-        await forceSave(note.content, 'update');
-        
-        // Call original save handler
+        // Since saving is automatic, we just need to call the original save handler
+        // The automatic save system will handle the actual saving
         onSave();
       } catch (error) {
-        console.error('Failed to save with history:', error);
-        // Fallback to original save
+        console.error('Error in save handler:', error);
+        // Still call original save handler as fallback
         onSave();
       }
-    } else {
-      onSave();
     }
-  }, [note, forceSave, onSave]);
-
-  // Handle page unload to force save pending changes
-  useEffect(() => {
-    // Create a stable reference to the handler function
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      // Skip if there's no note
-      if (!note || !note.id) return;
-      
-      // Check if there are unsaved changes
-      const hasUnsavedChanges = lastContentRef.current && lastContentRef.current !== note.content;
-      
-      if (hasUnsavedChanges) {
-        // Standard way to show confirmation dialog on page unload
-        e.preventDefault();
-        e.returnValue = '';
-        
-        // Try to save without awaiting (we can't await during beforeunload)
-        try {
-          // Use forceSave without awaiting
-          forceSave(lastContentRef.current, 'update');
-        } catch (error) {
-          // Just log the error - we can't do much else during unload
-          console.error('Error during unload save:', error);
-        }
-      }
-    };
-
-    // Add the event listener
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    // Clean up the event listener on unmount
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [note, forceSave]); // Only re-attach when note or forceSave changes
+  }, [note, onSave]);
 
   return {
     handleContentChange,
