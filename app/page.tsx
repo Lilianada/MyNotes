@@ -173,7 +173,7 @@ export default function Home() {
           }
         `}</style>
         
-        <main className="flex-1 grid gap-0 sm:gap-3 md:grid-cols-[var(--sidebar-width)_1fr] lg:grid-cols-[24%_75%] overflow-hidden relative main-content h-[calc(100vh-var(--header-height))]">
+        <main className="flex-1 md:grid md:gap-3 md:grid-cols-[var(--sidebar-width)_1fr] lg:grid-cols-[24%_75%] overflow-hidden relative main-content md:h-[calc(100vh-var(--header-height))] h-auto">
           {/* Mobile overlay to close sidebar when clicking outside */}
           {isSidebarOpen && (
             <div 
@@ -183,14 +183,12 @@ export default function Home() {
             />
           )}
           <SidebarErrorBoundary>
-            <div className="h-[calc(100vh-var(--header-height))] ">
-              <List 
-                isSidebarOpen={isSidebarOpen}
-                onSelectNote={(note) => selectNote(note.id)}
-              />
-            </div>
+            <List 
+              isSidebarOpen={isSidebarOpen}
+              onSelectNote={(note) => selectNote(note.id)}
+            />
           </SidebarErrorBoundary>
-          <div className="p-2 overflow-hidden editor-container mx-2 my-2 border border-gray-200 dark:border-gray-700 rounded-md">
+          <div className="p-1 md:p-2 overflow-hidden editor-container md:mx-2 md:my-2 md:border md:border-gray-200 md:dark:border-gray-700 md:rounded-md md:h-auto h-[calc(100vh-120px)]">
             <EditorErrorBoundary>
               <NoteErrorBoundary>
                 <Notes />

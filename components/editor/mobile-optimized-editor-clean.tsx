@@ -69,25 +69,8 @@ export const MobileOptimizedEditor = forwardRef<MobileEditorRef, MobileOptimized
 
     return (
       <div className={`flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-white dark:bg-gray-900' : 'h-full'}`}>
-        {/* Fullscreen toolbar - only show when in fullscreen */}
-        {isFullscreen && (
-          <div className="flex-shrink-0 flex items-center justify-between p-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Fullscreen Editor
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={toggleFullscreen}
-              aria-label="Exit fullscreen"
-            >
-              <Minimize2 size={16} />
-            </Button>
-          </div>
-        )}
-        
-        {/* Mobile-optimized textarea */}
-        <div className={`flex-1 overflow-hidden ${isFullscreen ? 'h-[calc(100vh-120px)]' : 'h-full'}`}>
+        {/* Mobile-optimized textarea - removed separate toolbar */}
+        <div className={`flex-1 overflow-hidden ${isFullscreen ? 'h-[calc(100vh-60px)]' : 'h-full'}`}>
           <TextareaAutosize
             className="w-full h-full min-h-[50vh] p-4 resize-none outline-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-base leading-relaxed border-0 focus:ring-0 overflow-auto"
             value={content}

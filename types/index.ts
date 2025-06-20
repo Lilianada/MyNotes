@@ -9,9 +9,9 @@ export interface NoteCategory {
 export interface NoteEditHistory {
   timestamp: Date;
   editType: 'create' | 'update' | 'title' | 'tags' | 'category' | 'autosave';
-  contentSnapshot?: string; // Store content snapshot for significant changes
-  contentLength?: number; // Track content length for change detection
-  changePercentage?: number; // Track percentage of content changed
+  contentSnapshot?: string; 
+  contentLength?: number; 
+  changePercentage?: number; 
 }
 
 export interface Note {
@@ -32,19 +32,19 @@ export interface Note {
   description?: string;
   editHistory?: NoteEditHistory[];
   archived?: boolean;
-  fileSize?: number; // File size in bytes
-  isLocalOnly?: boolean; // Mark notes that exist only in local storage
+  fileSize?: number; 
+  isLocalOnly?: boolean;
 }
 
 // User storage tracking interface
 export interface UserStorage {
   userId: string;
-  totalStorage: number; // Total storage used in bytes
-  maxStorage: number; // Storage limit in bytes (10MB for regular users)
+  totalStorage: number; 
+  maxStorage: number; 
   noteCount: number;
   lastUpdated: Date;
   isAdmin: boolean;
-  displayName?: string; // Optional user display name
+  displayName?: string; 
 }
 
 // Storage alert interface

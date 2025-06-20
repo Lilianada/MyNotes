@@ -62,7 +62,6 @@ export const UnifiedContextNoteEditor = forwardRef<HTMLTextAreaElement, UnifiedC
   
   const handleSave = () => {
     // We don't need to implement save explicitly since the state store is handling persistence
-    console.log(`Saving note ${note.id}`)
   }
 
   return (

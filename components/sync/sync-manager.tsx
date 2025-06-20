@@ -32,8 +32,6 @@ export const SyncManager: React.FC = () => {
       // Only check if user is logged in and auth state is stable
       if (user && !authLoading) {
         try {
-          // Reset sync status for this user on each login
-          // This ensures the sync modal appears every time they log in if needed
           const syncStatus = localStorage.getItem(SYNC_STATUS_KEY) || '{}';
           const parsedStatus = JSON.parse(syncStatus);
           delete parsedStatus[user.uid]; // Remove any previous sync status

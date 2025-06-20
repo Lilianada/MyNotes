@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef } from "react"
+import { useRef, useEffect } from "react"
 import { UnifiedContextNoteEditor } from "@/components/editor/unified-context-note-editor"
 import { useAppState } from "@/lib/state/use-app-state"
 import { LoadingSpinner } from "@/components/ui/loading-states"
@@ -41,9 +41,7 @@ export function Notes() {
   }
   
   return (
-    <div className="w-full mx-auto max-h-[calc(100vh_-_70px)] h-full flex flex-col">
-      {/* <div className="border border-gray-200 rounded-lg px-4 pt-4 bg-white dark:bg-gray-800 dark:border-gray-700 flex-1 flex flex-col overflow-auto">
-      </div> */}
+    <div className="w-full mx-auto h-full flex flex-col md:max-h-[calc(100vh_-_70px)]">
         <div className="flex-1 overflow-hidden">
           <UnifiedContextNoteEditor key={activeNote.id} note={activeNote} />
         </div>

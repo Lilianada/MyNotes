@@ -71,15 +71,6 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean, onClos
   // Initialize metadata when note changes
   useEffect(() => {
     if (isOpen && note) {
-      console.log('Note data for metadata:', { 
-        noteId: note.id,
-        noteTitle: note.noteTitle,
-        description: note.description,
-        publish: note.publish,
-        archived: note.archived,
-        filePath: note.filePath
-      });
-      
       loadEditHistory();
       // Force description to be initialized even if it's undefined or null
       // Explicitly set description with fallback to empty string
@@ -179,7 +170,7 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean, onClos
         if (prev.length < 5) {
           return [...prev, tag];
         } else {
-          console.log('Tag limit reached (5), cannot add more tags');
+          // Tag limit reached - silently ignore
           return prev;
         }
       }
@@ -191,7 +182,6 @@ export function useUnifiedNoteDetails(note: Note | null, isOpen: boolean, onClos
     
     try {
       const updatedTags = await updateNoteTags(note.id, pendingTags, user, isAdmin || false);
-      console.log('Tags updated successfully');
       
       // Reset pending tags to match the note's actual tags
       setPendingTags(updatedTags || pendingTags);

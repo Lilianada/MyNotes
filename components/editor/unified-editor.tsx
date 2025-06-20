@@ -12,9 +12,9 @@ import { configureMarkdownLanguage } from '@/lib/markdown/monaco-markdown-comple
 import { configureWikiLinkCompletion } from '@/lib/markdown/monaco-wiki-links';
 import { Monaco, EditorInstance } from './types';
 import { Button } from '@/components/ui/button';
-import { Eye, Code, Copy, MoreVertical, Smartphone } from "lucide-react";
+import { Eye, Code, Copy, MoreVertical, Smartphone, Maximize2, Minimize2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { MobileOptimizedEditor } from "./mobile-optimized-editor";
+import { MobileOptimizedEditor, MobileEditorRef } from "./mobile-optimized-editor";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,6 +42,8 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
     const { toast } = useToast();
     const [isMobile, setIsMobile] = useState(false);
     const [monacoLoadFailed, setMonacoLoadFailed] = useState(false);
+    const [mobileFullscreen, setMobileFullscreen] = useState(false);
+    const mobileEditorRef = useRef<MobileEditorRef>(null); // Ref to control mobile editor
     
     // Detect mobile devices
     useEffect(() => {
@@ -128,6 +130,24 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
 
           {/* Editor tools on the right - different for mobile vs desktop */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Mobile fullscreen button - only show on mobile when using simple editor */}
+            {isMobile && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  // Toggle fullscreen for mobile editor
+                  if (mobileEditorRef.current && mobileEditorRef.current.toggleFullscreen) {
+                    mobileEditorRef.current.toggleFullscreen();
+                    setMobileFullscreen(!mobileFullscreen);
+                  }
+                }}
+                title={mobileFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              >
+                {mobileFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              </Button>
+            )}
+            
             {/* Preview toggle button */}
             <Button
               variant="outline"
@@ -190,6 +210,8 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
               note={note} 
               onChange={handleContentChange} 
               onSave={handleSave} 
+              onToggleFullscreen={setMobileFullscreen}
+              ref={mobileEditorRef} // Attach ref to mobile editor
             />
           ) : (
             // Desktop editor options
@@ -242,7 +264,7 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                 <div className="h-full w-full relative flex flex-col" aria-label="Simple text editor">
                   <textarea
                     ref={ref}
-                    className={`w-full flex-1 min-h-0 p-4 resize-none outline-none bg-white dark:bg-gray-900 overflow-auto text-[15px] ${fontFamilyClass}`}
+                    className={`w-full flex-1 min-h-0 p-4 resize-none outline-none bg-white dark:bg-gray-900 overflow-auto text-sm sm:text-[15px] ${fontFamilyClass}`}
                     value={note.content || ""}
                     onChange={(e) => handleContentChange(e.target.value)}
                     placeholder="Start writing..."

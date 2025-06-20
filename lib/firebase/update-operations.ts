@@ -79,7 +79,7 @@ export const updateNoteContent = async (noteId: number, content: string, userId?
     await updateDoc(docRef, sanitizedUpdateData);
     
     // Update storage tracking for non-admin users if file size changed significantly
-    if (!isAdmin && userId && Math.abs(sizeDifference) > 100) { // Only track if change is > 100 bytes
+    if (!isAdmin && userId && Math.abs(sizeDifference) > 100) { 
       try {
         if (sizeDifference > 0) {
           await incrementStorage(userId, sizeDifference);
@@ -134,9 +134,8 @@ export const updateNoteTitle = async (noteId: number, newTitle: string, userId?:
       const updateData = {
         noteTitle: newTitle,
         slug: slug,
-        filePath: filePath, // Ensure filePath is updated even if slug doesn't change
+        filePath: filePath,
         updatedAt: serverTimestamp()
-        // editHistory is intentionally omitted - managed by EditHistoryService
       };
       const sanitizedUpdateData = sanitizeForFirebase(updateData);
       sanitizedUpdateData.updatedAt = serverTimestamp();
@@ -144,7 +143,6 @@ export const updateNoteTitle = async (noteId: number, newTitle: string, userId?:
       return;
     }
 
-    // Otherwise, perform Firestore document rename (copy + delete)
     // Create new doc with new slug as ID
     const newDocRef = doc(notesRef, slug);
     
@@ -152,12 +150,10 @@ export const updateNoteTitle = async (noteId: number, newTitle: string, userId?:
     // This preserves all other properties including createdAt
     const newDocData = {
       ...currentData,
-      noteTitle: newTitle,  // Update the title
-      slug,                // Update the slug
-      filePath: `notes/${slug}`,  // Explicitly set filePath based on new slug
-      updatedAt: serverTimestamp() // Update the timestamp
-      // All other properties remain unchanged
-      // editHistory is preserved from the old document
+      noteTitle: newTitle, 
+      slug,                
+      filePath: `notes/${slug}`, 
+      updatedAt: serverTimestamp() 
     };
     // Sanitize data before sending to Firestore
     const sanitizedData = sanitizeForFirebase(newDocData);
@@ -190,7 +186,6 @@ export const updateNoteTitle = async (noteId: number, newTitle: string, userId?:
  */
 export const updateNoteCategory = async (noteId: number, category: NoteCategory | null, userId?: string, isAdmin: boolean = false): Promise<void> => {
   try {
-    // For non-admin users, userId is required for subcollection access
     if (!isAdmin && !userId) {
       throw new Error('User ID is required for non-admin users');
     }
@@ -211,8 +206,6 @@ export const updateNoteCategory = async (noteId: number, category: NoteCategory 
     }
     
     const docRef = doc(notesRef, snapshot.docs[0].id);
-    
-    // Note: History is managed by EditHistoryService, not added here
     
     const updateData: any = {
       updatedAt: serverTimestamp()
@@ -242,7 +235,6 @@ export const updateNoteCategory = async (noteId: number, category: NoteCategory 
  */
 export const updateNoteTags = async (noteId: number, tags: string[], userId?: string, isAdmin: boolean = false): Promise<string[]> => {
   try {
-    // For non-admin users, userId is required for subcollection access
     if (!isAdmin && !userId) {
       throw new Error('User ID is required for non-admin users');
     }
@@ -343,9 +335,7 @@ export const updateNoteData = async (noteId: number, updates: Partial<Note>, use
     const updateData: any = {
       updatedAt: serverTimestamp()
     };
-    
-    // Only add defined values from updates to avoid undefined values in Firestore
-    // Explicitly exclude createdAt to prevent it from being modified during updates
+
     Object.keys(updates).forEach(key => {
       if (key !== 'createdAt') { // Protect createdAt from being modified
         const value = (updates as any)[key];
