@@ -14,16 +14,12 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
-  // Configure webpack to properly handle Monaco Editor and fix dependencies
+  // Configure webpack to properly handle Monaco Editor
   webpack: (config, { isServer }) => {
-    import path from 'path';
-    
     // Add Monaco Editor webpack loader configurations
     config.resolve.alias = {
       ...config.resolve.alias,
-      'monaco-editor': 'monaco-editor/esm/vs/editor/editor.api',
-      // Fix for escape-string-regexp import in mdast-util-find-and-replace
-      'escape-string-regexp': path.resolve('./lib/patches/escape-string-regexp-fix.js')
+      'monaco-editor': 'monaco-editor/esm/vs/editor/editor.api'
     };
     
     return config;
