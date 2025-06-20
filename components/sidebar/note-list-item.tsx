@@ -30,10 +30,9 @@ export default function NoteListItem({
   return (
     <li
       key={note.id}
-      className={`p-2 text-sm hover:bg-gray-50 rounded cursor-pointer flex items-center justify-between hover:bg-blue-50 transition-colors ${
+      className={`p-2 text-sm rounded cursor-pointer flex items-center justify-between hover:bg-blue-50 transition-colors ${
         selectedNoteId === note.id ? "bg-blue-50" : ""
       } ${isSelected ? "bg-blue-50" : ""}`}
-      aria-selected={selectedNoteId === note.id}
     >
       {/* Checkbox for selection mode */}
       {isSelectionMode && (

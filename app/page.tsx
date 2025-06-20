@@ -189,7 +189,7 @@ export default function Home() {
           }
           @media (max-width: 768px) {
             :root {
-              --header-height: 56px;
+              --header-height: 46px;
               --sidebar-width: 100%;
             }
           }

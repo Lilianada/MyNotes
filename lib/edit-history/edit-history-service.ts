@@ -22,6 +22,7 @@ export class EditHistoryService {
   private lastSavedContent: Map<number, string> = new Map(); // Track last saved content
   private autosaveTimers: Map<number, NodeJS.Timeout> = new Map(); // Track autosave timers
   private activeNoteIds: Set<number> = new Set(); // Track active notes to prevent memory leaks
+  private saveOperations: Map<number, Promise<void>> = new Map(); // Track ongoing saves to prevent races
   
   // Session-based history tracking
   private editingSessions: Map<number, {
@@ -32,8 +33,17 @@ export class EditHistoryService {
   }> = new Map();
   private sessionTimers: Map<number, NodeJS.Timeout> = new Map();
 
+  // Shutdown flag to prevent operations during cleanup
+  private isShuttingDown = false;
+
   constructor(config?: EditHistoryConfig) {
     this.config = config || DEFAULT_EDIT_HISTORY_CONFIG;
+    
+    // Setup cleanup handlers
+    if (typeof window !== 'undefined') {
+      window.addEventListener('beforeunload', this.handleShutdown.bind(this));
+      window.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+    }
   }
 
   /**
@@ -54,6 +64,8 @@ export class EditHistoryService {
     isAdmin: boolean,
     user: { uid: string } | null | undefined
   ): void {
+    if (this.isShuttingDown) return;
+    
     // Safety check - ensure we're dealing with a valid noteId
     if (noteId === 0 || noteId === null || noteId === undefined) {
       logger.warn('Invalid noteId in trackContentChange:', noteId);
@@ -74,6 +86,47 @@ export class EditHistoryService {
     
     // 2. SESSION TRACKING LOGIC - Track editing sessions for history
     this.trackEditingSession(noteId, newContent);
+  }
+
+  /**
+   * Handle shutdown event
+   */
+  private handleShutdown(): void {
+    this.isShuttingDown = true;
+    this.flushAllPendingChanges();
+  }
+
+  /**
+   * Handle visibility change
+   */
+  private handleVisibilityChange(): void {
+    if (document.visibilityState === 'hidden') {
+      this.flushAllPendingChanges();
+    }
+  }
+
+  /**
+   * Flush all pending changes immediately
+   */
+  private flushAllPendingChanges(): void {
+    const pendingPromises: Promise<void>[] = [];
+    
+    this.pendingChanges.forEach((content, noteId) => {
+      try {
+        // Use synchronous localStorage save for immediate flush
+        const notes = localStorageNotesService.getNotes();
+        const noteIndex = notes.findIndex(n => n.id === noteId);
+        if (noteIndex !== -1) {
+          notes[noteIndex].content = content;
+          notes[noteIndex].updatedAt = new Date();
+          localStorageNotesService.updateNoteContent(noteId, content);
+        }
+      } catch (error) {
+        logger.error(`Failed to flush save for note ${noteId}:`, error);
+      }
+    });
+    
+    this.pendingChanges.clear();
   }
 
   /**
@@ -205,11 +258,24 @@ export class EditHistoryService {
     isAdmin: boolean,
     user: { uid: string } | null | undefined
   ): Promise<void> {
+    if (this.isShuttingDown) return;
+    
     try {
       // Validate noteId
       if (!noteId || noteId <= 0) {
         logger.warn(`Invalid noteId in performAutosave: ${noteId}`);
         return;
+      }
+      
+      // Check if there's already a save operation in progress
+      const existingSave = this.saveOperations.get(noteId);
+      if (existingSave) {
+        // Wait for existing save to complete, then try again
+        await existingSave;
+        // Re-check if we still have pending changes after the wait
+        if (!this.pendingChanges.has(noteId)) {
+          return;
+        }
       }
       
       const newContent = this.pendingChanges.get(noteId);
@@ -235,12 +301,11 @@ export class EditHistoryService {
         return;
       }
       
-      // ONLY save the content - NO HISTORY CREATION
-      if (user && firebaseNotesService) {
-        await firebaseNotesService.updateNoteData(noteId, { content: newContent }, user.uid, isAdmin);
-      } else {
-        localStorageNotesService.updateNoteContent(noteId, newContent);
-      }
+      // Create save operation promise and track it
+      const savePromise = this.performSafeSave(noteId, newContent, isAdmin, user);
+      this.saveOperations.set(noteId, savePromise);
+      
+      await savePromise;
       
       // Update our tracking
       this.lastSavedContent.set(noteId, newContent);
@@ -252,6 +317,37 @@ export class EditHistoryService {
     } catch (error) {
       logger.error(`Autosave failed for note ${noteId}:`, error);
       // Don't delete pending changes if save failed - we'll try again later
+    } finally {
+      this.saveOperations.delete(noteId);
+    }
+  }
+
+  /**
+   * Perform safe save operation
+   */
+  private async performSafeSave(
+    noteId: number,
+    content: string,
+    isAdmin: boolean,
+    user: { uid: string } | null | undefined
+  ): Promise<void> {
+    // Use data protection service for safe saving
+    const saveFunction = async () => {
+      if (user && firebaseNotesService) {
+        await firebaseNotesService.updateNoteData(noteId, { content }, user.uid, isAdmin);
+      } else {
+        localStorageNotesService.updateNoteContent(noteId, content);
+      }
+    };
+
+    // Use the data protection service if available, otherwise use direct save
+    if (typeof window !== 'undefined' && (window as any).dataProtectionService) {
+      const success = await (window as any).dataProtectionService.safeSave(noteId, content, saveFunction);
+      if (!success) {
+        throw new Error(`Safe save failed for note ${noteId}`);
+      }
+    } else {
+      await saveFunction();
     }
   }
 
@@ -563,20 +659,12 @@ export class EditHistoryService {
    * Cleanup all tracking (call on app unmount)
    */
   cleanup(): void {
-    // Save any pending changes before cleanup
-    this.activeNoteIds.forEach(noteId => {
-      const pendingContent = this.pendingChanges.get(noteId);
-      const lastContent = this.lastSavedContent.get(noteId);
-      
-      if (pendingContent && lastContent && pendingContent !== lastContent) {
-        try {
-          // Try to save pending changes without awaiting
-          this.forceSave(noteId, pendingContent, 'autosave', false, null)
-            .catch(() => {}); // Silently catch errors during cleanup
-        } catch (error) {
-          // Ignore errors during cleanup
-        }
-      }
+    this.isShuttingDown = true;
+    
+    // Wait for any ongoing save operations to complete
+    const pendingSaves = Array.from(this.saveOperations.values());
+    Promise.allSettled(pendingSaves).then(() => {
+      this.flushAllPendingChanges();
     });
     
     // Clear all timers
@@ -590,10 +678,13 @@ export class EditHistoryService {
     this.autosaveTimers.clear();
     this.sessionTimers.clear();
     this.editingSessions.clear();
-    this.activeNoteIds.clear();
-    this.lastSavedContent.clear();
-    this.pendingChanges.clear();
-    this.autosaveTimers.clear();
+    this.saveOperations.clear();
+    
+    // Remove event listeners
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('beforeunload', this.handleShutdown);
+      window.removeEventListener('visibilitychange', this.handleVisibilityChange);
+    }
   }
 }
 

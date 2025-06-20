@@ -12,6 +12,7 @@ import { UserPreferencesProvider } from "@/contexts/user-preferences-context"
 import { Toaster } from "@/components/ui/toaster"
 import { AppErrorBoundary } from "@/components/error-handling"
 import { AutoHistoryCleanup } from "@/components/utils/auto-history-cleanup"
+import { StorageMonitor } from "@/components/utils/storage-monitor"
 import { SyncManager } from "@/components/sync/sync-manager"
 import { AuthProvider } from "@/contexts/auth-context"
 import { AutoSyncModal } from "@/components/modals/auto-sync-modal"
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <FontProvider>
                   {children}
                   <AutoHistoryCleanup />
+                  <StorageMonitor />
                   <SyncManager />
                   <AutoSyncModal />
                   <Toaster />

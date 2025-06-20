@@ -122,7 +122,7 @@ export function FilterSortToolbar({
   }
 
   return (
-    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+    <div className="sm:px-4 sm:py-3 border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between">
         {/* Left side - Filter and Sort icons */}
         <div className="flex items-center gap-2">

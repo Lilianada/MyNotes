@@ -50,7 +50,7 @@ export function Header({
   }, []);
 
   return (
-    <header className="sticky top-0 flex items-center py-3 px-3 sm:px-8 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200 shadow-sm z-40" role="banner">
+    <header className="sticky top-0 flex items-center sm:py-3 sm:px-8 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b border-gray-200 shadow-sm z-40" role="banner">
       <div>
         <button
           onClick={toggleSidebar}

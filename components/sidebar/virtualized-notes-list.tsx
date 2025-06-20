@@ -39,7 +39,7 @@ export function VirtualizedNotesList({
   
   // Container ref to measure available height
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState(600); // Default height before measurement
+  const [containerHeight, setContainerHeight] = useState(600);
   
   const itemHeight = 48; 
   
@@ -48,7 +48,7 @@ export function VirtualizedNotesList({
     const updateHeight = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        const availableHeight = rect.height - 16; // Account for padding
+        const availableHeight = rect.height; // Account for padding
         setContainerHeight(Math.max(200, availableHeight)); 
       }
     };
@@ -132,7 +132,7 @@ export function VirtualizedNotesList({
         width="100%"
         itemCount={filteredNotes.length}
         itemSize={itemHeight}
-        className="scrollbar-hide"
+        className="scrollbar-hide h-screen"
       >
         {renderNoteItem}
       </List>
