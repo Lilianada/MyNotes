@@ -294,7 +294,7 @@ ul li.task-list-item {
   
   /* Improve editor container on mobile */
   .editor-container {
-    height: calc(100vh - 120px);
+    height: calc(100vh - 70px);
     overflow: hidden;
   }
 }
