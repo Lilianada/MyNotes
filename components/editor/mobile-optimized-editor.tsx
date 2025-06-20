@@ -100,6 +100,7 @@ export const MobileOptimizedEditor = forwardRef<MobileEditorRef, MobileOptimized
             autoComplete="on"
             autoCorrect="on"
             aria-label="Note content"
+            style={{ fontSize: '14px' }}
           />
         </div>
         

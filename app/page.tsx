@@ -40,7 +40,20 @@ export default function Home() {
   const [titleInput, setTitleInput] = useState('')
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
   const [isImportModalOpen, setIsImportModalOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const { toast } = useToast()
+  
+  // Detect mobile devices
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   // Get the currently selected note
   const currentNote = selectedNoteId ? notes.find((note: any) => note.id === selectedNoteId) : null
@@ -149,6 +162,15 @@ export default function Home() {
     setSidebarOpen(false)
   }
   
+  // Handle note selection and close sidebar on mobile
+  const handleSelectNote = (note: any) => {
+    selectNote(note.id);
+    // Close sidebar on mobile when a note is selected
+    if (isMobile && isSidebarOpen) {
+      setSidebarOpen(false);
+    }
+  };
+
   const mainContent = (
     <FontSwitcher>
       <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
@@ -185,7 +207,7 @@ export default function Home() {
           <SidebarErrorBoundary>
             <List 
               isSidebarOpen={isSidebarOpen}
-              onSelectNote={(note) => selectNote(note.id)}
+              onSelectNote={handleSelectNote}
             />
           </SidebarErrorBoundary>
           <div className="p-1 md:p-2 overflow-hidden editor-container md:mx-2 md:my-2 md:border md:border-gray-200 md:dark:border-gray-700 md:rounded-md md:h-auto h-[calc(100vh-120px)]">
