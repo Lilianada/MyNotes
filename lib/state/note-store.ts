@@ -257,6 +257,11 @@ export const useNoteStore = create<NoteState>((set, get) => ({
       if (!noteToUpdate) {
         throw new Error(`Note with ID ${id} not found`);
       }
+
+      // Generate new slug and filePath based on the new title
+      const { createSlugFromTitle } = await import('@/lib/firebase/firebase-helpers');
+      const newSlug = createSlugFromTitle(title);
+      const newFilePath = `notes/${newSlug}`;
       
       if (user) {
         await firebaseNotesService.updateNoteTitle(id, title, user.uid, isAdmin);
@@ -264,11 +269,17 @@ export const useNoteStore = create<NoteState>((set, get) => ({
         localStorageNotesService.updateNoteTitle(id, title);
       }
       
-      // Update local state
+      // Update local state with all the changed properties
       set({
         notes: notes.map(note => 
           note.id === id 
-            ? { ...note, noteTitle: title, updatedAt: new Date() } 
+            ? { 
+                ...note, 
+                noteTitle: title, 
+                slug: newSlug,
+                filePath: newFilePath,
+                updatedAt: new Date() 
+              } 
             : note
         )
       });

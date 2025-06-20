@@ -33,6 +33,7 @@ export interface Note {
   editHistory?: NoteEditHistory[];
   archived?: boolean;
   fileSize?: number; // File size in bytes
+  isLocalOnly?: boolean; // Mark notes that exist only in local storage
 }
 
 // User storage tracking interface

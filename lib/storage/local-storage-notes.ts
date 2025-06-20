@@ -247,8 +247,9 @@ export const localStorageNotesService = {
       note.id === id ? { 
         ...note, 
         noteTitle,
-        slug
-        // Note: Removed actual filePath setting - localStorage only
+        slug,
+        filePath, // Now properly updating filePath
+        updatedAt: new Date()
       } : note
     );
     window.localStorage.setItem('notes', JSON.stringify(updatedNotes));
