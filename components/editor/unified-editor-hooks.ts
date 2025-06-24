@@ -273,7 +273,7 @@ export function useMonacoConfig(
       wordWrapBreakAfterCharacters: ' \t',
       wordWrapBreakBeforeCharacters: ' \t',
       autoClosingBrackets: 'always',
-      autoClosingQuotes: 'always',
+      autoClosingQuotes: 'never', // Disable auto-closing quotes
       autoIndent: 'full',
       cursorBlinking: 'smooth',
       cursorSmoothCaretAnimation: 'on',

@@ -27,7 +27,7 @@ export function Notes() {
       <div className="flex flex-col items-center justify-center h-full text-center p-4">
         <div className="max-w-md">
           <p className="text-base text-gray-600 dark:text-gray-300 mb-2 font-medium">
-            "Make things as simple as possible, but not simpler.""
+            Make things as simple as possible, <br/> but not simpler.
           </p>
           <p className="text-xs text-blue-500 dark:text-blue-400 mb-6">
             - Albert Einstein

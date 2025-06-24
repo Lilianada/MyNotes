@@ -1,16 +1,10 @@
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { FileUp, FileText, FilePlus, Loader2, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { importFiles, ImportResult } from '@/lib/data-processing/import-utils';
 import { useAppState } from '@/lib/state/app-state';
-import {
-  UltraTransparentDialog,
-  UltraTransparentDialogContent,
-  UltraTransparentDialogHeader,
-  UltraTransparentDialogTitle,
-} from '@/components/ui/ultra-transparent-dialog';
 
 interface ImportDialogProps {
   isOpen: boolean;
@@ -25,6 +19,19 @@ export function ImportDialog({ isOpen, onClose }: ImportDialogProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { addNote } = useAppState();
+
+  // Reset state when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedFiles([]);
+      setImportResult(null);
+      setIsImporting(false);
+      setDragActive(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }, [isOpen]);
 
   // Handle file selection
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,23 +97,27 @@ export function ImportDialog({ isOpen, onClose }: ImportDialogProps) {
       const result = await importFiles(selectedFiles);
       setImportResult(result);
 
-      if (result.success) {
-        // Add imported notes to the app
+      if (result.success && result.notes.length > 0) {
+        // Add imported notes to the app - handle multiple notes properly
+        let successCount = 0;
         for (const note of result.notes) {
-          // Type fix: Pass note properties instead of the note object
-          await addNote(note.noteTitle || 'Imported Note');
+          try {
+            await addNote(note.noteTitle || `Imported Note ${successCount + 1}`);
+            successCount++;
+          } catch (error) {
+            console.error('Error adding note:', error);
+          }
         }
 
         toast({
           title: "Import successful",
-          description: `Successfully imported ${result.notes.length} note${result.notes.length !== 1 ? 's' : ''}.`,
+          description: `Successfully imported ${successCount} note${successCount !== 1 ? 's' : ''}.`,
         });
 
-        // Close dialog after successful import
+        // Close dialog after successful import and reset state
         setTimeout(() => {
-          onClose();
-          handleClearFiles();
-        }, 2000);
+          handleCloseAndReset();
+        }, 1500);
       } else {
         toast({
           title: "Import failed",
@@ -126,14 +137,48 @@ export function ImportDialog({ isOpen, onClose }: ImportDialogProps) {
     }
   };
 
+  // Handle closing and resetting state
+  const handleCloseAndReset = () => {
+    onClose();
+    // Reset state after a small delay to ensure modal is closed
+    setTimeout(() => {
+      handleClearFiles();
+      setImportResult(null);
+      setIsImporting(false);
+      setDragActive(false);
+    }, 100);
+  };
+
+  // Handle clicking outside to close
+  const handleClickOutside = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && !isImporting) {
+      handleCloseAndReset();
+    }
+  };
+
+  if (!isOpen) return null;
+
   return (
-    <UltraTransparentDialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <UltraTransparentDialogContent className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full overflow-hidden">
-        <UltraTransparentDialogHeader>
-          <UltraTransparentDialogTitle className="text-lg font-semibold">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] animate-in fade-in-0 duration-200"
+      onClick={handleClickOutside}
+    >
+      <div
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-lg max-w-md w-full mx-4 transform transition-all duration-200 scale-100"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
             Import Notes
-          </UltraTransparentDialogTitle>
-        </UltraTransparentDialogHeader>
+          </h3>
+          <button
+            onClick={handleCloseAndReset}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            disabled={isImporting}
+          >
+            <X size={20} />
+          </button>
+        </div>
         
         <div className="p-4">
           <div
@@ -235,8 +280,9 @@ export function ImportDialog({ isOpen, onClose }: ImportDialogProps) {
           <div className="flex justify-end mt-6">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 mr-2"
+              onClick={handleCloseAndReset}
+              disabled={isImporting}
+              className="px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 mr-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
@@ -260,8 +306,8 @@ export function ImportDialog({ isOpen, onClose }: ImportDialogProps) {
             </button>
           </div>
         </div>
-      </UltraTransparentDialogContent>
-    </UltraTransparentDialog>
+      </div>
+    </div>
   );
 }
 

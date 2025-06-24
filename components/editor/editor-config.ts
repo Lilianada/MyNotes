@@ -33,7 +33,7 @@ export function configureBracketCompletion(editor: EditorInstance): void {
   // Ensure it's enabled in the editor options
   editor.updateOptions({
     autoClosingBrackets: 'always',
-    autoClosingQuotes: 'always'
+    autoClosingQuotes: 'never' // Disable auto-closing quotes
   });
 }
 

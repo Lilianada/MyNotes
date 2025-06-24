@@ -30,7 +30,7 @@ export default function NoteListItem({
   return (
     <li
       key={note.id}
-      className={`p-2 text-sm rounded cursor-pointer flex items-center justify-between hover:bg-blue-50 transition-colors ${
+      className={`border-b border-zinc-100 p-2 text-sm rounded cursor-pointer flex items-center justify-between hover:bg-blue-50 transition-colors ${
         selectedNoteId === note.id ? "bg-blue-50" : ""
       } ${isSelected ? "bg-blue-50" : ""}`}
     >
