@@ -4,6 +4,7 @@ import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkFrontmatter from 'remark-frontmatter';
+import remarkBreaks from 'remark-breaks';
 import { Components } from 'react-markdown';
 import { remarkParagraphSpacing } from '@/lib/markdown/remark-paragraph-spacing';
 import { getMarkdownBodyClass } from './styles';
@@ -29,7 +30,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   return (
     <div className={`markdown-renderer overflow-y-auto h-full p-4 ${getMarkdownBodyClass()} ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkFrontmatter, remarkParagraphSpacing]}
+        remarkPlugins={[remarkGfm, remarkFrontmatter, remarkBreaks, remarkParagraphSpacing]}
         components={{
           // Headers - use CSS from styles/markdown.css
           h1: ({ children }) => <h1>{children}</h1>,
