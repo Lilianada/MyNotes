@@ -9,7 +9,7 @@ export function configureMarkdownLanguage(monaco: any) {
       { open: '[', close: ']' },
       { open: '{', close: '}' },
       { open: '"', close: '"' },
-      { open: "'", close: "'" },
+      // Removed single quotes from auto-closing
       { open: '`', close: '`' },
       { open: '*', close: '*' }, // for markdown emphasis
       { open: '_', close: '_' }, // for markdown emphasis alternative
@@ -20,7 +20,7 @@ export function configureMarkdownLanguage(monaco: any) {
       { open: '[', close: ']' },
       { open: '{', close: '}' },
       { open: '"', close: '"' },
-      { open: "'", close: "'" },
+      // Removed single quotes from surrounding pairs
       { open: '`', close: '`' },
       { open: '*', close: '*' },
       { open: '_', close: '_' },
