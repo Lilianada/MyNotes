@@ -198,10 +198,10 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
         </div>
 
         {/* Editor content */}
-        <div className="flex-grow relative overflow-y-auto pb-4">
+        <div className="flex-grow relative overflow-y-auto pb-16">
           {renderHTML ? (
             // Render markdown preview
-            <div className={`h-full overflow-auto p-4 ${fontFamilyClass}`}>
+            <div className={`h-full overflow-auto p-4 ${fontFamilyClass}`} style={{ fontSize: '14px', lineHeight: '1.6' }}>
               <MarkdownRenderer content={note.content || ""} />
             </div>
           ) : isMobile ? (
@@ -264,7 +264,8 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                 <div className="h-full w-full relative flex flex-col" aria-label="Simple text editor">
                   <textarea
                     ref={ref}
-                    className={`w-full flex-1 min-h-0 p-4 resize-none outline-none bg-white dark:bg-gray-900 overflow-auto text-sm sm:text-[15px] ${fontFamilyClass}`}
+                    className={`w-full flex-1 min-h-0 p-4 pb-16 resize-none outline-none bg-white dark:bg-gray-900 overflow-auto ${fontFamilyClass}`}
+                    style={{ fontSize: '14px', lineHeight: '1.6' }}
                     value={note.content || ""}
                     onChange={(e) => handleContentChange(e.target.value)}
                     placeholder="Start writing..."

@@ -13,6 +13,13 @@ code.inline-code {
   border-radius: 0.25rem;
 }
 
+/* Ensure markdown renderer has consistent spacing and font with editors */
+.markdown-renderer {
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  padding-bottom: 4rem !important; /* Match the pb-16 from editors */
+}
+
 /* Ensure code inside pre (code blocks) displays properly */
 pre code {
   display: block;

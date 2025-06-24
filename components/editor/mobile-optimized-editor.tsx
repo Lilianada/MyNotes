@@ -89,7 +89,8 @@ export const MobileOptimizedEditor = forwardRef<MobileEditorRef, MobileOptimized
         {/* Mobile-optimized textarea */}
         <div className={`flex-1 ${isFullscreen ? 'h-[calc(100vh-70px)]' : 'h-full'}`}>
           <TextareaAutosize
-            className="w-full h-full p-4 resize-none outline-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-sm leading-relaxed border-0 focus:ring-0 "
+            className="w-full h-full p-4 pb-16 resize-none outline-none bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-0 focus:ring-0 overflow-auto"
+            style={{ fontSize: '14px', lineHeight: '1.6' }}
             value={content}
             onChange={handleChange}
             placeholder="Start writing..."
@@ -100,7 +101,6 @@ export const MobileOptimizedEditor = forwardRef<MobileEditorRef, MobileOptimized
             autoComplete="on"
             autoCorrect="on"
             aria-label="Note content"
-            style={{ fontSize: '14px' }}
           />
         </div>
         

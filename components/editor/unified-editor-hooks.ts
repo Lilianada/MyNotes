@@ -279,7 +279,12 @@ export function useMonacoConfig(
       cursorSmoothCaretAnimation: 'on',
       scrollBeyondLastLine: true,
       smoothScrolling: true,
-      theme: isDarkTheme ? 'vs-dark' : 'vs'
+      theme: isDarkTheme ? 'vs-dark' : 'vs',
+      scrollbar: {
+        verticalScrollbarSize: 8,
+        horizontalScrollbarSize: 8,
+        alwaysConsumeMouseWheel: false
+      }
     });
     
   }, [editorInstance, isDarkTheme, fontFamily]);
