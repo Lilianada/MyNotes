@@ -2,9 +2,9 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { FileUp, FileText, FilePlus, Loader2, X } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { importFiles, ImportResult } from '@/lib/data-processing/import-utils';
-import { useAppState } from '@/lib/state/app-state';
+import { useAppState } from '@/lib/state/use-app-state';
 
 interface ImportDialogProps {
   isOpen: boolean;

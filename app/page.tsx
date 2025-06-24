@@ -11,7 +11,7 @@ import { Header } from "@/components/navigation/header"
 import { AuthDialog } from "@/components/auth/auth-dialog"
 import { TitleModal } from "@/components/modals/title-modal"
 import ExportDialog from "@/components/modals/export-dialog"
-import PortalImportDialog from "@/components/modals/portal-import-dialog"
+import { ImportDialog } from "@/components/modals/import-dialog"
 import { logger } from "@/lib/utils/logger"
 import { 
   NoteErrorBoundary,
@@ -250,7 +250,7 @@ export default function Home() {
   return (
     <>
       {mainContent}
-      <PortalImportDialog
+      <ImportDialog
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
       />
