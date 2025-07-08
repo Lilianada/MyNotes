@@ -277,6 +277,9 @@ ul li.task-list-item {
   #sidebar {
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    /* Ensure proper height calculation on mobile */
+    height: calc(100vh - 46px) !important;
+    top: 46px !important;
   }
   
   /* Fix header accessibility on mobile */
@@ -284,6 +287,7 @@ ul li.task-list-item {
     position: sticky;
     top: 0;
     z-index: 40;
+    height: 46px;
   }
   
   /* Prevent horizontal scroll */
@@ -297,4 +301,46 @@ ul li.task-list-item {
     height: calc(100vh - 70px);
     overflow: hidden;
   }
+}
+
+/* Desktop sidebar styles */
+@media (min-width: 768px) {
+  #sidebar {
+    height: 100% !important;
+    top: 0 !important;
+  }
+  
+  header {
+    height: fit-content;
+  }
+}
+
+/* Ensure virtualized list containers work well with flexbox */
+.virtualized-container {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Better scrollbar handling */
+.react-window-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.react-window-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.react-window-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.react-window-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.react-window-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }

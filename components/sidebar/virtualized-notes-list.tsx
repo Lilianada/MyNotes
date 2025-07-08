@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { FixedSizeList as List } from 'react-window';
 import type { Note } from '@/types';
 import NoteListItem from './note-list-item';
@@ -39,68 +39,47 @@ export function VirtualizedNotesList({
   
   // Container ref to measure available height
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerHeight, setContainerHeight] = useState(600);
+  const [containerHeight, setContainerHeight] = useState(400); // Start with reasonable default
   
-  const itemHeight = 48; 
+  const itemHeight = 48;
   
-  // Update container height on mount and window resize
-  useEffect(() => {
-    const updateHeight = () => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        const availableHeight = rect.height; // Account for padding
-        setContainerHeight(Math.max(200, availableHeight)); 
+  // Stable height calculation function
+  const calculateHeight = useCallback(() => {
+    if (!containerRef.current) return;
+    
+    try {
+      const rect = containerRef.current.getBoundingClientRect();
+      const availableHeight = rect.height;
+      const minHeight = 200;
+      const newHeight = Math.max(minHeight, availableHeight - 20); // Leave some padding
+      
+      if (newHeight !== containerHeight) {
+        setContainerHeight(newHeight);
       }
-    };
-    
-    const timeoutId = setTimeout(updateHeight, 100);
-    
-    // Add resize listener
-    window.addEventListener('resize', updateHeight);
-    
-    // Cleanup
-    return () => {
-      clearTimeout(timeoutId);
-      window.removeEventListener('resize', updateHeight);
-    };
-  }, []);
+    } catch (error) {
+      console.error('Error calculating container height:', error);
+    }
+  }, [containerHeight]);
   
-  // Loading state
-  if (showLoading) {
-    return <NoteListSkeleton count={7} />;
-  }
-  
-  // Empty state
-  if (filteredNotes.length === 0) {
-    return (
-      <p className="text-center text-gray-400 text-base p-4" role="status">No notes yet</p>
-    );
-  }
+  // Memoized note selection handler
+  const handleNoteSelect = useCallback((note: Note) => {
+    // Use requestAnimationFrame for smooth transitions
+    requestAnimationFrame(() => {
+      try {
+        if (selectNote) {
+          selectNote(note.id);
+        } else {
+          onSelectNote(note);
+        }
+      } catch (error) {
+        console.error('Error selecting note:', error);
+      }
+    });
+  }, [selectNote, onSelectNote]);
   
   // Render a note item
-  const renderNoteItem = ({ index, style }: { index: number; style: React.CSSProperties }) => {
+  const renderNoteItem = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
     const note = filteredNotes[index];
-    
-    // Safe note selection handler to prevent Monaco editor errors
-    const handleNoteSelect = (note: Note) => {
-      // First, check if we're on mobile
-      const isMobile = typeof window !== 'undefined' && 
-        (window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
-      
-      // Use a longer delay on mobile devices to ensure the sidebar animation completes
-      const delay = isMobile ? 300 : 50;
-      setTimeout(() => {
-        try {
-          if (selectNote) {
-            selectNote(note.id);
-          } else {
-            onSelectNote(note);
-          }
-        } catch (error) {
-          console.error('Error selecting note:', error);
-        }
-      }, delay);
-    };
     
     return (
       <div style={style}>
@@ -118,12 +97,70 @@ export function VirtualizedNotesList({
         />
       </div>
     );
-  };
+  }, [filteredNotes, selectedNoteId, isDeleting, isSelectionMode, selectedNoteIds, handleNoteSelect, onOpenDetails, onDeleteNote, onToggleSelection]);
+  
+  // Use ResizeObserver for better performance and accuracy
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    
+    // Initial calculation with delay to ensure DOM is ready
+    const initialTimer = setTimeout(calculateHeight, 100);
+    
+    // Use ResizeObserver if available, fallback to resize listener
+    if (typeof window !== 'undefined' && typeof ResizeObserver !== 'undefined') {
+      const resizeObserver = new ResizeObserver((entries) => {
+        // Debounce the height calculation
+        const timer = setTimeout(() => {
+          calculateHeight();
+        }, 50);
+        
+        return () => clearTimeout(timer);
+      });
+      
+      resizeObserver.observe(container);
+      
+      return () => {
+        clearTimeout(initialTimer);
+        resizeObserver.disconnect();
+      };
+    } else {
+      // Fallback for older browsers
+      const handleResize = () => {
+        calculateHeight();
+      };
+      
+      window.addEventListener('resize', handleResize);
+      
+      return () => {
+        clearTimeout(initialTimer);
+        window.removeEventListener('resize', handleResize);
+      };
+    }
+  }, [calculateHeight]);
+  
+  // Recalculate when notes change
+  useEffect(() => {
+    const timeoutId = setTimeout(calculateHeight, 100);
+    return () => clearTimeout(timeoutId);
+  }, [filteredNotes.length, calculateHeight]);
+  
+  // Loading state
+  if (showLoading) {
+    return <NoteListSkeleton count={7} />;
+  }
+  
+  // Empty state
+  if (filteredNotes.length === 0) {
+    return (
+      <p className="text-center text-gray-400 text-base p-4" role="status">No notes yet</p>
+    );
+  }
   
   return (
     <div 
       ref={containerRef} 
-      className="flex-1 overflow-hidden p-2 h-full"
+      className="virtualized-container p-2"
       role="list" 
       aria-label="Notes list"
     >
@@ -132,7 +169,7 @@ export function VirtualizedNotesList({
         width="100%"
         itemCount={filteredNotes.length}
         itemSize={itemHeight}
-        className="scrollbar-hide h-screen"
+        className="react-window-list"
       >
         {renderNoteItem}
       </List>

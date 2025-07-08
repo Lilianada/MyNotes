@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import type { Note } from "@/types";
 import { FilterSortToolbar } from "./filter-sort-toolbar";
 import { useSidebarState } from "./sidebar-hooks";
@@ -9,6 +9,7 @@ import { SidebarDialogs } from "./sidebar-dialogs";
 import { useAppState, FilterOptions, SortField } from "@/lib/state/use-app-state";
 import { useToast } from "@/hooks/use-toast";
 import type { SortOption } from "./filter-sort-toolbar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -35,6 +36,20 @@ export default function Sidebar({
   } = useAppState();
   
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  
+  // Calculate header height based on screen size
+  const headerHeight = useMemo(() => isMobile ? 46 : 56, [isMobile]);
+  
+  // Calculate sidebar height styles
+  const sidebarStyles = useMemo(() => {
+    const baseStyles = "fixed left-0 z-30 w-[85%] sm:w-72 md:w-full bg-white dark:bg-gray-800 border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg overflow-x-hidden scrollbar-hide flex flex-col md:translate-x-0 md:relative md:w-full md:m-2 md:border md:rounded-md md:shadow-sm md:transition-shadow";
+    
+    // Use CSS classes for height management instead of inline styles
+    const responsiveStyles = "top-[46px] h-[calc(100vh-46px)] md:top-0 md:h-full";
+    
+    return `${baseStyles} ${responsiveStyles}`;
+  }, []);
   
   // Use custom hooks for state and handlers
   // We'll keep using these hooks for now but integrate with our new state management
@@ -99,12 +114,12 @@ export default function Sidebar({
     <>
       <aside 
         id="sidebar"
-        className={`fixed top-[var(--header-height)] sm:top-0 left-0 z-30 w-[85%] sm:w-72 md:w-full bg-white dark:bg-gray-800 border-r border-gray-200 transform transition-all duration-300 ease-in-out shadow-lg h-[calc(100vh-var(--header-height))] max-h-[calc(100vh_-_5rem)] md:h-full overflow-x-hidden scrollbar-hide flex flex-col${
+        className={`${sidebarStyles}${
           isSidebarOpen ? ' translate-x-0' : ' -translate-x-full'
-        } md:translate-x-0 md:relative md:w-full md:m-2 md:border md:rounded-md md:shadow-sm md:transition-shadow`}
+        }`}
         aria-label="Sidebar navigation"
-        tabIndex={!isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768 ? -1 : undefined}
-        aria-hidden={!isSidebarOpen && typeof window !== 'undefined' && window.innerWidth < 768}
+        tabIndex={!isSidebarOpen && isMobile ? -1 : undefined}
+        aria-hidden={!isSidebarOpen && isMobile}
       >
         {/* Header */}
         <SidebarHeader 
