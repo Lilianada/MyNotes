@@ -344,3 +344,37 @@ ul li.task-list-item {
 .react-window-list::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.3);
 }
+
+/* Fix double cursor issues in Monaco Editor */
+.monaco-editor .cursors-layer {
+  /* Ensure only one cursor is visible */
+  pointer-events: none;
+}
+
+.monaco-editor .cursor {
+  /* Ensure single cursor display */
+  position: absolute !important;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Disable multi-cursor selection UI */
+.monaco-editor .selection-anchor,
+.monaco-editor .selection-anchor-viewport {
+  display: none !important;
+}
+
+/* Ensure proper cursor blinking */
+.monaco-editor .cursor.blink {
+  animation: monaco-cursor-blink 1s infinite;
+}
+
+@keyframes monaco-cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* Prevent ghost cursors */
+.monaco-editor .view-overlays .cursor-layer {
+  pointer-events: none;
+}

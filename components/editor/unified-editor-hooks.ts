@@ -77,11 +77,11 @@ export function useUnifiedEditorState(
     setRenderHTML(!renderHTML);
   };
   
-  // Cursor position management
+  // Cursor position management - simplified for natural feel
   useEffect(() => {
     if (!editorInstance || !note?.id) return;
     
-    // Save cursor position when editor changes or component unmounts
+    // Only save cursor position when switching notes or on unmount
     const saveCursorPosition = () => {
       try {
         const position = editorInstance.getPosition();
@@ -97,30 +97,46 @@ export function useUnifiedEditorState(
           localStorage.setItem(CURSOR_POSITIONS_KEY, JSON.stringify(positions));
         }
       } catch (e) {
-        console.error("Failed to save cursor position:", e);
+        // Silently handle errors
       }
     };
 
-    // Restore cursor position when note changes
+    // Restore cursor position only when switching notes (not on every change)
     const restoreCursorPosition = () => {
       try {
         if (prevNoteIdRef.current !== note.id) {
           const positions = getStoredCursorPositions();
           const savedPosition = positions[note.id];
           
-          if (savedPosition) {
-            editorInstance.setPosition({
-              lineNumber: savedPosition.line,
-              column: savedPosition.column
-            });
-            editorInstance.revealPositionInCenter({
-              lineNumber: savedPosition.line,
-              column: savedPosition.column
-            });
+          if (savedPosition && editorInstance && editorInstance.getModel()) {
+            // Use a timeout to ensure the editor is ready and prevent cursor conflicts
+            setTimeout(() => {
+              if (editorInstance && editorInstance.getModel()) {
+                // Clear any existing selections first to prevent double cursor
+                editorInstance.setSelection({
+                  startLineNumber: savedPosition.line,
+                  startColumn: savedPosition.column,
+                  endLineNumber: savedPosition.line,
+                  endColumn: savedPosition.column
+                });
+                
+                // Then set the cursor position
+                editorInstance.setPosition({
+                  lineNumber: savedPosition.line,
+                  column: savedPosition.column
+                });
+                
+                // Gentle reveal without centering to avoid jarring movement
+                editorInstance.revealPosition({
+                  lineNumber: savedPosition.line,
+                  column: savedPosition.column
+                });
+              }
+            }, 150); // Slightly longer delay to ensure everything is settled
           }
         }
       } catch (e) {
-        console.error("Failed to restore cursor position:", e);
+        // Silently handle errors
       }
     };
     
@@ -284,7 +300,13 @@ export function useMonacoConfig(
         verticalScrollbarSize: 8,
         horizontalScrollbarSize: 8,
         alwaysConsumeMouseWheel: false
-      }
+      },
+      // Disable multi-cursor features to prevent double cursor issues
+      multiCursorModifier: 'alt', // Require Alt key for multi-cursor (harder to trigger accidentally)
+      multiCursorMergeOverlapping: true,
+      // Additional cursor-related settings
+      cursorWidth: 2,
+      cursorStyle: 'line'
     });
     
   }, [editorInstance, isDarkTheme, fontFamily]);
@@ -306,6 +328,22 @@ export function useMonacoConfig(
 
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
       editor.trigger('keyboard', 'editor.action.triggerSuggest', null);
+    });
+
+    // Disable problematic multi-cursor commands to prevent double cursor issues
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyD, () => {
+      // Override default multi-cursor behavior - do nothing or implement single cursor duplicate line
+      return null;
+    });
+    
+    editor.addCommand(monaco.KeyMod.Alt | monaco.KeyCode.UpArrow, () => {
+      // Override default multi-cursor behavior
+      return null;
+    });
+    
+    editor.addCommand(monaco.KeyMod.Alt | monaco.KeyCode.DownArrow, () => {
+      // Override default multi-cursor behavior
+      return null;
     });
 
     // Configure markdown specific features

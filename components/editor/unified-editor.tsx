@@ -255,7 +255,12 @@ export const UnifiedEditor = forwardRef<HTMLTextAreaElement, UnifiedEditorProps>
                         renderLineHighlight: 'all',
                         cursorBlinking: 'smooth',
                         cursorSmoothCaretAnimation: 'on',
-                        smoothScrolling: true
+                        smoothScrolling: true,
+                        // Prevent double cursor issues
+                        multiCursorModifier: 'alt',
+                        multiCursorMergeOverlapping: true,
+                        cursorWidth: 2,
+                        cursorStyle: 'line'
                       }}
                     />
                 </div>
